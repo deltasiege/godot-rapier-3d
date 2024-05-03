@@ -4,3 +4,15 @@
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_6ytrr")
+
+[node name="A" type="Node" parent="."]
+
+[node name="B" type="Node" parent="A"]
+
+[node name="C" type="Node" parent="A/B"]
+
+[node name="RapierRigidBody3D" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.78304, 0.686945, 0.951337)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="RapierRigidBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.264855, 0, 0)

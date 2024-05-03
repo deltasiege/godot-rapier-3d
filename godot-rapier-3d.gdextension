@@ -3,6 +3,10 @@ entry_symbol = "gdext_rust_init"
 compatibility_minimum = 4.2
 reloadable = true
 
+[icons]
+RapierRigidBody3D = "res://addons/godot-rapier-3d/icons/rb3d.svg"
+RapierCollider3D = "res://addons/godot-rapier-3d/icons/col3d.svg"
+
 [libraries]
 linux.debug.x86_64 =     "res://addons/godot-rapier-3d/target/debug/libgodot_rapier_3d.so"
 linux.release.x86_64 =   "res://addons/godot-rapier-3d/target/release/libgodot_rapier_3d.so"

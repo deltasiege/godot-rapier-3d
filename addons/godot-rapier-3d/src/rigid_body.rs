@@ -4,25 +4,29 @@ use godot::engine::INode3D;
 use godot::engine::Node3D;
 use godot::prelude::*;
 use nalgebra::Vector3 as NAVector3;
+use rapier3d::math::Rotation;
 use rapier3d::prelude::*;
 
 #[derive(GodotClass)]
 #[class(base=Node3D)]
-pub struct RapierCollider3D {
-    pub handle: ColliderHandle,
-    pub collider: Collider,
-    pub parent: Option<RigidBodyHandle>,
+pub struct RapierRigidBody3D {
+    pub handle: RigidBodyHandle,
+    pub rigid_body: RigidBody,
+    #[export]
+    body_type: RigidBodyType,
+    #[export]
+    pub mass: Real,
     base: Base<Node3D>,
 }
 
 #[godot_api]
-impl INode3D for RapierCollider3D {
+impl INode3D for RapierRigidBody3D {
     fn init(base: Base<Node3D>) -> Self {
-        godot_print!("RapierCollider3D::init()");
         Self {
-            handle: ColliderHandle::invalid(),
-            collider: ColliderBuilder::ball(0.5).restitution(0.7).build(),
-            parent: None,
+            handle: RigidBodyHandle::invalid(),
+            rigid_body: RigidBodyBuilder::dynamic().build(),
+            body_type: RigidBodyType::Dynamic,
+            mass: 1.0,
             base,
         }
     }
@@ -38,14 +42,14 @@ impl INode3D for RapierCollider3D {
 }
 
 #[godot_api]
-impl RapierCollider3D {
+impl RapierRigidBody3D {
     fn on_enter_tree(&mut self) {
         self.base_mut().set_notify_transform(true);
     }
 
     fn on_exit_tree(&mut self) {
-        godot_print!("RapierCollider3D::exit_tree()");
-        // TODO remove self from physics pipeline collider_set
+        godot_print!("RapierRigidBody3D::exit_tree()");
+        // TODO remove self from physics pipeline rigid_body_set and remove colliders too
     }
 
     fn on_transform_changed(&mut self) {
@@ -56,10 +60,20 @@ impl RapierCollider3D {
     }
 
     fn set_rapier_translation(&mut self, translation: NAVector3<Real>) {
-        self.collider.set_translation(translation);
+        self.rigid_body.set_translation(translation, false); // TODO wakeup (second arg) is needed?
     }
 
     fn set_rapier_rotation(&mut self, rotation: Rotation<Real>) {
-        self.collider.set_rotation(rotation);
+        self.rigid_body.set_rotation(rotation, false); // TODO wakeup (second arg) is needed?
     }
+}
+
+#[derive(GodotConvert, Var, Export)]
+#[godot(via = GString)]
+// https://docs.rs/rapier3d/latest/rapier3d/dynamics/enum.RigidBodyType.html
+pub enum RigidBodyType {
+    Dynamic,
+    Fixed,
+    KinematicPositionBased,
+    KinematicVelocityBased,
 }
