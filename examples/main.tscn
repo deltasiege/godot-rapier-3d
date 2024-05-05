@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://tm0w46kmn4yh"]
+[gd_scene load_steps=3 format=3 uid="uid://tm0w46kmn4yh"]
 
 [ext_resource type="Script" path="res://examples/main.gd" id="1_6ytrr"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_6u11n"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_6ytrr")
@@ -11,8 +13,13 @@ script = ExtResource("1_6ytrr")
 
 [node name="C" type="Node" parent="A/B"]
 
-[node name="RapierRigidBody3D" type="RapierRigidBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.78304, 0.686945, 0.951337)
+[node name="RapierRigidBody3D" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.329677, 0, -0.109035)
 
-[node name="RapierCollider3D" type="RapierCollider3D" parent="RapierRigidBody3D"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.264855, 0, 0)
+[node name="RapierCollider3D" type="Node3D" parent="RapierRigidBody3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RapierRigidBody3D"]
+mesh = SubResource("SphereMesh_6u11n")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)

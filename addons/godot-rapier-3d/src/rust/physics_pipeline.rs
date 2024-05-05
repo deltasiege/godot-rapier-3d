@@ -1,8 +1,10 @@
 use crate::collider::RapierCollider3D;
 use crate::rigid_body::RapierRigidBody3D;
+use crate::utils::*;
 use godot::engine::IRefCounted;
 use godot::engine::RefCounted;
 use godot::prelude::*;
+use rapier3d::math::Vector as RVector;
 use rapier3d::na;
 use rapier3d::prelude::*;
 
@@ -31,9 +33,6 @@ impl IRefCounted for RapierPhysicsPipeline {
     fn init(base: Base<RefCounted>) -> Self {
         godot_print!("RapierPhysicsPipeline::init()");
 
-        let rigid_body_set = RigidBodySet::new();
-        let collider_set = ColliderSet::new();
-
         // let collider = ColliderBuilder::cuboid(100.0, 0.1, 100.0).build();
         // collider_set.insert(collider);
 
@@ -45,10 +44,9 @@ impl IRefCounted for RapierPhysicsPipeline {
         // collider_set.insert_with_parent(collider, ball_body_handle, &mut rigid_body_set);
 
         Self {
-            // rigid_body_set: RigidBodySet::new(),
-            // collider_set: ColliderSet::new(),
-            rigid_body_set,
-            collider_set,
+            rigid_body_nodes: Vec::new(),
+            rigid_body_set: RigidBodySet::new(),
+            collider_set: ColliderSet::new(),
             gravity: vector![0.0, -9.81, 0.0],
             integration_parameters: IntegrationParameters::default(),
             physics_pipeline: PhysicsPipeline::new(),
@@ -69,12 +67,10 @@ impl IRefCounted for RapierPhysicsPipeline {
 #[godot_api]
 impl RapierPhysicsPipeline {
     #[signal]
-    fn physics_step();
+    fn rapier3d_physics_step();
 
     #[func]
     fn step(&mut self) {
-        godot_print!("RapierPhysicsPipeline::step()");
-
         self.physics_pipeline.step(
             &self.gravity,
             &self.integration_parameters,
@@ -91,23 +87,48 @@ impl RapierPhysicsPipeline {
             &self.event_handler,
         );
 
-        // let ball_body = &self.rigid_body_set[self.ball_body_handle];
-
-        // godot_print!("Ball altitude: {}", ball_body.translation().y);
-
-        self.base_mut().emit_signal("stepped".into(), &[]);
+        self.base_mut()
+            .emit_signal("rapier3d_physics_step".into(), &[]);
     }
 
     #[func]
-    fn add_rigid_body(&mut self, mut rigid_body: Gd<RapierRigidBody3D>) {
+    fn get_active_dynamic_body_ids(&self) -> Array<VariantArray> {
+        self.island_manager
+            .active_dynamic_bodies()
+            .into_iter()
+            .map(|handle| rb_handle_to_id(*handle))
+            .collect()
+    }
+
+    #[func]
+    fn sync_active_body_godot_transforms(&self) {
+        // self.island_manager
+        //     .active_dynamic_bodies()
+        //     .iter()
+        //     .for_each(|handle| {
+        //         let id = rb_handle_to_id(*handle);
+        //         let node: Gd<RapierRigidBody3D> = self
+        //             .rigid_body_nodes
+        //             .iter()
+        //             .find(|node| node.bind().id == id)
+        //             .unwrap();
+        //         // let rigid_body = node.bind().rigid_body.clone();
+        //         // let translation: RVector<Real> = rigid_body.translation().clone();
+        //         // godot_print!("rb: {:?}", rigid_body);
+        //         // let mut node_clone = node.clone();
+        //         // let mut node_class = node_clone.bind_mut();
+        //         // node_class.set_godot_position(translation); // TODO so much cloning... surely im doing something wrong
+        //     })
+    }
+
+    #[func]
+    fn add_rigid_body(&mut self, rigid_body: Gd<RapierRigidBody3D>) {
+        rigid_body.bind_mut().join_set(&mut self.rigid_body_set); // TODO I don't want to clone - is it necessary to ask the rigid_body to join the set here?
+    }
+
+    #[func]
+    fn remove_rigid_body(&mut self, mut rigid_body: Gd<RapierRigidBody3D>) {
         let mut rb = rigid_body.bind_mut();
-        let handle = self.rigid_body_set.insert(rb.rigid_body.clone());
-        rb.handle = handle;
-    }
-
-    #[func]
-    fn remove_rigid_body(&mut self, rigid_body: Gd<RapierRigidBody3D>) {
-        let rb = rigid_body.bind();
         self.rigid_body_set.remove(
             rb.handle,
             &mut self.island_manager,
@@ -116,6 +137,8 @@ impl RapierPhysicsPipeline {
             &mut self.multibody_joint_set,
             false,
         );
+        rb.handle = RigidBodyHandle::invalid();
+        rb.id = Array::new();
     }
 
     #[func]
@@ -123,11 +146,15 @@ impl RapierPhysicsPipeline {
         self.rigid_body_set.len() as i64
     }
 
-    // TODO remove me
     #[func]
-    fn print_rigid_bodies(&mut self) {
+    fn print_rigid_body_transforms(&mut self) {
         self.rigid_body_set.iter().for_each(|(handle, rigid_body)| {
-            godot_print!("Handle: {:?} | Mass: {:?}", handle, rigid_body.mass());
+            godot_print!(
+                "{:?}: translation: {:?}, rotation: {:?}",
+                handle,
+                rigid_body.translation(),
+                rigid_body.rotation()
+            );
         });
     }
 
@@ -146,17 +173,25 @@ impl RapierPhysicsPipeline {
         );
         col.handle = handle;
         col.parent = Some(rb.handle);
+        let (index, generation) = handle.into_raw_parts();
+        let mut id = Array::new();
+        id.push(index);
+        id.push(generation);
+        col.id = id;
     }
 
     #[func]
-    fn remove_collider(&mut self, collider: Gd<RapierCollider3D>) {
-        let col = collider.bind();
+    fn remove_collider(&mut self, mut collider: Gd<RapierCollider3D>) {
+        let mut col = collider.bind_mut();
         self.collider_set.remove(
             col.handle,
             &mut self.island_manager,
             &mut self.rigid_body_set,
             false,
         );
+        col.handle = ColliderHandle::invalid();
+        col.parent = None;
+        col.id = Array::new();
     }
 
     #[func]

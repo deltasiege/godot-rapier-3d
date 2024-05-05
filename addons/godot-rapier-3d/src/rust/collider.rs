@@ -5,12 +5,17 @@ use godot::engine::Node3D;
 use godot::prelude::*;
 use nalgebra::Vector3 as NAVector3;
 use rapier3d::prelude::*;
+// use rapier3d::geometry::ShapeType
 
 #[derive(GodotClass)]
 #[class(base=Node3D)]
 pub struct RapierCollider3D {
+    #[var]
+    pub id: Array<u32>, // ColliderHandle::into_raw_parts
     pub handle: ColliderHandle,
     pub collider: Collider,
+    #[export]
+    pub shape: ShapeType,
     pub parent: Option<RigidBodyHandle>,
     base: Base<Node3D>,
 }
@@ -19,9 +24,12 @@ pub struct RapierCollider3D {
 impl INode3D for RapierCollider3D {
     fn init(base: Base<Node3D>) -> Self {
         godot_print!("RapierCollider3D::init()");
+        // ColliderBuilder::ball(0.5).restitution(0.7).build()
         Self {
+            id: Array::new(),
             handle: ColliderHandle::invalid(),
             collider: ColliderBuilder::ball(0.5).restitution(0.7).build(),
+            shape: ShapeType::Ball,
             parent: None,
             base,
         }
@@ -62,4 +70,13 @@ impl RapierCollider3D {
     fn set_rapier_rotation(&mut self, rotation: Rotation<Real>) {
         self.collider.set_rotation(rotation);
     }
+}
+
+#[derive(GodotConvert, Var, Export)]
+#[godot(via = GString)]
+// https://docs.rs/rapier3d/latest/rapier3d/geometry/enum.ShapeType.html
+pub enum ShapeType {
+    Ball,
+    Cuboid,
+    Capsule,
 }

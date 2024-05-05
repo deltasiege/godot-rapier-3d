@@ -1,17 +1,21 @@
-use crate::utils::transform_to_posrot;
+use crate::utils::*;
+use godot::builtin::Vector3 as GVector3;
 use godot::engine::notify::Node3DNotification;
 use godot::engine::INode3D;
 use godot::engine::Node3D;
 use godot::prelude::*;
 use nalgebra::Vector3 as NAVector3;
 use rapier3d::math::Rotation;
+use rapier3d::math::Vector as RVector;
 use rapier3d::prelude::*;
 
 #[derive(GodotClass)]
 #[class(base=Node3D)]
 pub struct RapierRigidBody3D {
+    #[var]
+    pub id: Array<Variant>, // RigidBodyHandle::into_raw_parts
     pub handle: RigidBodyHandle,
-    pub rigid_body: RigidBody,
+    pub set: &RigidBodySet,
     #[export]
     body_type: RigidBodyType,
     #[export]
@@ -23,8 +27,8 @@ pub struct RapierRigidBody3D {
 impl INode3D for RapierRigidBody3D {
     fn init(base: Base<Node3D>) -> Self {
         Self {
+            id: Array::new(),
             handle: RigidBodyHandle::invalid(),
-            rigid_body: RigidBodyBuilder::dynamic().build(),
             body_type: RigidBodyType::Dynamic,
             mass: 1.0,
             base,
@@ -53,11 +57,49 @@ impl RapierRigidBody3D {
     }
 
     fn on_transform_changed(&mut self) {
-        let transform = self.base().get_global_transform();
-        let (pos, rot) = transform_to_posrot(transform);
-        self.set_rapier_translation(pos);
-        self.set_rapier_rotation(rot);
+        // TODO lock this when pipeline is stepped, instead of only doing in editor
+        if godot::engine::Engine::singleton().is_editor_hint() {
+            godot_print!("RapierRigidBody3D::on_transform_changed()");
+            let transform = self.base().get_global_transform();
+            let (pos, rot) = transform_to_posrot(transform);
+            self.set_rapier_translation(pos);
+            self.set_rapier_rotation(rot);
+        }
     }
+
+    // pub fn rigid_body(&self) -> &RigidBody {
+    //     self.rigid_body
+    // }
+
+    pub fn build_into_set(&mut self, set: &mut RigidBodySet) -> RigidBodyHandle {
+        let body_type = match self.body_type {
+            RigidBodyType::Dynamic => RigidBodyBuilder::dynamic(),
+            RigidBodyType::Fixed => RigidBodyBuilder::kinematic(),
+            RigidBodyType::KinematicPositionBased => RigidBodyBuilder::kinematic(),
+            RigidBodyType::KinematicVelocityBased => RigidBodyBuilder::kinematic(),
+        };
+        let built = body_type.build();
+        self.handle = set.insert(built);
+        self.id = rb_handle_to_id(self.handle);
+        self.set = &*set;
+        self.handle
+    }
+
+    pub fn set_godot_position(&mut self, position: RVector<Real>) {
+        let pos = GVector3::new(position.x, position.y, position.z);
+        godot_print!(
+            "RapierRigidBody3D::set_godot_position() pos: {:?} b4 {:?}",
+            pos,
+            position
+        );
+        self.base_mut().set_notify_transform(false);
+        self.base_mut().set_global_position(pos);
+        self.base_mut().set_notify_transform(true);
+    }
+
+    // pub fn set_godot_rotation(&mut self, rotation: Rotation<Real>) {
+    //     self.base_mut().set_quaternion(rotation);
+    // }
 
     fn set_rapier_translation(&mut self, translation: NAVector3<Real>) {
         self.rigid_body.set_translation(translation, false); // TODO wakeup (second arg) is needed?
