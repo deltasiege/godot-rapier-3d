@@ -3,11 +3,12 @@ use godot::engine::Engine;
 use godot::prelude::*;
 
 // mod collider;
-mod editor_plugin;
-mod singleton;
+// mod editor_plugin;
+
 // mod physics_pipeline;
+mod singleton;
 // mod rigid_body;
-mod utils;
+// mod utils;
 
 struct GodotRapier3D;
 

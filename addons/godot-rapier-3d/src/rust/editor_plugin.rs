@@ -12,13 +12,13 @@ struct GodotRapier3DEditorPlugin {
 impl IEditorPlugin for GodotRapier3DEditorPlugin {
     fn enter_tree(&mut self) {
         self.base_mut().add_autoload_singleton(
-            GString::from("Rapier3D"),
+            GString::from("Rapier3D_Utils"),
             GString::from("res://addons/godot-rapier-3d/Rapier3D.gd"),
         )
     }
 
     fn exit_tree(&mut self) {
         self.base_mut()
-            .remove_autoload_singleton(GString::from("Rapier3D"))
+            .remove_autoload_singleton(GString::from("Rapier3D_Utils"))
     }
 }

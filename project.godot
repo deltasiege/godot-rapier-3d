@@ -21,7 +21,7 @@ Rapier3D="*res://addons/godot-rapier-3d/Rapier3D.gd"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot-rapier-3d/plugin.cfg")
+enabled=PackedStringArray()
 
 [rendering]
 
