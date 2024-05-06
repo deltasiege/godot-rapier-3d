@@ -43,7 +43,7 @@ impl INode3D for RapierRigidBody3D {
 impl RapierRigidBody3D {
     fn on_enter_tree(&mut self) {
         self.base_mut().set_notify_transform(true);
-        let ston = crate::utils::get_singleton();
+        let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             let mut singleton = ston.unwrap();
             let pipeline = &mut singleton.bind_mut().pipeline;
@@ -66,7 +66,7 @@ impl RapierRigidBody3D {
     }
 
     fn on_exit_tree(&mut self) {
-        let ston = crate::utils::get_singleton();
+        let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             ston.unwrap()
                 .bind_mut()
@@ -76,7 +76,7 @@ impl RapierRigidBody3D {
     }
 
     fn on_transform_changed(&mut self) {
-        let ston = crate::utils::get_singleton();
+        let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             let mut singleton = ston.unwrap();
             let pipeline = &mut singleton.bind_mut().pipeline;
@@ -117,7 +117,7 @@ impl RapierRigidBody3D {
 
     #[func]
     pub fn print_colliders(&self) {
-        let ston = crate::utils::get_singleton();
+        let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             let mut singleton = ston.unwrap();
             let pipeline = &mut singleton.bind_mut().pipeline;

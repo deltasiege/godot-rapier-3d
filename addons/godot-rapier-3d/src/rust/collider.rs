@@ -50,7 +50,7 @@ impl INode3D for RapierCollider3D {
 impl RapierCollider3D {
     fn on_enter_tree(&mut self) {
         self.base_mut().set_notify_transform(true);
-        let ston = crate::utils::get_singleton();
+        let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             let mut singleton = ston.unwrap();
             let pipeline = &mut singleton.bind_mut().pipeline;
@@ -73,7 +73,7 @@ impl RapierCollider3D {
     }
 
     fn on_exit_tree(&mut self) {
-        let ston = crate::utils::get_singleton();
+        let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             ston.unwrap().bind_mut().pipeline.unregister_collider(self);
         }
@@ -91,7 +91,7 @@ impl RapierCollider3D {
 
     #[func]
     fn _on_parented(&mut self) {
-        let ston = crate::utils::get_singleton();
+        let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             let mut singleton = ston.unwrap();
             let pipeline = &mut singleton.bind_mut().pipeline;
@@ -135,7 +135,7 @@ impl RapierCollider3D {
         if !self.notify_parent {
             return;
         }
-        let ston = crate::utils::get_singleton();
+        let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             let mut singleton = ston.unwrap();
             let pipeline = &mut singleton.bind_mut().pipeline;
@@ -150,7 +150,7 @@ impl RapierCollider3D {
     }
 
     fn on_transform_changed(&mut self) {
-        let ston = crate::utils::get_singleton();
+        let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             let mut singleton = ston.unwrap();
             let pipeline = &mut singleton.bind_mut().pipeline;

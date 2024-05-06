@@ -8,10 +8,12 @@ use nalgebra::Vector3 as NAVector;
 use rapier3d::math::Rotation;
 use rapier3d::prelude::*;
 
-pub const SINGLETON_NAME: &str = "Rapier3D";
+pub const AUTOLOAD_NAME: &str = "Rapier3D";
+pub const AUTOLOAD_PATH: &str = "res://addons/godot-rapier-3d/Rapier3D.gd";
+pub const ENGINE_SINGLETON_NAME: &str = "Rapier3DEngine";
 
-pub fn get_singleton() -> Option<Gd<Rapier3DSingleton>> {
-    let gd_pointer = godot::engine::Engine::singleton().get_singleton(get_singleton_name());
+pub fn get_engine_singleton() -> Option<Gd<Rapier3DSingleton>> {
+    let gd_pointer = godot::engine::Engine::singleton().get_singleton(get_engine_singleton_name());
 
     match gd_pointer {
         Some(gd_pointer) => {
@@ -19,14 +21,22 @@ pub fn get_singleton() -> Option<Gd<Rapier3DSingleton>> {
             Some(casted)
         }
         None => {
-            godot_error!("Could not find Rapier3D singleton2");
+            godot_error!("Could not find Rapier3D singleton");
             None
         }
     }
 }
 
-pub fn get_singleton_name() -> StringName {
-    StringName::from(SINGLETON_NAME)
+pub fn get_engine_singleton_name() -> StringName {
+    StringName::from(ENGINE_SINGLETON_NAME)
+}
+
+pub fn get_autoload_name() -> GString {
+    GString::from(AUTOLOAD_NAME)
+}
+
+pub fn get_autoload_path() -> GString {
+    GString::from(AUTOLOAD_PATH)
 }
 
 pub fn rot_godot_to_rapier(rot: GQuaternion) -> Rotation<Real> {
