@@ -1,17 +1,15 @@
+use crate::collider::RapierCollider3D;
 use crate::rigid_body::RapierRigidBody3D;
-use godot::builtin::Quaternion as GQuaternion;
-use godot::builtin::Vector3 as GVector;
-use godot::engine::Node3D;
-use godot::obj::Base;
 use godot::prelude::*;
 use rapier3d::math::Vector as RVector;
 use rapier3d::prelude::*;
 
 pub struct RapierPhysicsPipeline {
     pub rigid_body_ids: Dictionary, // gd node instance_id <-> rapier rb_handle_to_id()
+    pub collider_ids: Dictionary,   // gd node instance_id <-> rapier collider_handle_to_id()
 
-    rigid_body_set: RigidBodySet,
-    collider_set: ColliderSet,
+    pub rigid_body_set: RigidBodySet,
+    pub collider_set: ColliderSet,
     gravity: RVector<Real>,
     integration_parameters: IntegrationParameters,
     physics_pipeline: PhysicsPipeline,
@@ -30,6 +28,7 @@ impl RapierPhysicsPipeline {
     pub fn new() -> Self {
         Self {
             rigid_body_ids: Dictionary::new(),
+            collider_ids: Dictionary::new(),
             rigid_body_set: RigidBodySet::new(),
             collider_set: ColliderSet::new(),
             gravity: RVector::new(0.0, -9.81, 0.0),
@@ -80,12 +79,8 @@ impl RapierPhysicsPipeline {
                 }
             };
 
-            let rb_pos = rb.translation();
-            let rb_rot = rb.rotation().quaternion().coords;
-            let g_pos = GVector::new(rb_pos.x, rb_pos.y, rb_pos.z);
-            let g_rot = GQuaternion::new(rb_rot.x, rb_rot.y, rb_rot.z, rb_rot.w);
-
-            godot_print!("Syncing body {:?} to {:?}", rb_rot, g_rot);
+            let g_pos = crate::utils::pos_rapier_to_godot(*rb.translation());
+            let g_rot = crate::utils::rot_rapier_to_godot(*rb.rotation());
 
             let id = crate::utils::rb_handle_to_id(*active_body_handle);
             let instance_id_var: Variant = match self.rigid_body_ids.find_key_by_value(id.clone()) {
@@ -117,9 +112,9 @@ impl RapierPhysicsPipeline {
         }
     }
 
-    pub fn register_rigid_body(&mut self, rrb: &mut RapierRigidBody3D) -> RigidBodyHandle {
-        let instance_id = rrb.base().instance_id().to_i64();
-        let mut rigid_body: RigidBody = rrb.build();
+    pub fn register_rigid_body(&mut self, class: &mut RapierRigidBody3D) -> RigidBodyHandle {
+        let instance_id = class.base().instance_id().to_i64();
+        let mut rigid_body: RigidBody = class.build();
         rigid_body.user_data = u128::try_from(instance_id).unwrap();
         let handle = self.rigid_body_set.insert(rigid_body);
         let id = crate::utils::rb_handle_to_id(handle);
@@ -127,9 +122,9 @@ impl RapierPhysicsPipeline {
         handle
     }
 
-    pub fn unregister_rigid_body(&mut self, rrb: &mut RapierRigidBody3D) {
-        let instance_id = rrb.base().instance_id().to_i64();
-        let handle = rrb.handle; // TODO - check if this is valid somehow?
+    pub fn unregister_rigid_body(&mut self, class: &mut RapierRigidBody3D) {
+        let instance_id = class.base().instance_id().to_i64();
+        let handle = class.handle;
         self.rigid_body_set.remove(
             handle,
             &mut self.island_manager,
@@ -139,5 +134,61 @@ impl RapierPhysicsPipeline {
             true, // true = also remove colliders
         );
         self.rigid_body_ids.remove(instance_id);
+    }
+
+    pub fn get_rigid_body_mut(&mut self, handle: RigidBodyHandle) -> Option<&mut RigidBody> {
+        self.rigid_body_set.get_mut(handle)
+    }
+
+    pub fn register_collider(&mut self, class: &mut RapierCollider3D) -> ColliderHandle {
+        let instance_id = class.base().instance_id().to_i64();
+        let mut collider: Collider = class.build();
+        collider.user_data = u128::try_from(instance_id).unwrap();
+        let handle = self.collider_set.insert(collider);
+        let id = crate::utils::collider_handle_to_id(handle);
+        self.collider_ids.set(instance_id, id);
+        handle
+    }
+
+    // Parent rigid_body must already exist in rigid_body_set when calling this
+    pub fn register_collider_with_parent(
+        &mut self,
+        class: &mut RapierCollider3D,
+        parent_handle: RigidBodyHandle,
+    ) -> ColliderHandle {
+        let instance_id = class.base().instance_id().to_i64();
+        let mut collider: Collider = class.build();
+        collider.user_data = u128::try_from(instance_id).unwrap();
+        let handle =
+            self.collider_set
+                .insert_with_parent(collider, parent_handle, &mut self.rigid_body_set);
+        let id = crate::utils::collider_handle_to_id(handle);
+        self.collider_ids.set(instance_id, id);
+        handle
+    }
+
+    pub fn set_collider_parent(
+        &mut self,
+        collider: ColliderHandle,
+        parent: Option<RigidBodyHandle>,
+    ) {
+        self.collider_set
+            .set_parent(collider, parent, &mut self.rigid_body_set);
+    }
+
+    pub fn unregister_collider(&mut self, class: &mut RapierCollider3D) {
+        let instance_id = class.base().instance_id().to_i64();
+        let handle = class.handle;
+        self.collider_set.remove(
+            handle,
+            &mut self.island_manager,
+            &mut self.rigid_body_set,
+            false,
+        ); // false = don't wakeup parent rigid_body
+        self.collider_ids.remove(instance_id);
+    }
+
+    pub fn get_collider_mut(&mut self, handle: ColliderHandle) -> Option<&mut Collider> {
+        self.collider_set.get_mut(handle)
     }
 }

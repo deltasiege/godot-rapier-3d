@@ -1,11 +1,7 @@
-use crate::physics_pipeline::RapierPhysicsPipeline;
-use crate::singleton::Rapier3DSingleton;
 use godot::engine::notify::Node3DNotification;
 use godot::engine::INode3D;
 use godot::engine::Node3D;
 use godot::prelude::*;
-use rapier3d::math::Rotation;
-use rapier3d::math::Vector as RVector;
 use rapier3d::prelude::*;
 
 #[derive(GodotClass)]
@@ -28,7 +24,7 @@ impl INode3D for RapierRigidBody3D {
             id: Array::new(),
             handle: RigidBodyHandle::invalid(),
             body_type: RigidBodyType::Dynamic,
-            additional_mass: 1.0,
+            additional_mass: 0.0,
             base,
         }
     }
@@ -49,14 +45,27 @@ impl RapierRigidBody3D {
         self.base_mut().set_notify_transform(true);
         let ston = crate::utils::get_singleton();
         if ston.is_some() {
-            let handle = ston.unwrap().bind_mut().pipeline.register_rigid_body(self);
+            let mut singleton = ston.unwrap();
+            let pipeline = &mut singleton.bind_mut().pipeline;
+            let handle = pipeline.register_rigid_body(self);
             self.handle = handle;
             self.id = crate::utils::rb_handle_to_id(handle);
+
+            let rigid_body = pipeline.get_rigid_body_mut(self.handle);
+
+            match rigid_body {
+                Some(rigid_body) => {
+                    self.sync_transforms_to_godot(rigid_body, false);
+                }
+                None => {
+                    godot_error!("RapierRigidBody3D::on_enter_tree - Could not find rigid body");
+                    return;
+                }
+            }
         }
     }
 
     fn on_exit_tree(&mut self) {
-        godot_print!("RapierRigidBody3D::exit_tree()");
         let ston = crate::utils::get_singleton();
         if ston.is_some() {
             ston.unwrap()
@@ -67,12 +76,33 @@ impl RapierRigidBody3D {
     }
 
     fn on_transform_changed(&mut self) {
-        // TODO lock this when pipeline is stepped, instead of only doing in editor
-        godot_print!("RapierRigidBody3D::on_transform_changed()");
-        // let transform = self.base().get_global_transform();
-        // let (pos, rot) = transform_to_posrot(transform);
-        // self.set_rapier_translation(pos);
-        // self.set_rapier_rotation(rot);
+        let ston = crate::utils::get_singleton();
+        if ston.is_some() {
+            let mut singleton = ston.unwrap();
+            let pipeline = &mut singleton.bind_mut().pipeline;
+            let rigid_body = pipeline.get_rigid_body_mut(self.handle);
+
+            match rigid_body {
+                Some(rigid_body) => {
+                    self.sync_transforms_to_godot(rigid_body, false);
+                }
+                None => {
+                    godot_error!(
+                        "RapierRigidBody3D::on_transform_changed - Could not find rigid body"
+                    );
+                    return;
+                }
+            }
+        }
+    }
+
+    fn sync_transforms_to_godot(&mut self, rigid_body: &mut RigidBody, wakeup: bool) {
+        let translation = self.base().get_global_position();
+        let rotation = self.base().get_quaternion();
+        let r_pos = crate::utils::pos_godot_to_rapier(translation);
+        let r_rot = crate::utils::rot_godot_to_rapier(rotation);
+        rigid_body.set_translation(r_pos, wakeup);
+        rigid_body.set_rotation(r_rot, wakeup);
     }
 
     pub fn build(&self) -> RigidBody {
@@ -83,6 +113,25 @@ impl RapierRigidBody3D {
             RigidBodyType::KinematicVelocityBased => RigidBodyBuilder::kinematic_velocity_based(),
         };
         rb.additional_mass(self.additional_mass).build()
+    }
+
+    #[func]
+    pub fn print_colliders(&self) {
+        let ston = crate::utils::get_singleton();
+        if ston.is_some() {
+            let mut singleton = ston.unwrap();
+            let pipeline = &mut singleton.bind_mut().pipeline;
+            let rigid_body = pipeline.get_rigid_body_mut(self.handle);
+            match rigid_body {
+                Some(rigid_body) => {
+                    godot_print!("Colliders: {:?}", rigid_body.colliders());
+                }
+                None => {
+                    godot_error!("Could not find rigid body {:?}", self.handle);
+                    return;
+                }
+            }
+        }
     }
 }
 

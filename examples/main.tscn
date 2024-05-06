@@ -1,6 +1,37 @@
-[gd_scene load_steps=2 format=3 uid="uid://tm0w46kmn4yh"]
+[gd_scene load_steps=7 format=3 uid="uid://tm0w46kmn4yh"]
 
 [ext_resource type="Script" path="res://examples/main.gd" id="1_whv57"]
+[ext_resource type="PackedScene" uid="uid://cphs625ftkts3" path="res://examples/ball.tscn" id="2_qer03"]
+[ext_resource type="PackedScene" uid="uid://cr702vffuye2y" path="res://examples/ground.tscn" id="3_ayqm6"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_hu8s7"]
+sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+ground_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+
+[sub_resource type="Sky" id="Sky_le2tf"]
+sky_material = SubResource("ProceduralSkyMaterial_hu8s7")
+
+[sub_resource type="Environment" id="Environment_sq75r"]
+background_mode = 2
+sky = SubResource("Sky_le2tf")
+tonemap_mode = 2
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_whv57")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_sq75r")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866023, -0.433016, 0.250001, 0, 0.499998, 0.866027, -0.500003, 0.749999, -0.43301, 0, 9.83239, 0)
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20.6053)
+
+[node name="Node" type="Node" parent="."]
+
+[node name="Ball" parent="." instance=ExtResource("2_qer03")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 12.9217, 0)
+
+[node name="Ground" parent="." instance=ExtResource("3_ayqm6")]

@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://cphs625ftkts3"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_2liuv"]
+
+[node name="Ball" type="RapierRigidBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.56147, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_2liuv")
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="."]

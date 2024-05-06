@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://cr702vffuye2y"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ocyna"]
+size = Vector2(100, 100)
+
+[node name="Ground" type="RapierCollider3D"]
+shape = "Cuboid"
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.84107, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_ocyna")

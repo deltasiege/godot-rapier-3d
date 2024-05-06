@@ -28,7 +28,12 @@ impl Rapier3DSingleton {
     }
 
     #[func]
-    pub fn print_rigid_body_ids(&self) {
-        godot_print!("Rigid body ids: {:?}", self.pipeline.rigid_body_ids);
+    pub fn print_debug_info(&self) {
+        godot_print!(
+            "Rigid body ids: {:?}
+Collider ids: {:?}",
+            self.pipeline.rigid_body_ids,
+            self.pipeline.collider_ids
+        );
     }
 }
