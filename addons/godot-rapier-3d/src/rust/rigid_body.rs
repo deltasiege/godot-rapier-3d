@@ -1,4 +1,5 @@
-use crate::utils::*;
+use crate::physics_pipeline::RapierPhysicsPipeline;
+use crate::singleton::Rapier3DSingleton;
 use godot::builtin::Vector3 as GVector3;
 use godot::engine::notify::Node3DNotification;
 use godot::engine::INode3D;
@@ -15,7 +16,6 @@ pub struct RapierRigidBody3D {
     #[var]
     pub id: Array<Variant>, // RigidBodyHandle::into_raw_parts
     pub handle: RigidBodyHandle,
-    pub set: &RigidBodySet,
     #[export]
     body_type: RigidBodyType,
     #[export]
@@ -39,7 +39,7 @@ impl INode3D for RapierRigidBody3D {
         match what {
             Node3DNotification::EnterTree => self.on_enter_tree(),
             Node3DNotification::ExitTree => self.on_exit_tree(),
-            Node3DNotification::TransformChanged => self.on_transform_changed(),
+            // Node3DNotification::TransformChanged => self.on_transform_changed(),
             _ => {}
         };
     }
@@ -49,64 +49,33 @@ impl INode3D for RapierRigidBody3D {
 impl RapierRigidBody3D {
     fn on_enter_tree(&mut self) {
         self.base_mut().set_notify_transform(true);
+        let ston = crate::utils::get_singleton();
+        if ston.is_some() {
+            let handle = ston.unwrap().bind_mut().pipeline.register_rigid_body(self);
+            self.handle = handle;
+            self.id = crate::utils::rb_handle_to_id(handle);
+        }
     }
 
     fn on_exit_tree(&mut self) {
         godot_print!("RapierRigidBody3D::exit_tree()");
-        // TODO remove self from physics pipeline rigid_body_set and remove colliders too
-    }
-
-    fn on_transform_changed(&mut self) {
-        // TODO lock this when pipeline is stepped, instead of only doing in editor
-        if godot::engine::Engine::singleton().is_editor_hint() {
-            godot_print!("RapierRigidBody3D::on_transform_changed()");
-            let transform = self.base().get_global_transform();
-            let (pos, rot) = transform_to_posrot(transform);
-            self.set_rapier_translation(pos);
-            self.set_rapier_rotation(rot);
+        let ston = crate::utils::get_singleton();
+        if ston.is_some() {
+            ston.unwrap()
+                .bind_mut()
+                .pipeline
+                .unregister_rigid_body(self);
         }
     }
 
-    // pub fn rigid_body(&self) -> &RigidBody {
-    //     self.rigid_body
-    // }
-
-    pub fn build_into_set(&mut self, set: &mut RigidBodySet) -> RigidBodyHandle {
-        let body_type = match self.body_type {
+    pub fn build(&self) -> RigidBody {
+        let rb = match self.body_type {
             RigidBodyType::Dynamic => RigidBodyBuilder::dynamic(),
-            RigidBodyType::Fixed => RigidBodyBuilder::kinematic(),
-            RigidBodyType::KinematicPositionBased => RigidBodyBuilder::kinematic(),
-            RigidBodyType::KinematicVelocityBased => RigidBodyBuilder::kinematic(),
+            RigidBodyType::Fixed => RigidBodyBuilder::fixed(),
+            RigidBodyType::KinematicPositionBased => RigidBodyBuilder::kinematic_position_based(),
+            RigidBodyType::KinematicVelocityBased => RigidBodyBuilder::kinematic_velocity_based(),
         };
-        let built = body_type.build();
-        self.handle = set.insert(built);
-        self.id = rb_handle_to_id(self.handle);
-        self.set = &*set;
-        self.handle
-    }
-
-    pub fn set_godot_position(&mut self, position: RVector<Real>) {
-        let pos = GVector3::new(position.x, position.y, position.z);
-        godot_print!(
-            "RapierRigidBody3D::set_godot_position() pos: {:?} b4 {:?}",
-            pos,
-            position
-        );
-        self.base_mut().set_notify_transform(false);
-        self.base_mut().set_global_position(pos);
-        self.base_mut().set_notify_transform(true);
-    }
-
-    // pub fn set_godot_rotation(&mut self, rotation: Rotation<Real>) {
-    //     self.base_mut().set_quaternion(rotation);
-    // }
-
-    fn set_rapier_translation(&mut self, translation: NAVector3<Real>) {
-        self.rigid_body.set_translation(translation, false); // TODO wakeup (second arg) is needed?
-    }
-
-    fn set_rapier_rotation(&mut self, rotation: Rotation<Real>) {
-        self.rigid_body.set_rotation(rotation, false); // TODO wakeup (second arg) is needed?
+        rb.build()
     }
 }
 

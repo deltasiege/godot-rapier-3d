@@ -1,8 +1,5 @@
 extends Node3D
 
-func say_foo():
-	print("foo")
-
 #const debug = preload("res://addons/godot-rapier-3d/src/gdscript/debug.gd")
 #const rb = preload("res://addons/godot-rapier-3d/src/gdscript/rigidbody.gd")
 #const utils = preload("res://addons/godot-rapier-3d/src/gdscript/utils.gd")

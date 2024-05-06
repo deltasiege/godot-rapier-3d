@@ -5,10 +5,10 @@ use godot::prelude::*;
 // mod collider;
 // mod editor_plugin;
 
-// mod physics_pipeline;
+mod physics_pipeline;
+mod rigid_body;
 mod singleton;
-// mod rigid_body;
-// mod utils;
+mod utils;
 
 struct GodotRapier3D;
 
@@ -16,8 +16,9 @@ struct GodotRapier3D;
 unsafe impl ExtensionLibrary for GodotRapier3D {
     fn on_level_init(level: InitLevel) {
         if level == InitLevel::Scene {
+            godot_print!("Godot-Rapier3D is initialized! foo");
             Engine::singleton().register_singleton(
-                StringName::from("Rapier3D"),
+                crate::utils::get_singleton_name(),
                 Rapier3DSingleton::new_alloc().upcast(),
             );
         }
@@ -26,7 +27,7 @@ unsafe impl ExtensionLibrary for GodotRapier3D {
     fn on_level_deinit(level: InitLevel) {
         if level == InitLevel::Scene {
             let mut engine = Engine::singleton();
-            let singleton_name = StringName::from("Rapier3D");
+            let singleton_name = crate::utils::get_singleton_name();
 
             let singleton = engine
                 .get_singleton(singleton_name.clone())
