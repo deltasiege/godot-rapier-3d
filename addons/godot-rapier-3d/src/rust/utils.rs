@@ -1,4 +1,5 @@
 use crate::Rapier3DSingleton;
+use godot::builtin::Array as GArray;
 use godot::builtin::Transform3D;
 use godot::prelude::*;
 use nalgebra::Quaternion as NAQuaternion;
@@ -37,9 +38,9 @@ pub fn transform_to_posrot(transform: Transform3D) -> (NAVector3<Real>, Rotation
     (na_pos, na_rot)
 }
 
-pub fn rb_handle_to_id(handle: RigidBodyHandle) -> Array<Variant> {
+pub fn rb_handle_to_id(handle: RigidBodyHandle) -> GArray<Variant> {
     let (index, generation) = handle.into_raw_parts();
-    let mut id = Array::new();
+    let mut id = GArray::new();
     id.push(Variant::from(index));
     id.push(Variant::from(generation));
     id

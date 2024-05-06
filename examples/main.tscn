@@ -4,9 +4,3 @@
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_whv57")
-
-[node name="A" type="Node" parent="."]
-
-[node name="B" type="Node" parent="A"]
-
-[node name="C" type="Node" parent="A/B"]

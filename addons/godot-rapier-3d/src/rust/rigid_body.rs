@@ -1,11 +1,9 @@
 use crate::physics_pipeline::RapierPhysicsPipeline;
 use crate::singleton::Rapier3DSingleton;
-use godot::builtin::Vector3 as GVector3;
 use godot::engine::notify::Node3DNotification;
 use godot::engine::INode3D;
 use godot::engine::Node3D;
 use godot::prelude::*;
-use nalgebra::Vector3 as NAVector3;
 use rapier3d::math::Rotation;
 use rapier3d::math::Vector as RVector;
 use rapier3d::prelude::*;
@@ -19,7 +17,7 @@ pub struct RapierRigidBody3D {
     #[export]
     body_type: RigidBodyType,
     #[export]
-    pub mass: Real,
+    pub additional_mass: Real,
     base: Base<Node3D>,
 }
 
@@ -30,7 +28,7 @@ impl INode3D for RapierRigidBody3D {
             id: Array::new(),
             handle: RigidBodyHandle::invalid(),
             body_type: RigidBodyType::Dynamic,
-            mass: 1.0,
+            additional_mass: 1.0,
             base,
         }
     }
@@ -39,7 +37,7 @@ impl INode3D for RapierRigidBody3D {
         match what {
             Node3DNotification::EnterTree => self.on_enter_tree(),
             Node3DNotification::ExitTree => self.on_exit_tree(),
-            // Node3DNotification::TransformChanged => self.on_transform_changed(),
+            Node3DNotification::TransformChanged => self.on_transform_changed(),
             _ => {}
         };
     }
@@ -68,6 +66,15 @@ impl RapierRigidBody3D {
         }
     }
 
+    fn on_transform_changed(&mut self) {
+        // TODO lock this when pipeline is stepped, instead of only doing in editor
+        godot_print!("RapierRigidBody3D::on_transform_changed()");
+        // let transform = self.base().get_global_transform();
+        // let (pos, rot) = transform_to_posrot(transform);
+        // self.set_rapier_translation(pos);
+        // self.set_rapier_rotation(rot);
+    }
+
     pub fn build(&self) -> RigidBody {
         let rb = match self.body_type {
             RigidBodyType::Dynamic => RigidBodyBuilder::dynamic(),
@@ -75,7 +82,7 @@ impl RapierRigidBody3D {
             RigidBodyType::KinematicPositionBased => RigidBodyBuilder::kinematic_position_based(),
             RigidBodyType::KinematicVelocityBased => RigidBodyBuilder::kinematic_velocity_based(),
         };
-        rb.build()
+        rb.additional_mass(self.additional_mass).build()
     }
 }
 
