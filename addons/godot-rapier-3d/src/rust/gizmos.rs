@@ -36,6 +36,7 @@ fn add_gizmo(plugin: &mut GodotRapier3DEditorPlugin, path: &str) {
             let iid = casted.instance_id().to_i64();
             plugin.base_mut().add_node_3d_gizmo_plugin(casted);
             gizmo_iids.push(iid);
+            godot_print!("Added gizmo: {:?}", path);
         }
     } else {
         godot_error!("Could not load gizmo: {:?}", path);

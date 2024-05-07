@@ -2,7 +2,7 @@
 
 ## Roadmap
 
-- [] Editor gizmos for collider shapes
+- [] Gizmos handles for collider shapes
 - [] Serialize/deserialize physics state to/from variable
 - [] Save/load physics state to/from resource file
 

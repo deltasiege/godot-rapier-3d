@@ -3,7 +3,6 @@ use crate::rigid_body::RapierRigidBody3D;
 use godot::engine::notify::Node3DNotification;
 use godot::engine::INode3D;
 use godot::engine::Node3D;
-use godot::engine::Shape3D;
 use godot::prelude::*;
 use rapier3d::prelude::*;
 
@@ -13,13 +12,17 @@ pub struct RapierCollider3D {
     #[var]
     pub id: Array<Variant>, // ColliderHandle::into_raw_parts
     pub handle: ColliderHandle,
+    pub parent: Option<RigidBodyHandle>,
+    #[export]
+    pub shape: ShapeType,
 
     #[export]
-    #[var(
-        usage_flags = [DEFAULT, EDITOR_INSTANTIATE_OBJECT]
-    )]
-    pub shape: Option<Gd<Shape3D>>,
-    pub parent: Option<RigidBodyHandle>,
+    #[var(get, set = set_ball_radius)]
+    pub ball_radius: f32,
+    #[export]
+    #[var(get, set = set_cuboid_half_extents)]
+    pub cuboid_half_extents: Vector3,
+
     notify_parent: bool,
     base: Base<Node3D>,
 }
@@ -30,8 +33,10 @@ impl INode3D for RapierCollider3D {
         Self {
             id: Array::new(),
             handle: ColliderHandle::invalid(),
-            shape: None,
             parent: None,
+            shape: ShapeType::Ball,
+            ball_radius: 0.5,
+            cuboid_half_extents: Vector3::new(0.5, 0.5, 0.5),
             notify_parent: true,
             base,
         }
@@ -193,13 +198,27 @@ impl RapierCollider3D {
             .build();
         collider
     }
+
+    // This is so gross - don't want a function for every single property
+    // But don't want to define every single property like they are anyway (prefer Shape3Ds or Resources)
+    // just wait until https://github.com/godot-rust/gdext/issues/440 is resolved
+    #[func]
+    fn set_ball_radius(&mut self, radius: f32) {
+        self.ball_radius = radius;
+        self.base_mut().update_gizmos();
+    }
+
+    #[func]
+    fn set_cuboid_half_extents(&mut self, half_extents: Vector3) {
+        self.cuboid_half_extents = half_extents;
+        self.base_mut().update_gizmos();
+    }
 }
 
-// #[derive(GodotConvert, Var, Export)]
-// #[godot(via = GString)]
-// // https://docs.rs/rapier3d/latest/rapier3d/geometry/enum.ShapeType.html
-// pub enum ShapeType {
-//     Ball,
-//     Cuboid,
-//     Capsule,
-// }
+#[derive(GodotConvert, Var, Export)]
+#[godot(via = GString)]
+// https://docs.rs/rapier3d/latest/rapier3d/geometry/enum.ShapeType.html
+pub enum ShapeType {
+    Ball,
+    Cuboid,
+}

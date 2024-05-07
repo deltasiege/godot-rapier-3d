@@ -10,31 +10,44 @@ func _init():
 	create_handle_material("handles")
 
 func _has_gizmo(node):
-	return node is RapierCollider3D
+	return (node is RapierCollider3D) and (node.get_class() == _get_gizmo_name())
 
-func _redraw(gizmo):
+func _get_handle_name(gizmo: EditorNode3DGizmo, handle_id: int, secondary: bool):
+	var node = gizmo.get_node_3d()
+	if !_has_gizmo(node): return
+	match node.shape:
+		"Ball": return "radius"
+
+func _get_handle_value(gizmo: EditorNode3DGizmo, handle_id: int, secondary: bool):
+	var node = gizmo.get_node_3d()
+	if !_has_gizmo(node): return
+	match node.shape:
+		"Ball": return node.ball_radius
+
+func _commit_handle(gizmo: EditorNode3DGizmo, handle_id: int, secondary: bool, restore: Variant, cancel: bool):
+	var node = gizmo.get_node_3d()
+	if !_has_gizmo(node): return
+	match node.shape:
+		"Ball":
+			if cancel: node.ball_radius = restore
+			var undo_redo = UndoRedo.new()
+			undo_redo.create_action("Modify ball_radius")
+			undo_redo.add_do_method(func(): node.ball_radius = node.ball_radius)
+			undo_redo.add_undo_method(func(): node.ball_radius = restore)
+
+func _redraw(gizmo: EditorNode3DGizmo):
+	var node = gizmo.get_node_3d()
+	if !_has_gizmo(node): return
 	gizmo.clear()
 	
-	var lines = PackedVector3Array()
-	var collider_node = gizmo.get_node_3d()
-	var radius = 10.0
-	
-	for i in 360:
-		var ra = deg_to_rad(float(i));
-		var rb = deg_to_rad(float(i + 1));
-		var a = Vector2(sin(ra), cos(ra)) * radius;
-		var b = Vector2(sin(rb), cos(rb)) * radius;
-
-		lines.push_back(Vector3(a.x, 0, a.y));
-		lines.push_back(Vector3(b.x, 0, b.y));
-		lines.push_back(Vector3(0, a.x, a.y));
-		lines.push_back(Vector3(0, b.x, b.y));
-		lines.push_back(Vector3(a.x, a.y, 0));
-		lines.push_back(Vector3(b.x, b.y, 0));
+	var lines
+	var handles
+	match node.shape:
+		"Ball":
+			lines = Rapier3DGizmoShapes.ball_lines(node.ball_radius)
+			handles = Rapier3DGizmoShapes.ball_handles(node.ball_radius)
+		"Cuboid":
+			lines = PackedVector3Array()
 	
 	gizmo.add_lines(lines, get_material("main", gizmo), false)
-	
-	#var handles = PackedVector3Array()
-	#handles.push_back(Vector3(0, 1, 0))
-	#handles.push_back(Vector3(0, 5, 0))
-	#gizmo.add_handles(handles, get_material("handles", gizmo), [])
+	gizmo.add_handles(handles, get_material("handles", gizmo), [])

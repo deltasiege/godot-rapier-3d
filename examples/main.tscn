@@ -1,8 +1,6 @@
-[gd_scene load_steps=7 format=3 uid="uid://tm0w46kmn4yh"]
+[gd_scene load_steps=5 format=3 uid="uid://tm0w46kmn4yh"]
 
 [ext_resource type="Script" path="res://examples/main.gd" id="1_whv57"]
-[ext_resource type="PackedScene" uid="uid://cphs625ftkts3" path="res://examples/ball.tscn" id="2_qer03"]
-[ext_resource type="PackedScene" uid="uid://cr702vffuye2y" path="res://examples/ground.tscn" id="3_ayqm6"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_hu8s7"]
 sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
@@ -29,19 +27,7 @@ shadow_enabled = true
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20.6053)
 
-[node name="Node" type="Node" parent="."]
+[node name="RapierCollider3D" type="RapierCollider3D" parent="."]
+ball_radius = 3.0
 
-[node name="RapierCollider3D2" type="RapierCollider3D" parent="."]
-
-[node name="Ball" parent="." instance=ExtResource("2_qer03")]
-editor_description = "<null>"
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
-rotation_order = 0
-visible = false
-
-[node name="Ground" parent="." instance=ExtResource("3_ayqm6")]
-shape = null
-editor_description = "<null>"
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
-rotation_order = 0
-visible = false
+[node name="Node3D" type="Node3D" parent="."]
