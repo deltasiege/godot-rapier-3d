@@ -7,6 +7,7 @@ use godot::prelude::*;
 #[class(base=Object)]
 pub struct Rapier3DSingleton {
     pub pipeline: RapierPhysicsPipeline,
+    pub gizmo_iids: Vec<i64>,
     base: Base<Object>,
 }
 
@@ -15,6 +16,7 @@ impl IObject for Rapier3DSingleton {
     fn init(base: Base<Object>) -> Self {
         Self {
             pipeline: RapierPhysicsPipeline::new(),
+            gizmo_iids: Vec::new(),
             base,
         }
     }

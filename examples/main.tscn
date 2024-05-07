@@ -31,7 +31,16 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 20.6053)
 
 [node name="Node" type="Node" parent="."]
 
+[node name="RapierCollider3D2" type="RapierCollider3D" parent="."]
+
 [node name="Ball" parent="." instance=ExtResource("2_qer03")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 12.9217, 0)
+editor_description = "<null>"
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+rotation_order = 0
+visible = false
 
 [node name="Ground" parent="." instance=ExtResource("3_ayqm6")]
+editor_description = "<null>"
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+rotation_order = 0
+visible = false

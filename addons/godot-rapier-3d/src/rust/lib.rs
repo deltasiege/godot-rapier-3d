@@ -4,6 +4,7 @@ use godot::prelude::*;
 
 mod collider;
 mod editor_plugin;
+mod gizmos;
 mod physics_pipeline;
 mod rigid_body;
 mod singleton;
