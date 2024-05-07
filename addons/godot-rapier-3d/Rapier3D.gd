@@ -4,5 +4,5 @@ extends Node3D
 #const rb = preload("res://addons/godot-rapier-3d/src/gdscript/rigidbody.gd")
 #const utils = preload("res://addons/godot-rapier-3d/src/gdscript/utils.gd")
 
-static func step():
+func step():
 	Rapier3DEngine.step()

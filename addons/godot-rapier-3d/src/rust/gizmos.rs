@@ -4,7 +4,7 @@ use godot::engine::GDScript;
 use godot::prelude::*;
 
 pub const GIZMO_PATHS: &'static [&'static str] =
-    &["res://addons/godot-rapier-3d/src/gdscript/gizmos/collider_ball.gd"];
+    &["res://addons/godot-rapier-3d/src/gdscript/gizmos/collider3D.gd"];
 
 pub fn add_all_gizmos(plugin: &mut GodotRapier3DEditorPlugin) {
     for path in GIZMO_PATHS {

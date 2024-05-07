@@ -13,7 +13,9 @@ pub struct RapierCollider3D {
     pub id: Array<Variant>, // ColliderHandle::into_raw_parts
     pub handle: ColliderHandle,
     pub parent: Option<RigidBodyHandle>,
+
     #[export]
+    #[var(get, set = set_shape)]
     pub shape: ShapeType,
 
     #[export]
@@ -35,8 +37,8 @@ impl INode3D for RapierCollider3D {
             handle: ColliderHandle::invalid(),
             parent: None,
             shape: ShapeType::Ball,
-            ball_radius: 0.5,
-            cuboid_half_extents: Vector3::new(0.5, 0.5, 0.5),
+            ball_radius: 1.0,
+            cuboid_half_extents: Vector3::new(1.0, 1.0, 1.0),
             notify_parent: true,
             base,
         }
@@ -186,36 +188,56 @@ impl RapierCollider3D {
     }
 
     pub fn build(&self) -> Collider {
-        // let shape = match self.shape {
-        //     ShapeType::Ball => SharedShape::ball(0.5),
-        //     ShapeType::Cuboid => SharedShape::cuboid(10.0, 1.0, 10.0),
-        //     ShapeType::Capsule => {
-        //         SharedShape::capsule(OPoint::origin(), OPoint::from(NAVector3::y()), 0.5)
-        //     }
-        // };
-        let collider = ColliderBuilder::new(SharedShape::ball(0.5))
-            .restitution(0.7)
-            .build();
+        let shape = match self.shape {
+            ShapeType::Ball => SharedShape::ball(self.ball_radius),
+            ShapeType::Cuboid => SharedShape::cuboid(
+                self.cuboid_half_extents.x,
+                self.cuboid_half_extents.y,
+                self.cuboid_half_extents.z,
+            ),
+        };
+        let collider = ColliderBuilder::new(shape).restitution(0.7).build(); // TODO restitution param
         collider
+    }
+
+    pub fn reregister(&mut self) {
+        let ston = crate::utils::get_engine_singleton();
+        if ston.is_some() {
+            let mut singleton = ston.unwrap();
+            let pipeline = &mut singleton.bind_mut().pipeline;
+            pipeline.unregister_collider(self);
+            let handle = pipeline.register_collider(self);
+            self.handle = handle;
+            self.id = crate::utils::collider_handle_to_id(handle);
+        }
     }
 
     // This is so gross - don't want a function for every single property
     // But don't want to define every single property like they are anyway (prefer Shape3Ds or Resources)
     // just wait until https://github.com/godot-rust/gdext/issues/440 is resolved
     #[func]
+    fn set_shape(&mut self, shape: ShapeType) {
+        self.shape = shape;
+        self.base_mut().update_gizmos();
+        self.reregister();
+    }
+
+    #[func]
     fn set_ball_radius(&mut self, radius: f32) {
         self.ball_radius = radius;
         self.base_mut().update_gizmos();
+        self.reregister();
     }
 
     #[func]
     fn set_cuboid_half_extents(&mut self, half_extents: Vector3) {
         self.cuboid_half_extents = half_extents;
         self.base_mut().update_gizmos();
+        self.reregister();
     }
 }
 
-#[derive(GodotConvert, Var, Export)]
+#[derive(Debug, GodotConvert, Var, Export)]
 #[godot(via = GString)]
 // https://docs.rs/rapier3d/latest/rapier3d/geometry/enum.ShapeType.html
 pub enum ShapeType {
