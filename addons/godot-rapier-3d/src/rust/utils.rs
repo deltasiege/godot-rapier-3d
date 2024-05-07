@@ -1,4 +1,4 @@
-use crate::Rapier3DSingleton;
+use crate::singleton::Rapier3DSingleton;
 use godot::builtin::Array as GArray;
 use godot::builtin::Quaternion as GQuaternion;
 use godot::builtin::Vector3 as GVector;

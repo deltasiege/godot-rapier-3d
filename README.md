@@ -1,5 +1,11 @@
 # Godot Rapier 3D
 
+## Roadmap
+
+- [] Editor gizmos for collider shapes
+- [] Serialize/deserialize physics state to/from variable
+- [] Save/load physics state to/from resource file
+
 ## Contributing
 
 See [CONTRIBUTING.md]()
@@ -10,12 +16,11 @@ Inspired by [ilyas-taouaou/rapier-gdext](https://github.com/ilyas-taouaou/rapier
 
 ## TODO
 
-1. Visualise colliders
+1. collision shapes as resource
+1. Simple example
 1. On init, register all found rigid bodies and colliders
-1. Save/load state
-1. Switch to editor singleton for guaranteed access to scene tree?
-1. Maybe wait 3 frames before step starts working to give colliders a chance to connect? (call deferred)
-1. refactor engine singleton function to include pipeline retrieval
+1. Maybe wait 3 frames before step starts working to give colliders a chance to connect? (call deferred) (document this in readme)
+1. refactor utils engine singleton function to include pipeline retrieval
 
 ## Saving/loading
 

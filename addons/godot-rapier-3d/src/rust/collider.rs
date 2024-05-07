@@ -3,9 +3,8 @@ use crate::rigid_body::RapierRigidBody3D;
 use godot::engine::notify::Node3DNotification;
 use godot::engine::INode3D;
 use godot::engine::Node3D;
+use godot::engine::Shape3D;
 use godot::prelude::*;
-use nalgebra::geometry::OPoint;
-use nalgebra::Vector3 as NAVector3;
 use rapier3d::prelude::*;
 
 #[derive(GodotClass)]
@@ -14,8 +13,12 @@ pub struct RapierCollider3D {
     #[var]
     pub id: Array<Variant>, // ColliderHandle::into_raw_parts
     pub handle: ColliderHandle,
+
     #[export]
-    pub shape: ShapeType,
+    #[var(
+        usage_flags = [DEFAULT, EDITOR_INSTANTIATE_OBJECT]
+    )]
+    pub shape: Option<Gd<Shape3D>>,
     pub parent: Option<RigidBodyHandle>,
     notify_parent: bool,
     base: Base<Node3D>,
@@ -27,7 +30,7 @@ impl INode3D for RapierCollider3D {
         Self {
             id: Array::new(),
             handle: ColliderHandle::invalid(),
-            shape: ShapeType::Ball,
+            shape: None,
             parent: None,
             notify_parent: true,
             base,
@@ -178,23 +181,25 @@ impl RapierCollider3D {
     }
 
     pub fn build(&self) -> Collider {
-        let shape = match self.shape {
-            ShapeType::Ball => SharedShape::ball(0.5),
-            ShapeType::Cuboid => SharedShape::cuboid(10.0, 1.0, 10.0),
-            ShapeType::Capsule => {
-                SharedShape::capsule(OPoint::origin(), OPoint::from(NAVector3::y()), 0.5)
-            }
-        };
-        let collider = ColliderBuilder::new(shape).restitution(0.7).build();
+        // let shape = match self.shape {
+        //     ShapeType::Ball => SharedShape::ball(0.5),
+        //     ShapeType::Cuboid => SharedShape::cuboid(10.0, 1.0, 10.0),
+        //     ShapeType::Capsule => {
+        //         SharedShape::capsule(OPoint::origin(), OPoint::from(NAVector3::y()), 0.5)
+        //     }
+        // };
+        let collider = ColliderBuilder::new(SharedShape::ball(0.5))
+            .restitution(0.7)
+            .build();
         collider
     }
 }
 
-#[derive(GodotConvert, Var, Export)]
-#[godot(via = GString)]
-// https://docs.rs/rapier3d/latest/rapier3d/geometry/enum.ShapeType.html
-pub enum ShapeType {
-    Ball,
-    Cuboid,
-    Capsule,
-}
+// #[derive(GodotConvert, Var, Export)]
+// #[godot(via = GString)]
+// // https://docs.rs/rapier3d/latest/rapier3d/geometry/enum.ShapeType.html
+// pub enum ShapeType {
+//     Ball,
+//     Cuboid,
+//     Capsule,
+// }

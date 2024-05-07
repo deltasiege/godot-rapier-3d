@@ -40,6 +40,7 @@ rotation_order = 0
 visible = false
 
 [node name="Ground" parent="." instance=ExtResource("3_ayqm6")]
+shape = null
 editor_description = "<null>"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 rotation_order = 0
