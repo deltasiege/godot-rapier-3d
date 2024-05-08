@@ -37,8 +37,8 @@ impl INode3D for RapierCollider3D {
             handle: ColliderHandle::invalid(),
             parent: None,
             shape: ShapeType::Ball,
-            ball_radius: 1.0,
-            cuboid_half_extents: Vector3::new(1.0, 1.0, 1.0),
+            ball_radius: 0.5,
+            cuboid_half_extents: Vector3::new(0.5, 0.5, 0.5),
             notify_parent: true,
             base,
         }
@@ -121,7 +121,7 @@ impl RapierCollider3D {
                                 return;
                             }
 
-                            let rb_exists = pipeline.rigid_body_set.contains(class.handle);
+                            let rb_exists = pipeline.state.rigid_body_set.contains(class.handle);
                             if !rb_exists {
                                 godot_error!("RapierCollider3D::on_parented - trying to parent to invalid rigid body {:?}", class.handle);
                                 return;

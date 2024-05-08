@@ -2,25 +2,26 @@
 
 ## Roadmap
 
-- [] Serialize/deserialize physics state to/from variable
-- [] Save/load physics state to/from resource file
-- [] Gizmos handles for collider shapes
+- [ ] Visualize colliders in game
+- [ ] Serialize/deserialize physics state to/from variable
+- [ ] Save/load physics state to/from resource file
+- [ ] Gizmos handles for collider shapes
+- [ ] Interface for stepping in editor
+- [ ] Collision layers
 
 ## Contributing
 
 See [CONTRIBUTING.md]()
 
-## Credits
+## References
 
-Inspired by [ilyas-taouaou/rapier-gdext](https://github.com/ilyas-taouaou/rapier-gdext)
+- [ilyas-taouaou/rapier-gdext](https://github.com/ilyas-taouaou/rapier-gdext)
 
 ## TODO
 
-1. collision shapes as resource
-1. Simple example
-1. On init, register all found rigid bodies and colliders
+1. collision shapes as resource - issues
+1. On editor init, register all found rigid bodies and colliders
 1. Maybe wait 3 frames before step starts working to give colliders a chance to connect? (call deferred) (document this in readme)
-1. refactor utils engine singleton function to include pipeline retrieval
 
 ## Saving/loading
 
@@ -34,3 +35,14 @@ Inspired by [ilyas-taouaou/rapier-gdext](https://github.com/ilyas-taouaou/rapier
 1. singleton should provide load() function that takes serialized state
 1. overwrite all values in the PhysicsState struct with the loaded ones
 1. continue as normal
+
+## Visualizing colliders
+
+1. add Rapier3DDebugger as an autoload (which is a tool script) (both editor and runtime version can be in @tool)
+1. Rapier3DDebugger calls RapierDebugRenderPipeline render method in \_process loop
+1. render method needs to call singleton to get the physics state
+1. RapierDebugRenderPipeline wants draw line
+1. call back up to Rapier3DDebugger maybe??
+1. use same techniques as debug_draw to draw lines
+
+call autoloads - could be useful for log func

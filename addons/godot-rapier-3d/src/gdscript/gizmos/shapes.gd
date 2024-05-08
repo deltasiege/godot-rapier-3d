@@ -1,6 +1,6 @@
 class_name Rapier3DGizmoShapes
 
-static func ball(radius: float = 1.0) -> PackedVector3Array:
+static func ball(radius: float = 0.5) -> PackedVector3Array:
 	var lines = PackedVector3Array()
 	for i in 360:
 		var ra = deg_to_rad(float(i));
@@ -15,7 +15,7 @@ static func ball(radius: float = 1.0) -> PackedVector3Array:
 		lines.push_back(Vector3(b.x, b.y, 0));
 	return lines
 
-static func cuboid(half_extents: Vector3 = Vector3(1.0, 1.0, 1.0)) -> PackedVector3Array:
+static func cuboid(half_extents: Vector3 = Vector3(0.5, 0.5, 0.5)) -> PackedVector3Array:
 	var lines = PackedVector3Array()
 	var x = half_extents.x
 	var y = half_extents.y

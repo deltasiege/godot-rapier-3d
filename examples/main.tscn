@@ -1,46 +1,16 @@
-[gd_scene load_steps=7 format=3 uid="uid://tm0w46kmn4yh"]
+[gd_scene load_steps=5 format=3 uid="uid://tm0w46kmn4yh"]
 
 [ext_resource type="Script" path="res://examples/main.gd" id="1_whv57"]
-
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_hu8s7"]
-sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
-ground_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
-
-[sub_resource type="Sky" id="Sky_le2tf"]
-sky_material = SubResource("ProceduralSkyMaterial_hu8s7")
-
-[sub_resource type="Environment" id="Environment_sq75r"]
-background_mode = 2
-sky = SubResource("Sky_le2tf")
-tonemap_mode = 2
-
-[sub_resource type="SphereMesh" id="SphereMesh_e03ud"]
-
-[sub_resource type="PlaneMesh" id="PlaneMesh_k2n61"]
-size = Vector2(50, 50)
+[ext_resource type="PackedScene" uid="uid://bll017w15kfkw" path="res://assets/flycam.tscn" id="2_6eyky"]
+[ext_resource type="PackedScene" uid="uid://digi5ge888fgn" path="res://assets/ball.tscn" id="2_a6xru"]
+[ext_resource type="PackedScene" uid="uid://cwkqaxdhe1ifp" path="res://assets/world.tscn" id="4_qrxp7"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_whv57")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_sq75r")
+[node name="FlyCam" parent="." instance=ExtResource("2_6eyky")]
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(-0.866024, -0.433016, 0.250001, 0, 0.499998, 0.866026, -0.500003, 0.749999, -0.43301, 0, 50, 0)
-shadow_enabled = true
+[node name="Ball" parent="." instance=ExtResource("2_a6xru")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 0)
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0855999, 20)
-
-[node name="RapierRigidBody3D" type="RapierRigidBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.67922, 0)
-
-[node name="RapierCollider3D" type="RapierCollider3D" parent="RapierRigidBody3D"]
-ball_radius = 0.5
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="RapierRigidBody3D"]
-mesh = SubResource("SphereMesh_e03ud")
-
-[node name="Ground" type="MeshInstance3D" parent="."]
-visible = false
-mesh = SubResource("PlaneMesh_k2n61")
+[node name="World" parent="." instance=ExtResource("4_qrxp7")]

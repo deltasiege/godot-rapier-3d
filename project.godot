@@ -17,7 +17,9 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+DebugDraw="*res://addons/debug_draw/debug_draw.gd"
 Rapier3D="*res://addons/godot-rapier-3d/Rapier3D.gd"
+Rapier3DDebugger="*res://addons/godot-rapier-3d/Rapier3DDebugger.gd"
 
 [editor_plugins]
 
