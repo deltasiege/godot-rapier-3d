@@ -1,5 +1,4 @@
-use crate::singleton::Rapier3DEngineSingleton;
-use godot::engine::Engine;
+use crate::singleton::{register_engine, unregister_engine};
 use godot::prelude::*;
 
 mod collider;
@@ -17,26 +16,14 @@ struct GodotRapier3D;
 unsafe impl ExtensionLibrary for GodotRapier3D {
     fn on_level_init(level: InitLevel) {
         if level == InitLevel::Scene {
-            godot_print!("Registering Rapier3D engine singleton");
-            Engine::singleton().register_singleton(
-                crate::utils::get_engine_singleton_name(),
-                Rapier3DEngineSingleton::new_alloc().upcast(),
-            );
+            godot_print!("InitLevel::Scene");
+            register_engine();
         }
     }
 
     fn on_level_deinit(level: InitLevel) {
         if level == InitLevel::Scene {
-            let mut engine = Engine::singleton();
-            let singleton_name = crate::utils::get_engine_singleton_name();
-
-            let singleton = engine
-                .get_singleton(singleton_name.clone())
-                .expect("cannot retrieve the singleton");
-
-            godot_print!("Unregistering Rapier3D engine singleton");
-            engine.unregister_singleton(singleton_name);
-            singleton.free();
+            unregister_engine();
         }
     }
 }

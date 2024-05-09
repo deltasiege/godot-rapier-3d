@@ -4,7 +4,7 @@ use crate::rigid_body::RapierRigidBody3D;
 use godot::prelude::*;
 use rapier3d::prelude::*;
 
-pub struct RapierPhysicsPipeline {
+pub struct GR3DPhysicsPipeline {
     pub rigid_body_ids: Dictionary, // gd node instance_id <-> rapier rb_handle_to_id()
     pub collider_ids: Dictionary,   // gd node instance_id <-> rapier collider_handle_to_id()
     physics_pipeline: PhysicsPipeline,
@@ -13,7 +13,7 @@ pub struct RapierPhysicsPipeline {
     event_handler: (),
 }
 
-impl RapierPhysicsPipeline {
+impl GR3DPhysicsPipeline {
     pub fn new() -> Self {
         Self {
             rigid_body_ids: Dictionary::new(),

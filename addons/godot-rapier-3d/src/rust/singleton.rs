@@ -1,22 +1,44 @@
-use crate::physics_pipeline::RapierPhysicsPipeline;
+use crate::physics_pipeline::GR3DPhysicsPipeline;
 use godot::builtin::PackedByteArray;
+use godot::engine::Engine;
 use godot::engine::IObject;
 use godot::engine::Object;
 use godot::prelude::*;
 
+pub fn register_engine() {
+    godot_print!("Registering Rapier3DEngine singleton");
+    Engine::singleton().register_singleton(
+        crate::utils::get_engine_singleton_name(),
+        GR3DEngineSingleton::new_alloc().upcast(),
+    );
+}
+
+pub fn unregister_engine() {
+    let mut engine = Engine::singleton();
+    let singleton_name = crate::utils::get_engine_singleton_name();
+
+    let singleton = engine
+        .get_singleton(singleton_name.clone())
+        .expect("cannot retrieve the singleton");
+
+    godot_print!("Unregistering Rapier3DEngine singleton");
+    engine.unregister_singleton(singleton_name);
+    singleton.free();
+}
+
 #[derive(GodotClass)]
 #[class(base=Object)]
-pub struct Rapier3DEngineSingleton {
-    pub pipeline: RapierPhysicsPipeline,
+pub struct GR3DEngineSingleton {
+    pub pipeline: GR3DPhysicsPipeline,
     pub gizmo_iids: Vec<i64>, // Remembered so that gizmos can be removed
     base: Base<Object>,
 }
 
 #[godot_api]
-impl IObject for Rapier3DEngineSingleton {
+impl IObject for GR3DEngineSingleton {
     fn init(base: Base<Object>) -> Self {
         Self {
-            pipeline: RapierPhysicsPipeline::new(),
+            pipeline: GR3DPhysicsPipeline::new(),
             gizmo_iids: Vec::new(),
             base,
         }
@@ -24,7 +46,7 @@ impl IObject for Rapier3DEngineSingleton {
 }
 
 #[godot_api]
-impl Rapier3DEngineSingleton {
+impl GR3DEngineSingleton {
     #[func]
     pub fn step(&mut self) {
         self.pipeline.step();

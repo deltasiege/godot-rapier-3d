@@ -9,7 +9,8 @@ func _init():
 	create_material("main", gizmo_color)
 
 func _has_gizmo(node):
-	return (node is RapierCollider3D) and (node.get_class() == _get_gizmo_name())
+	return false
+	#return (node is RapierCollider3D) and (node.get_class() == _get_gizmo_name())
 
 func _redraw(gizmo: EditorNode3DGizmo):
 	var node = gizmo.get_node_3d()
@@ -23,4 +24,4 @@ func _redraw(gizmo: EditorNode3DGizmo):
 		"Cuboid":
 			lines = Rapier3DGizmoShapes.cuboid(node.cuboid_half_extents)
 	
-	gizmo.add_lines(lines, get_material("main", gizmo), false)
+	#gizmo.add_lines(lines, get_material("main", gizmo), false)

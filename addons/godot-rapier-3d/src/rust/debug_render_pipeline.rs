@@ -78,8 +78,8 @@ impl DebugRenderBackend for RapierDebugRenderBackend {
         match debugger_node {
             Some(node) => {
                 let args = &[
-                    Variant::from(Vector2::new(a.x as f32, a.y as f32)),
-                    Variant::from(Vector2::new(b.x as f32, b.y as f32)),
+                    Variant::from(Vector3::new(a.x as f32, a.y as f32, a.z as f32)),
+                    Variant::from(Vector3::new(b.x as f32, b.y as f32, b.z as f32)),
                     Variant::from(
                         Color::from_hsv(color[0] as f64, color[1] as f64, color[2] as f64)
                             .with_alpha(color[3]),

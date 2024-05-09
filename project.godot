@@ -11,15 +11,13 @@ config_version=5
 [application]
 
 config/name="godot-rapier-3d"
-run/main_scene="res://examples/main.tscn"
+run/main_scene="res://examples/empty.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
 DebugDraw="*res://addons/debug_draw/debug_draw.gd"
-Rapier3D="*res://addons/godot-rapier-3d/Rapier3D.gd"
-Rapier3DDebugger="*res://addons/godot-rapier-3d/Rapier3DDebugger.gd"
 
 [editor_plugins]
 

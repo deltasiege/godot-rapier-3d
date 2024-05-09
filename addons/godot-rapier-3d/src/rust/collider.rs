@@ -1,4 +1,4 @@
-use crate::physics_pipeline::RapierPhysicsPipeline;
+use crate::physics_pipeline::GR3DPhysicsPipeline;
 use crate::rigid_body::RapierRigidBody3D;
 use godot::engine::notify::Node3DNotification;
 use godot::engine::INode3D;
@@ -153,7 +153,7 @@ impl RapierCollider3D {
         }
     }
 
-    fn clear_parent(&mut self, pipeline: &mut RapierPhysicsPipeline) {
+    fn clear_parent(&mut self, pipeline: &mut GR3DPhysicsPipeline) {
         self.parent = None;
         pipeline.set_collider_parent(self.handle, None);
         // TODO maybe need to remove collider from RB?

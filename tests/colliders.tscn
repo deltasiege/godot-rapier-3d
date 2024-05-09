@@ -34,19 +34,15 @@ transform = Transform3D(1, 0, 0, 0, 0.961146, 0.27604, 0, -0.27604, 0.961146, 0,
 
 [node name="Ball" parent="." instance=ExtResource("1_f5kls")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25011, 2, 0)
-visible = false
 
 [node name="Ball2" parent="." instance=ExtResource("1_f5kls")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.24371, 3.39142, 0)
-visible = false
 
 [node name="Cube" parent="." instance=ExtResource("2_fl15e")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.75011, 0.5, 0)
-visible = false
 
 [node name="Cube2" parent="." instance=ExtResource("2_fl15e")]
 transform = Transform3D(0.591181, 0.632413, -0.500559, -0.592298, 0.761666, 0.26277, 0.547438, 0.141136, 0.824859, -1.01676, 1.86144, -0.13912)
-visible = false
 
 [node name="World" parent="." instance=ExtResource("4_1f08v")]
 

@@ -1,4 +1,4 @@
-use crate::editor_plugin::GodotRapier3DEditorPlugin;
+use crate::editor_plugin::GR3DEditorPlugin;
 use godot::engine::EditorNode3DGizmoPlugin;
 use godot::engine::GDScript;
 use godot::prelude::*;
@@ -6,13 +6,13 @@ use godot::prelude::*;
 pub const GIZMO_PATHS: &'static [&'static str] =
     &["res://addons/godot-rapier-3d/src/gdscript/gizmos/collider3D.gd"];
 
-pub fn add_all_gizmos(plugin: &mut GodotRapier3DEditorPlugin) {
+pub fn add_all_gizmos(plugin: &mut GR3DEditorPlugin) {
     for path in GIZMO_PATHS {
         add_gizmo(plugin, path);
     }
 }
 
-pub fn remove_all_gizmos(plugin: &mut GodotRapier3DEditorPlugin) {
+pub fn remove_all_gizmos(plugin: &mut GR3DEditorPlugin) {
     let ston = crate::utils::get_engine_singleton();
     if ston.is_some() {
         let mut singleton = ston.unwrap();
@@ -24,7 +24,7 @@ pub fn remove_all_gizmos(plugin: &mut GodotRapier3DEditorPlugin) {
     }
 }
 
-fn add_gizmo(plugin: &mut GodotRapier3DEditorPlugin, path: &str) {
+fn add_gizmo(plugin: &mut GR3DEditorPlugin, path: &str) {
     if let Ok(mut gizmo_script) = try_load::<GDScript>(path) {
         let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
@@ -43,7 +43,7 @@ fn add_gizmo(plugin: &mut GodotRapier3DEditorPlugin, path: &str) {
     }
 }
 
-fn remove_gizmo(plugin: &mut GodotRapier3DEditorPlugin, iid: i64) {
+fn remove_gizmo(plugin: &mut GR3DEditorPlugin, iid: i64) {
     let instance_id = InstanceId::from_i64(iid);
     let gizmo: Gd<EditorNode3DGizmoPlugin> = match Gd::try_from_instance_id(instance_id) {
         Ok(gizmo) => gizmo,

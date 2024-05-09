@@ -1,4 +1,4 @@
-use crate::singleton::Rapier3DEngineSingleton;
+use crate::singleton::GR3DEngineSingleton;
 use godot::builtin::Array as GArray;
 use godot::builtin::Quaternion as GQuaternion;
 use godot::builtin::Vector3 as GVector;
@@ -10,12 +10,12 @@ use rapier3d::prelude::*;
 
 pub const ENGINE_SINGLETON_NAME: &str = "Rapier3DEngine";
 
-pub fn get_engine_singleton() -> Option<Gd<Rapier3DEngineSingleton>> {
+pub fn get_engine_singleton() -> Option<Gd<GR3DEngineSingleton>> {
     let gd_pointer = godot::engine::Engine::singleton().get_singleton(get_engine_singleton_name());
 
     match gd_pointer {
         Some(gd_pointer) => {
-            let casted = gd_pointer.cast::<Rapier3DEngineSingleton>();
+            let casted = gd_pointer.cast::<GR3DEngineSingleton>();
             Some(casted)
         }
         None => {
