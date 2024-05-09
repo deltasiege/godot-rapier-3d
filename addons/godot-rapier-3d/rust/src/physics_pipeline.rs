@@ -1,5 +1,5 @@
 use crate::collider::RapierCollider3D;
-use crate::physics_state::PhysicsState;
+use crate::physics_state::GR3DPhysicsState;
 use crate::rigid_body::RapierRigidBody3D;
 use godot::prelude::*;
 use rapier3d::prelude::*;
@@ -8,7 +8,7 @@ pub struct GR3DPhysicsPipeline {
     pub rigid_body_ids: Dictionary, // gd node instance_id <-> rapier rb_handle_to_id()
     pub collider_ids: Dictionary,   // gd node instance_id <-> rapier collider_handle_to_id()
     physics_pipeline: PhysicsPipeline,
-    pub state: PhysicsState,
+    pub state: GR3DPhysicsState,
     physics_hooks: (),
     event_handler: (),
 }
@@ -19,7 +19,7 @@ impl GR3DPhysicsPipeline {
             rigid_body_ids: Dictionary::new(),
             collider_ids: Dictionary::new(),
             physics_pipeline: PhysicsPipeline::new(),
-            state: PhysicsState::default(),
+            state: GR3DPhysicsState::default(),
             physics_hooks: (),
             event_handler: (),
         }

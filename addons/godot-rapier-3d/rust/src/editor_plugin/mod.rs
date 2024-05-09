@@ -1,6 +1,5 @@
 use crate::editor_plugin::autoloads::{add_all_autoloads, remove_all_autoloads};
 use crate::editor_plugin::gizmos::{add_all_gizmos, remove_all_gizmos};
-use godot::engine::notify::NodeNotification;
 use godot::engine::EditorPlugin;
 use godot::engine::IEditorPlugin;
 use godot::prelude::*;
@@ -17,11 +16,11 @@ pub struct GR3DEditorPlugin {
 #[godot_api]
 impl IEditorPlugin for GR3DEditorPlugin {
     fn enter_tree(&mut self) {
-        // self.register();
+        self.register();
     }
 
     fn exit_tree(&mut self) {
-        // self.unregister();
+        self.unregister();
     }
 }
 

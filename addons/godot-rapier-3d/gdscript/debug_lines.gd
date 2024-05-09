@@ -5,7 +5,6 @@ var _lines := []
 var _line_immediate_mesh : ImmediateMesh
 
 func _ready():
-	print("READY")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_line_immediate_mesh = ImmediateMesh.new()
 	material_override = _get_line_material()

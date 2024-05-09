@@ -1,4 +1,4 @@
 extends Node3D
 
 func _physics_process(_delta):
-	pass
+	Rapier3D.step()

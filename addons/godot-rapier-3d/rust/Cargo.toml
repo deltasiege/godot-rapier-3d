@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-path = "src/rust/lib.rs"
 crate-type = ["cdylib"]  # Compile this crate to a dynamic C library.
 
 [dependencies]

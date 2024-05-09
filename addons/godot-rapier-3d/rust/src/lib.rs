@@ -16,7 +16,6 @@ struct GodotRapier3D;
 unsafe impl ExtensionLibrary for GodotRapier3D {
     fn on_level_init(level: InitLevel) {
         if level == InitLevel::Scene {
-            godot_print!("InitLevel::Scene");
             register_engine();
         }
     }

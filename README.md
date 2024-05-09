@@ -1,12 +1,16 @@
 # Godot Rapier 3D
 
+## Requirements
+
+- Godot 4.2.2 or later
+
 ## Roadmap
 
-- [ ] Visualize colliders in game
+- [x] Visualize colliders
 - [ ] Serialize/deserialize physics state to/from variable
 - [ ] Save/load physics state to/from resource file
-- [ ] Gizmos handles for collider shapes
 - [ ] Interface for stepping in editor
+- [ ] Gizmos handles for collider shapes
 - [ ] Collision layers
 
 ## Contributing

@@ -2,7 +2,7 @@ use rapier3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct PhysicsState {
+pub struct GR3DPhysicsState {
     pub rigid_body_set: RigidBodySet,
     pub collider_set: ColliderSet,
     pub gravity: Vector<f32>,
@@ -16,7 +16,7 @@ pub struct PhysicsState {
     pub query_pipeline: QueryPipeline,
 }
 
-impl PhysicsState {
+impl GR3DPhysicsState {
     pub fn pack(&self) -> Vec<u8> {
         bincode::serialize(self).unwrap()
     }
@@ -26,7 +26,7 @@ impl PhysicsState {
     }
 }
 
-impl Default for PhysicsState {
+impl Default for GR3DPhysicsState {
     fn default() -> Self {
         Self {
             rigid_body_set: RigidBodySet::new(),

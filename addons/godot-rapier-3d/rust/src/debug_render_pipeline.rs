@@ -1,4 +1,4 @@
-use crate::physics_state::PhysicsState;
+use crate::physics_state::GR3DPhysicsState;
 use godot::engine::IRefCounted;
 use godot::engine::RefCounted;
 use godot::prelude::*;
@@ -7,14 +7,14 @@ use rapier3d::prelude::*;
 
 #[derive(GodotClass)]
 #[class(base=RefCounted)]
-pub struct RapierDebugRenderPipeline {
+pub struct GR3DDebugRenderPipeline {
     debug_render_pipeline: DebugRenderPipeline,
     debug_render_backend: RapierDebugRenderBackend,
     base: Base<RefCounted>,
 }
 
 #[godot_api]
-impl IRefCounted for RapierDebugRenderPipeline {
+impl IRefCounted for GR3DDebugRenderPipeline {
     fn init(base: Base<RefCounted>) -> Self {
         Self {
             debug_render_pipeline: DebugRenderPipeline::new(
@@ -28,7 +28,7 @@ impl IRefCounted for RapierDebugRenderPipeline {
 }
 
 #[godot_api]
-impl RapierDebugRenderPipeline {
+impl GR3DDebugRenderPipeline {
     #[func]
     pub fn register_debugger(&mut self, debugger_node: Gd<Node3D>) {
         self.debug_render_backend.debugger_node = Some(debugger_node); //.cast::<Node3D>()
@@ -39,7 +39,7 @@ impl RapierDebugRenderPipeline {
         let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             let mut singleton = ston.unwrap();
-            let state: &mut PhysicsState = &mut singleton.bind_mut().pipeline.state;
+            let state: &mut GR3DPhysicsState = &mut singleton.bind_mut().pipeline.state;
             let rigid_body_set: &RigidBodySet = &state.rigid_body_set;
             let collider_set: &ColliderSet = &state.collider_set;
 
@@ -49,7 +49,7 @@ impl RapierDebugRenderPipeline {
                 collider_set,
             );
         } else {
-            godot_error!("RapierDebugRenderPipeline::render_colliders - Could not access Rapier3DEngine singleton");
+            godot_error!("GR3DDebugRenderPipeline::render_colliders - Could not access Rapier3DEngine singleton");
         }
     }
 }
