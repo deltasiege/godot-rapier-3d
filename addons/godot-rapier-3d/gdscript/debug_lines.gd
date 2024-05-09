@@ -32,7 +32,9 @@ func _process(_delta: float):
 	if !st: return
 	material_override = _get_line_material()
 	st.clear()
-	if _lines.size() == 0: return
+	if _lines.size() == 0: 
+		mesh = null
+		return
 	st.begin(Mesh.PRIMITIVE_LINES)
 	for line in _lines:
 		var p1 : Vector3 = line[0]

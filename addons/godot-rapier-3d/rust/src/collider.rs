@@ -20,8 +20,17 @@ pub struct RapierCollider3D {
     pub shape: ShapeType,
 
     #[export]
+    #[var(get, set = set_restitution)]
+    pub restitution: f32,
+
+    #[export]
+    #[var(get, set = set_friction)]
+    pub friction: f32,
+
+    #[export]
     #[var(get, set = set_ball_radius)]
     pub ball_radius: f32,
+
     #[export]
     #[var(get, set = set_cuboid_half_extents)]
     pub cuboid_half_extents: Vector3,
@@ -39,6 +48,8 @@ impl INode3D for RapierCollider3D {
             handle: ColliderHandle::invalid(),
             parent: None,
             shape: ShapeType::Ball,
+            restitution: 0.5,
+            friction: 0.5,
             ball_radius: 0.5,
             cuboid_half_extents: Vector3::new(0.5, 0.5, 0.5),
             notify_parent: true,
@@ -248,7 +259,10 @@ impl RapierCollider3D {
                 self.cuboid_half_extents.z,
             ),
         };
-        let collider = ColliderBuilder::new(shape).restitution(0.7).build(); // TODO restitution param
+        let collider = ColliderBuilder::new(shape)
+            .restitution(self.restitution)
+            .friction(self.friction)
+            .build();
         collider
     }
 
@@ -286,6 +300,18 @@ impl RapierCollider3D {
     fn set_cuboid_half_extents(&mut self, half_extents: Vector3) {
         self.cuboid_half_extents = half_extents;
         self.base_mut().update_gizmos();
+        self.reregister();
+    }
+
+    #[func]
+    fn set_restitution(&mut self, restitution: f32) {
+        self.restitution = restitution;
+        self.reregister();
+    }
+
+    #[func]
+    fn set_friction(&mut self, friction: f32) {
+        self.friction = friction;
         self.reregister();
     }
 }
