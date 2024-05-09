@@ -1,0 +1,72 @@
+[gd_scene load_steps=9 format=3 uid="uid://bwcdw2syew3r6"]
+
+[ext_resource type="PackedScene" uid="uid://bll017w15kfkw" path="res://assets/flycam.tscn" id="1_sir15"]
+[ext_resource type="Material" uid="uid://c6qus6d8wc43p" path="res://assets/dbug_mat_high.tres" id="3_cldhj"]
+[ext_resource type="Material" uid="uid://c0t4kx1mtvmwy" path="res://assets/dbug_mat_mid.tres" id="3_diwkp"]
+[ext_resource type="PackedScene" uid="uid://cwkqaxdhe1ifp" path="res://assets/world.tscn" id="4_vx8g6"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_yjjeh"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_v2q8u"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_53fml"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_fmibp"]
+size = Vector3(8, 4, 1)
+
+[node name="Colliders" type="Node3D"]
+
+[node name="FlyCam" parent="." instance=ExtResource("1_sir15")]
+transform = Transform3D(1, 0, 0, 0, 0.984808, 0.173648, 0, -0.173648, 0.984808, 0, 5, 10)
+
+[node name="World" parent="." instance=ExtResource("4_vx8g6")]
+
+[node name="Ball" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 3, 0)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball"]
+ball_radius = 0.51
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ball"]
+material_override = ExtResource("3_cldhj")
+mesh = SubResource("SphereMesh_yjjeh")
+
+[node name="Cube" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(0.853553, -0.146447, 0.5, 0.5, 0.5, -0.707107, -0.146447, 0.853553, 0.5, 0, 3, 0)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Cube"]
+shape = "Cuboid"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Cube"]
+material_override = ExtResource("3_cldhj")
+mesh = SubResource("BoxMesh_v2q8u")
+
+[node name="BigCube" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(0.853553, -0.146447, 0.5, 0.5, 0.5, -0.707107, -0.146447, 0.853553, 0.5, 0, 6, 0)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="BigCube"]
+shape = "Cuboid"
+cuboid_half_extents = Vector3(1, 1, 1)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BigCube"]
+material_override = ExtResource("3_cldhj")
+mesh = SubResource("BoxMesh_53fml")
+
+[node name="LWall" type="RapierCollider3D" parent="."]
+shape = "Cuboid"
+cuboid_half_extents = Vector3(4, 2, 0.5)
+transform = Transform3D(0.707106, 0, 0.707106, 0, 1, 0, -0.707106, 0, 0.707106, -5, 2, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="LWall"]
+material_override = ExtResource("3_diwkp")
+mesh = SubResource("BoxMesh_fmibp")
+
+[node name="RWall" type="RapierCollider3D" parent="."]
+shape = "Cuboid"
+cuboid_half_extents = Vector3(4, 2, 0.5)
+transform = Transform3D(0.5, 0, -0.866025, 0, 1, 0, 0.866025, 0, 0.5, 5, 2, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RWall"]
+material_override = ExtResource("3_diwkp")
+mesh = SubResource("BoxMesh_fmibp")

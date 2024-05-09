@@ -1,6 +1,7 @@
 use crate::physics_pipeline::GR3DPhysicsPipeline;
 use crate::rigid_body::RapierRigidBody3D;
 use godot::engine::notify::Node3DNotification;
+use godot::engine::GDExtensionManager;
 use godot::engine::INode3D;
 use godot::engine::Node3D;
 use godot::prelude::*;
@@ -26,6 +27,7 @@ pub struct RapierCollider3D {
     pub cuboid_half_extents: Vector3,
 
     notify_parent: bool,
+    hot_reload_cb: Callable,
     base: Base<Node3D>,
 }
 
@@ -40,6 +42,7 @@ impl INode3D for RapierCollider3D {
             ball_radius: 0.5,
             cuboid_half_extents: Vector3::new(0.5, 0.5, 0.5),
             notify_parent: true,
+            hot_reload_cb: Callable::invalid(),
             base,
         }
     }
@@ -58,8 +61,7 @@ impl INode3D for RapierCollider3D {
 
 #[godot_api]
 impl RapierCollider3D {
-    fn on_enter_tree(&mut self) {
-        self.base_mut().set_notify_transform(true);
+    fn register(&mut self) {
         let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             let mut singleton = ston.unwrap();
@@ -75,18 +77,63 @@ impl RapierCollider3D {
                     self.sync_transforms_to_godot(collider);
                 }
                 None => {
-                    godot_error!("RapierCollider3D::on_enter_tree - Could not find collider");
+                    godot_error!("RapierCollider3D on_enter_tree - could not find collider {:?} after registering", self.handle);
                     return;
                 }
             }
         }
     }
 
-    fn on_exit_tree(&mut self) {
+    fn unregister(&mut self) {
         let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             ston.unwrap().bind_mut().pipeline.unregister_collider(self);
         }
+    }
+
+    fn attach_extensions_reloaded_signal(&mut self) {
+        let sig = Signal::from_object_signal(
+            &GDExtensionManager::singleton(),
+            StringName::from("extensions_reloaded"),
+        );
+        let cb = Callable::from_object_method(&self.to_gd(), StringName::from("_on_hot_reload"));
+        let already_connected = sig.is_connected(cb.clone());
+        if already_connected {
+            return;
+        }
+        GDExtensionManager::singleton()
+            .connect(StringName::from("extensions_reloaded"), cb.clone());
+        self.hot_reload_cb = cb;
+    }
+
+    fn detach_extensions_reloaded_signal(&mut self) {
+        if !self.hot_reload_cb.is_null() {
+            GDExtensionManager::singleton().disconnect(
+                StringName::from("extensions_reloaded"),
+                self.hot_reload_cb.clone(),
+            );
+        }
+    }
+
+    #[func]
+    fn _on_hot_reload(&mut self) {
+        godot_print!("RapierCollider3D _on_hot_reload {:?}", self.handle);
+        self.base_mut().set_notify_transform(false);
+        self.unregister();
+        self.register();
+        self.base_mut().set_notify_transform(true);
+    }
+
+    fn on_enter_tree(&mut self) {
+        self.register();
+        self.attach_extensions_reloaded_signal();
+        self.base_mut().set_notify_transform(true);
+    }
+
+    fn on_exit_tree(&mut self) {
+        self.base_mut().set_notify_transform(false);
+        self.unregister();
+        self.detach_extensions_reloaded_signal();
     }
 
     fn on_parented(&mut self) {
@@ -123,7 +170,7 @@ impl RapierCollider3D {
 
                             let rb_exists = pipeline.state.rigid_body_set.contains(class.handle);
                             if !rb_exists {
-                                godot_error!("RapierCollider3D::on_parented - trying to parent to invalid rigid body {:?}", class.handle);
+                                godot_error!("RapierCollider3D on_parented - trying to parent to invalid rigid body {:?}", class.handle);
                                 return;
                             }
                             self.parent = Some(class.handle);
@@ -156,7 +203,6 @@ impl RapierCollider3D {
     fn clear_parent(&mut self, pipeline: &mut GR3DPhysicsPipeline) {
         self.parent = None;
         pipeline.set_collider_parent(self.handle, None);
-        // TODO maybe need to remove collider from RB?
     }
 
     fn on_transform_changed(&mut self) {
@@ -171,7 +217,10 @@ impl RapierCollider3D {
                     self.sync_transforms_to_godot(collider);
                 }
                 None => {
-                    godot_error!("Could not find collider {:?}", self.handle);
+                    godot_error!(
+                        "RapierCollider3D on_transform_changed - could not find collider {:?} in pipeline",
+                        self.handle
+                    );
                     return;
                 }
             }
@@ -216,7 +265,7 @@ impl RapierCollider3D {
         }
     }
 
-    // This is so gross - don't want a function for every single property
+    // This is gross - don't want a function for every single property
     // But don't want to define every single property like they are anyway (prefer Shape3Ds or Resources)
     // just wait until https://github.com/godot-rust/gdext/issues/440 is resolved
     #[func]

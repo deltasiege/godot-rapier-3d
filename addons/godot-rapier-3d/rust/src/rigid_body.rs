@@ -1,4 +1,6 @@
+use godot::builtin::Callable;
 use godot::engine::notify::Node3DNotification;
+use godot::engine::GDExtensionManager;
 use godot::engine::INode3D;
 use godot::engine::Node3D;
 use godot::prelude::*;
@@ -14,6 +16,7 @@ pub struct RapierRigidBody3D {
     body_type: RigidBodyType,
     #[export]
     pub additional_mass: Real,
+    hot_reload_cb: Callable,
     base: Base<Node3D>,
 }
 
@@ -25,6 +28,7 @@ impl INode3D for RapierRigidBody3D {
             handle: RigidBodyHandle::invalid(),
             body_type: RigidBodyType::Dynamic,
             additional_mass: 0.0,
+            hot_reload_cb: Callable::invalid(),
             base,
         }
     }
@@ -39,10 +43,12 @@ impl INode3D for RapierRigidBody3D {
     }
 }
 
+// unsafe impl Send for RapierRigidBody3D {}
+// unsafe impl Sync for RapierRigidBody3D {}
+
 #[godot_api]
 impl RapierRigidBody3D {
-    fn on_enter_tree(&mut self) {
-        self.base_mut().set_notify_transform(true);
+    fn register(&mut self) {
         let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             let mut singleton = ston.unwrap();
@@ -50,6 +56,7 @@ impl RapierRigidBody3D {
             let handle = pipeline.register_rigid_body(self);
             self.handle = handle;
             self.id = crate::utils::rb_handle_to_id(handle);
+            godot_print!("RapierRigidBody3D registered {:?}", handle);
 
             let rigid_body = pipeline.get_rigid_body_mut(self.handle);
 
@@ -58,14 +65,15 @@ impl RapierRigidBody3D {
                     self.sync_transforms_to_godot(rigid_body, false);
                 }
                 None => {
-                    godot_error!("RapierRigidBody3D::on_enter_tree - Could not find rigid body");
+                    godot_error!("RapierRigidBody3D on_enter_tree - Could not find rigid body in pipeline after registering");
                     return;
                 }
             }
         }
     }
 
-    fn on_exit_tree(&mut self) {
+    fn unregister(&mut self) {
+        godot_print!("RapierRigidBody3D unregistering {:?}", self.handle);
         let ston = crate::utils::get_engine_singleton();
         if ston.is_some() {
             ston.unwrap()
@@ -73,6 +81,51 @@ impl RapierRigidBody3D {
                 .pipeline
                 .unregister_rigid_body(self);
         }
+    }
+
+    fn attach_extensions_reloaded_signal(&mut self) {
+        let sig = Signal::from_object_signal(
+            &GDExtensionManager::singleton(),
+            StringName::from("extensions_reloaded"),
+        );
+        let cb = Callable::from_object_method(&self.to_gd(), StringName::from("_on_hot_reload"));
+        let already_connected = sig.is_connected(cb.clone());
+        if already_connected {
+            return;
+        }
+        GDExtensionManager::singleton()
+            .connect(StringName::from("extensions_reloaded"), cb.clone());
+        self.hot_reload_cb = cb;
+    }
+
+    fn detach_extensions_reloaded_signal(&mut self) {
+        if !self.hot_reload_cb.is_null() {
+            GDExtensionManager::singleton().disconnect(
+                StringName::from("extensions_reloaded"),
+                self.hot_reload_cb.clone(),
+            );
+        }
+    }
+
+    #[func]
+    fn _on_hot_reload(&mut self) {
+        godot_print!("RapierRigidBody3D _on_hot_reload {:?}", self.handle);
+        self.base_mut().set_notify_transform(false);
+        self.unregister();
+        self.register();
+        self.base_mut().set_notify_transform(true);
+    }
+
+    fn on_enter_tree(&mut self) {
+        self.register();
+        self.attach_extensions_reloaded_signal();
+        self.base_mut().set_notify_transform(true);
+    }
+
+    fn on_exit_tree(&mut self) {
+        self.base_mut().set_notify_transform(false);
+        self.unregister();
+        self.detach_extensions_reloaded_signal();
     }
 
     fn on_transform_changed(&mut self) {
@@ -88,7 +141,7 @@ impl RapierRigidBody3D {
                 }
                 None => {
                     godot_error!(
-                        "RapierRigidBody3D::on_transform_changed - Could not find rigid body"
+                        "RapierRigidBody3D on_transform_changed - could not find rigid body {:?} in pipeline", self.handle,
                     );
                     return;
                 }
@@ -130,7 +183,7 @@ impl RapierRigidBody3D {
                     godot_print!("Colliders: {:?}", rigid_body.colliders());
                 }
                 None => {
-                    godot_error!("Could not find rigid body {:?}", self.handle);
+                    godot_error!("Could not find rigid body {:?} in pipeline", self.handle);
                     return;
                 }
             }
