@@ -96,13 +96,16 @@ impl RapierRigidBody3D {
         }
     }
 
+    // Changes rapier transforms to match godot transforms
     fn sync_transforms_to_godot(&mut self, rigid_body: &mut RigidBody, wakeup: bool) {
-        let translation = self.base().get_global_position();
-        let rotation = self.base().get_quaternion();
-        let r_pos = crate::utils::pos_godot_to_rapier(translation);
-        let r_rot = crate::utils::rot_godot_to_rapier(rotation);
-        rigid_body.set_translation(r_pos, wakeup);
-        rigid_body.set_rotation(r_rot, wakeup);
+        if self.base().is_inside_tree() {
+            let translation = self.base().get_global_position();
+            let rotation = self.base().get_quaternion();
+            let r_pos = crate::utils::pos_godot_to_rapier(translation);
+            let r_rot = crate::utils::rot_godot_to_rapier(rotation);
+            rigid_body.set_translation(r_pos, wakeup);
+            rigid_body.set_rotation(r_rot, wakeup);
+        }
     }
 
     pub fn build(&self) -> RigidBody {

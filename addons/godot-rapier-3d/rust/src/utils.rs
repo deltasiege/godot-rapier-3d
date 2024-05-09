@@ -30,7 +30,9 @@ pub fn get_engine_singleton_name() -> StringName {
 }
 
 pub fn rot_godot_to_rapier(rot: GQuaternion) -> Rotation<Real> {
-    Rotation::from_quaternion(NAQuaternion::new(rot.x, rot.y, rot.z, rot.w))
+    let result =
+        Rotation::from_quaternion(NAQuaternion::new(-1.0 * rot.z, rot.y, -1.0 * rot.x, rot.w));
+    result
 }
 
 pub fn rot_rapier_to_godot(rot: Rotation<Real>) -> GQuaternion {

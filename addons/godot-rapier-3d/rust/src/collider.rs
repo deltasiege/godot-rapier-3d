@@ -178,13 +178,16 @@ impl RapierCollider3D {
         }
     }
 
+    // Changes rapier transforms to match godot transforms
     fn sync_transforms_to_godot(&mut self, collider: &mut Collider) {
-        let translation = self.base().get_global_position();
-        let rotation = self.base().get_quaternion();
-        let r_pos = crate::utils::pos_godot_to_rapier(translation);
-        let r_rot = crate::utils::rot_godot_to_rapier(rotation);
-        collider.set_translation(r_pos);
-        collider.set_rotation(r_rot);
+        if self.base().is_inside_tree() {
+            let translation = self.base().get_global_position();
+            let rotation = self.base().get_global_transform().basis.to_quat();
+            let r_pos = crate::utils::pos_godot_to_rapier(translation);
+            let r_rot = crate::utils::rot_godot_to_rapier(rotation);
+            collider.set_translation(r_pos);
+            collider.set_rotation(r_rot);
+        }
     }
 
     pub fn build(&self) -> Collider {
@@ -209,6 +212,7 @@ impl RapierCollider3D {
             let handle = pipeline.register_collider(self);
             self.handle = handle;
             self.id = crate::utils::collider_handle_to_id(handle);
+            self.sync_transforms_to_godot(pipeline.get_collider_mut(handle).unwrap());
         }
     }
 

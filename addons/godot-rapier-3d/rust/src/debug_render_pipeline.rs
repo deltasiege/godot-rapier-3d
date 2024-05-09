@@ -7,14 +7,14 @@ use rapier3d::prelude::*;
 
 #[derive(GodotClass)]
 #[class(base=RefCounted)]
-pub struct GR3DDebugRenderPipeline {
+pub struct RapierDebugRenderPipeline {
     debug_render_pipeline: DebugRenderPipeline,
     debug_render_backend: RapierDebugRenderBackend,
     base: Base<RefCounted>,
 }
 
 #[godot_api]
-impl IRefCounted for GR3DDebugRenderPipeline {
+impl IRefCounted for RapierDebugRenderPipeline {
     fn init(base: Base<RefCounted>) -> Self {
         Self {
             debug_render_pipeline: DebugRenderPipeline::new(
@@ -28,7 +28,7 @@ impl IRefCounted for GR3DDebugRenderPipeline {
 }
 
 #[godot_api]
-impl GR3DDebugRenderPipeline {
+impl RapierDebugRenderPipeline {
     #[func]
     pub fn register_debugger(&mut self, debugger_node: Gd<Node3D>) {
         self.debug_render_backend.debugger_node = Some(debugger_node); //.cast::<Node3D>()
@@ -49,7 +49,7 @@ impl GR3DDebugRenderPipeline {
                 collider_set,
             );
         } else {
-            godot_error!("GR3DDebugRenderPipeline::render_colliders - Could not access Rapier3DEngine singleton");
+            godot_error!("RapierDebugRenderPipeline::render_colliders - Could not access Rapier3DEngine singleton");
         }
     }
 }

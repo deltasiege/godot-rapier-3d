@@ -3,7 +3,7 @@ extends Node3D
 
 # Config
 var run_in_editor = true
-var run_in_game = false
+var run_in_game = true
 var show_colliders = true
 
 var debug_render_pipeline

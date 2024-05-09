@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://boudxolfgowrt"]
+[gd_scene load_steps=9 format=3 uid="uid://boudxolfgowrt"]
 
 [ext_resource type="Script" path="res://tests/colliders.gd" id="1_bbdkk"]
 [ext_resource type="PackedScene" uid="uid://bll017w15kfkw" path="res://assets/flycam.tscn" id="1_devoc"]
@@ -6,45 +6,64 @@
 [ext_resource type="PackedScene" uid="uid://do7nev7qwiely" path="res://assets/cube.tscn" id="2_fl15e"]
 [ext_resource type="PackedScene" uid="uid://cwkqaxdhe1ifp" path="res://assets/world.tscn" id="4_1f08v"]
 
-[sub_resource type="GDScript" id="GDScript_lhmj1"]
-script/source = "extends Node3D
+[sub_resource type="SphereMesh" id="SphereMesh_trqag"]
+radius = 1.0
+height = 2.0
 
-func _ready():
-	go()
+[sub_resource type="BoxMesh" id="BoxMesh_hi445"]
+size = Vector3(2, 2, 2)
 
-func go():
-	var st = SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	st.set_uv(Vector2(0, 0))
-	st.add_vertex(Vector3(-1, -1, 0))
-	st.set_uv(Vector2(0, 1))
-	st.add_vertex(Vector3(-1, 1, 0))
-	st.set_uv(Vector2(1, 1))
-	st.add_vertex(Vector3(1, 1, 0))
-	st.generate_normals()
-	var mesh = st.commit()
-	self.mesh = mesh
-"
+[sub_resource type="BoxMesh" id="BoxMesh_u25sm"]
+size = Vector3(5, 4, 1)
 
 [node name="Colliders" type="Node3D"]
 script = ExtResource("1_bbdkk")
 
 [node name="FlyCam" parent="." instance=ExtResource("1_devoc")]
-transform = Transform3D(1, 0, 0, 0, 0.961146, 0.27604, 0, -0.27604, 0.961146, 0, 2.88674, 4.3962)
+transform = Transform3D(1, 0, 0, 0, 0.996195, 0.0871557, 0, -0.0871557, 0.996195, 0, 3, 10)
 
 [node name="Ball" parent="." instance=ExtResource("1_f5kls")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25011, 2, 0)
 
-[node name="Ball2" parent="." instance=ExtResource("1_f5kls")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.24371, 3.39142, 0)
+[node name="BigBall" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.24371, 3.77512, 0)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="BigBall"]
+ball_radius = 1.0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BigBall"]
+mesh = SubResource("SphereMesh_trqag")
 
 [node name="Cube" parent="." instance=ExtResource("2_fl15e")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.75011, 0.5, 0)
 
-[node name="Cube2" parent="." instance=ExtResource("2_fl15e")]
-transform = Transform3D(0.591181, 0.632413, -0.500559, -0.592298, 0.761666, 0.26277, 0.547438, 0.141136, 0.824859, -1.01676, 1.86144, -0.13912)
+[node name="AngledCube" parent="." instance=ExtResource("2_fl15e")]
+transform = Transform3D(0.853553, -0.146447, 0.5, 0.5, 0.5, -0.707106, -0.146447, 0.853554, 0.5, -1.01676, 1.89731, -0.13912)
+
+[node name="BigCube" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(0.837792, 0.235889, 0.492404, -0.17101, 0.969846, -0.173648, -0.518518, 0.061275, 0.852868, 0, 6.02307, 0)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="BigCube"]
+shape = "Cuboid"
+cuboid_half_extents = Vector3(1, 1, 1)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BigCube"]
+mesh = SubResource("BoxMesh_hi445")
+
+[node name="Wall" type="RapierCollider3D" parent="."]
+shape = "Cuboid"
+cuboid_half_extents = Vector3(2.5, 2, 0.5)
+transform = Transform3D(0.258819, 0, 0.965925, 0, 1, 0, -0.965926, 0, 0.258819, -5, 2, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Wall"]
+mesh = SubResource("BoxMesh_u25sm")
+
+[node name="Wall2" type="RapierCollider3D" parent="."]
+shape = "Cuboid"
+cuboid_half_extents = Vector3(2.5, 2, 0.5)
+transform = Transform3D(0.258819, 0, -0.965925, 0, 1, 0, 0.965926, 0, 0.258819, 6.90319, 2, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Wall2"]
+mesh = SubResource("BoxMesh_u25sm")
 
 [node name="World" parent="." instance=ExtResource("4_1f08v")]
-
-[node name="Wireframe" type="MeshInstance3D" parent="."]
-script = SubResource("GDScript_lhmj1")
