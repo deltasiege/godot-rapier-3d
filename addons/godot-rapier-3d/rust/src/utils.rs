@@ -1,4 +1,4 @@
-use crate::singleton::GR3DEngineSingleton;
+use crate::engine::GR3DEngineSingleton;
 use godot::builtin::Array as GArray;
 use godot::builtin::Quaternion as GQuaternion;
 use godot::builtin::Vector3 as GVector;

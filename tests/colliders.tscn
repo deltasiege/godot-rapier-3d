@@ -1,10 +1,10 @@
 [gd_scene load_steps=9 format=3 uid="uid://boudxolfgowrt"]
 
-[ext_resource type="Script" path="res://tests/colliders.gd" id="1_bbdkk"]
 [ext_resource type="PackedScene" uid="uid://bll017w15kfkw" path="res://assets/flycam.tscn" id="1_devoc"]
 [ext_resource type="PackedScene" uid="uid://digi5ge888fgn" path="res://assets/ball.tscn" id="1_f5kls"]
 [ext_resource type="PackedScene" uid="uid://do7nev7qwiely" path="res://assets/cube.tscn" id="2_fl15e"]
 [ext_resource type="PackedScene" uid="uid://cwkqaxdhe1ifp" path="res://assets/world.tscn" id="4_1f08v"]
+[ext_resource type="PackedScene" uid="uid://qdndetibeu4v" path="res://assets/physics_controls.tscn" id="5_2qqg1"]
 
 [sub_resource type="SphereMesh" id="SphereMesh_trqag"]
 radius = 1.0
@@ -17,7 +17,6 @@ size = Vector3(2, 2, 2)
 size = Vector3(5, 4, 1)
 
 [node name="Colliders" type="Node3D"]
-script = ExtResource("1_bbdkk")
 
 [node name="FlyCam" parent="." instance=ExtResource("1_devoc")]
 transform = Transform3D(1, 0, 0, 0, 0.996195, 0.0871557, 0, -0.0871557, 0.996195, 0, 3, 10)
@@ -65,5 +64,7 @@ transform = Transform3D(0.258819, 0, -0.965925, 0, 1, 0, 0.965926, 0, 0.258819, 
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Wall2"]
 mesh = SubResource("BoxMesh_u25sm")
+
+[node name="Rapier3DPhysicsPipelineControls" parent="." instance=ExtResource("5_2qqg1")]
 
 [node name="World" parent="." instance=ExtResource("4_1f08v")]

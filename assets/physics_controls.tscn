@@ -1,0 +1,59 @@
+[gd_scene load_steps=2 format=3 uid="uid://qdndetibeu4v"]
+
+[ext_resource type="Script" path="res://assets/physics_controls.gd" id="1_6i583"]
+
+[node name="Rapier3DPhysicsPipelineControls" type="CanvasLayer"]
+script = ExtResource("1_6i583")
+
+[node name="Panel" type="PanelContainer" parent="."]
+offset_right = 309.0
+offset_bottom = 90.0
+
+[node name="MarginContainer" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="GridContainer" type="GridContainer" parent="Panel/MarginContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Panel/MarginContainer/GridContainer"]
+layout_mode = 2
+text = "Godot Rapier 3D"
+
+[node name="Hash" type="Label" parent="Panel/MarginContainer/GridContainer"]
+layout_mode = 2
+text = "Hash: "
+
+[node name="PlayButton" type="CheckButton" parent="Panel/MarginContainer/GridContainer"]
+layout_mode = 2
+button_pressed = true
+text = "Play"
+
+[node name="Reset" type="Button" parent="Panel/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reset"
+
+[node name="StepButton" type="Button" parent="Panel/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Step"
+
+[node name="SaveButton" type="Button" parent="Panel/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Save snapshot"
+
+[node name="LoadButton" type="Button" parent="Panel/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Load snapshot"
+
+[connection signal="toggled" from="Panel/MarginContainer/GridContainer/PlayButton" to="." method="_on_check_button_toggled"]
+[connection signal="pressed" from="Panel/MarginContainer/GridContainer/Reset" to="." method="_on_reset_pressed"]
+[connection signal="pressed" from="Panel/MarginContainer/GridContainer/StepButton" to="." method="_on_step_button_pressed"]
+[connection signal="pressed" from="Panel/MarginContainer/GridContainer/SaveButton" to="." method="_on_save_button_pressed"]
+[connection signal="pressed" from="Panel/MarginContainer/GridContainer/LoadButton" to="." method="_on_load_button_pressed"]

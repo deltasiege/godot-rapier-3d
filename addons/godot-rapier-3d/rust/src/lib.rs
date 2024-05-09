@@ -1,13 +1,13 @@
-use crate::singleton::{register_engine, unregister_engine};
+use crate::engine::{register_engine, unregister_engine};
 use godot::prelude::*;
 
 mod collider;
 mod debug_render_pipeline;
 mod editor_plugin;
+mod engine;
 mod physics_pipeline;
 mod physics_state;
 mod rigid_body;
-mod singleton;
 mod utils;
 
 struct GodotRapier3D;

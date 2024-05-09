@@ -45,10 +45,17 @@ impl GR3DPhysicsPipeline {
         self.sync_active_body_positions();
     }
 
-    // Syncs Godot position to Rapier position
+    // Syncs all rigid body Godot positions to match Rapier positions
+    pub fn sync_all_body_positions(&mut self) {
+        let dynamic_bodies = self.state.rigid_body_set.iter();
+        for (handle, rb) in dynamic_bodies {
+            self.sync_transform_to_rapier(handle, rb);
+        }
+    }
+
+    // Syncs active rigid body Godot positions to match Rapier positions
     pub fn sync_active_body_positions(&mut self) {
         let active_dynamic_bodies = self.state.island_manager.active_dynamic_bodies();
-
         for active_body_handle in active_dynamic_bodies {
             let rb = match self.state.rigid_body_set.get(*active_body_handle) {
                 Some(rb) => rb,
@@ -57,38 +64,46 @@ impl GR3DPhysicsPipeline {
                     continue;
                 }
             };
-
-            let g_pos = crate::utils::pos_rapier_to_godot(*rb.translation());
-            let g_rot = crate::utils::rot_rapier_to_godot(*rb.rotation());
-
-            let id = crate::utils::rb_handle_to_id(*active_body_handle);
-            let instance_id_var: Variant = match self.rigid_body_ids.find_key_by_value(id.clone()) {
-                Some(instance_id) => instance_id,
-                None => {
-                    godot_error!(
-                        "Could not find instance_id for active body {:?}",
-                        id.clone()
-                    );
-                    continue;
-                }
-            };
-
-            let instance_id_int = instance_id_var.to_string().parse::<i64>().unwrap();
-            let instance_id = InstanceId::from_i64(instance_id_int);
-
-            let mut node: Gd<RapierRigidBody3D> = match Gd::try_from_instance_id(instance_id) {
-                Ok(node) => node,
-                _ => {
-                    godot_error!("Could not find node for active body {:?}", instance_id);
-                    continue;
-                }
-            };
-
-            node.bind_mut().base_mut().set_notify_transform(false);
-            node.bind_mut().base_mut().set_global_position(g_pos);
-            node.bind_mut().base_mut().set_quaternion(g_rot);
-            node.bind_mut().base_mut().set_notify_transform(true);
+            self.sync_transform_to_rapier(*active_body_handle, rb);
         }
+    }
+
+    // Changes godot transforms to match rapier transforms
+    pub fn sync_transform_to_rapier(
+        &self,
+        rigid_body_handle: RigidBodyHandle,
+        rigid_body: &RigidBody,
+    ) {
+        let g_pos = crate::utils::pos_rapier_to_godot(*rigid_body.translation());
+        let g_rot = crate::utils::rot_rapier_to_godot(*rigid_body.rotation());
+
+        let id = crate::utils::rb_handle_to_id(rigid_body_handle);
+        let instance_id_var: Variant = match self.rigid_body_ids.find_key_by_value(id.clone()) {
+            Some(instance_id) => instance_id,
+            None => {
+                godot_error!(
+                    "Could not find instance_id for active body {:?}",
+                    id.clone()
+                );
+                return;
+            }
+        };
+
+        let instance_id_int = instance_id_var.to_string().parse::<i64>().unwrap();
+        let instance_id = InstanceId::from_i64(instance_id_int);
+
+        let mut node: Gd<RapierRigidBody3D> = match Gd::try_from_instance_id(instance_id) {
+            Ok(node) => node,
+            _ => {
+                godot_error!("Could not find node for active body {:?}", instance_id);
+                return;
+            }
+        };
+
+        node.bind_mut().base_mut().set_notify_transform(false);
+        node.bind_mut().base_mut().set_global_position(g_pos);
+        node.bind_mut().base_mut().set_quaternion(g_rot);
+        node.bind_mut().base_mut().set_notify_transform(true);
     }
 
     pub fn register_rigid_body(&mut self, class: &mut RapierRigidBody3D) -> RigidBodyHandle {

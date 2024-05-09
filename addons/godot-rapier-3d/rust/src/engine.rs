@@ -64,6 +64,7 @@ impl GR3DEngineSingleton {
         let slice = data.as_slice();
         let state = self.pipeline.state.unpack(slice);
         self.pipeline.state = state;
+        self.pipeline.sync_all_body_positions();
     }
 
     #[func]
