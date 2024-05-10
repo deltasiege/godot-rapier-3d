@@ -22,6 +22,20 @@ pub enum LogLevel {
     Debug,
 }
 
+impl TryFrom<i32> for LogLevel {
+    type Error = ();
+
+    fn try_from(v: i32) -> Result<Self, ()> {
+        match v {
+            x if x == (LogLevel::Error as i32) => Ok(LogLevel::Error),
+            x if x == (LogLevel::Warning as i32) => Ok(LogLevel::Warning),
+            x if x == (LogLevel::Info as i32) => Ok(LogLevel::Info),
+            x if x == (LogLevel::Debug as i32) => Ok(LogLevel::Debug),
+            _ => Err(()),
+        }
+    }
+}
+
 // TODO I'm not sure if double surrounding blocks { { } } in the 3rd arms are required
 // to avoid the engine bind leaking out of the macro and causing Godot crashes ?
 

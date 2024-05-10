@@ -1,15 +1,33 @@
 @tool
 extends Node3D
 
+const project_settings = preload("res://addons/godot-rapier-3d/gdscript/project_settings.gd")
+
 # Config
-var run_in_editor = true
-var run_in_game = true
-var show_colliders = true
+@onready var run_in_game = ProjectSettings.get_setting("debug/rapier_3d/debug_in_game")
+@onready var run_in_editor = ProjectSettings.get_setting("debug/rapier_3d/debug_in_editor")
+@onready var show_colliders = ProjectSettings.get_setting("debug/rapier_3d/show_colliders")
 
 var debug_render_pipeline
 
 const debug_lines_res = preload("res://addons/godot-rapier-3d/gdscript/debug_lines.gd")
 var _debug_lines
+
+func _enter_tree():
+	var project_settings_node = project_settings.new()
+	project_settings_node.add_project_settings()
+	project_settings_node.free()
+	ProjectSettings.connect("settings_changed", self._on_settings_changed)
+
+func _exit_tree():
+	ProjectSettings.disconnect("settings_changed", self._on_settings_changed)
+
+func _on_settings_changed():
+	run_in_game = ProjectSettings.get_setting("debug/rapier_3d/debug_in_game")
+	run_in_editor = ProjectSettings.get_setting("debug/rapier_3d/debug_in_editor")
+	show_colliders = ProjectSettings.get_setting("debug/rapier_3d/show_colliders")
+	if _debug_lines != null: _debug_lines.clear_lines()
+	if is_instance_valid(Rapier3DEngine): Rapier3DEngine.set_log_level(ProjectSettings.get_setting("debug/rapier_3d/logging_level"))
 
 func _ready():
 	if !_should_run(): return

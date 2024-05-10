@@ -39,7 +39,8 @@ pub struct GR3DEngineSingleton {
 #[godot_api]
 impl IObject for GR3DEngineSingleton {
     fn init(base: Base<Object>) -> Self {
-        let log_level = LogLevel::Debug;
+        let log_level = LogLevel::Info;
+
         Self {
             pipeline: GR3DPhysicsPipeline::new(log_level),
             gizmo_iids: Vec::new(),
@@ -69,6 +70,13 @@ impl GR3DEngineSingleton {
         let state = self.pipeline.state.unpack(slice);
         self.pipeline.state = state;
         self.pipeline.sync_all_body_positions();
+    }
+
+    #[func]
+    pub fn set_log_level(&mut self, log_level: i32) {
+        let level = LogLevel::try_from(log_level).unwrap_or(LogLevel::Debug);
+        self.log_level = level;
+        self.pipeline.log_level = level;
     }
 
     #[func]

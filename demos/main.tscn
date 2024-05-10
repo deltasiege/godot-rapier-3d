@@ -8,5 +8,3 @@
 [node name="FlyCam" parent="." instance=ExtResource("2_6eyky")]
 
 [node name="World" parent="." instance=ExtResource("4_qrxp7")]
-
-[node name="RapierCollider3D" type="RapierCollider3D" parent="."]

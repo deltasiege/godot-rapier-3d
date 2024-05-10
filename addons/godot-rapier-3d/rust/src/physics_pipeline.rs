@@ -10,7 +10,7 @@ pub struct GR3DPhysicsPipeline {
     pub collider_ids: Dictionary, // gd node instance_id <-> rapier collider_handle_to_id()
     physics_pipeline: PhysicsPipeline,
     pub state: GR3DPhysicsState,
-    log_level: LogLevel,
+    pub log_level: LogLevel,
     physics_hooks: (),
     event_handler: (),
 }

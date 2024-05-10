@@ -9,10 +9,14 @@ func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	material_override = _get_line_material()
 	st = SurfaceTool.new()
-	
 
 func draw_line(a: Vector3, b: Vector3, color: Color):
 	_lines.append([a, b, color])
+
+func clear_lines():
+	_lines.clear()
+	st.clear()
+	mesh = null
 
 func _get_line_material() -> StandardMaterial3D:
 	var mat : StandardMaterial3D
