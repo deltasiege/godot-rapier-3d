@@ -81,23 +81,39 @@ impl RapierCollider3D {
         let collider = match bind.pipeline.get_collider_mut(self.handle) {
             Some(collider) => collider,
             None => {
-                godot_error!(
-                    "RapierCollider3D register - could not find collider {:?} in pipeline",
-                    self.handle
-                );
+                crate::error!(bind; "RapierCollider3D register - could not find collider {:?} in pipeline", self.handle);
                 return;
             }
         };
         self.sync_transforms_to_godot(collider);
-        godot_print!("RapierCollider3D registered {:?}", handle);
+        crate::debug!(bind; "RapierCollider3D registered {:?}", self.handle.clone());
     }
 
     fn unregister(&mut self) {
         let mut engine = crate::get_engine!();
-        engine.bind_mut().pipeline.unregister_collider(self);
-        godot_print!("RapierCollider3D unregistered {:?}", self.handle);
+        let mut bind = engine.bind_mut();
+        bind.pipeline.unregister_collider(self);
+        crate::debug!(bind; "RapierCollider3D unregistered {:?}", self.handle.clone());
         self.handle = ColliderHandle::invalid();
         self.id = Array::new();
+    }
+
+    fn reregister(&mut self) {
+        let mut engine = crate::get_engine!();
+        let mut bind = engine.bind_mut();
+        bind.pipeline.unregister_collider(self);
+        let handle = bind.pipeline.register_collider(self);
+        self.handle = handle;
+        self.id = crate::utils::collider_handle_to_id(handle);
+        let collider = match bind.pipeline.get_collider_mut(self.handle) {
+            Some(collider) => collider,
+            None => {
+                crate::error!(bind; "RapierCollider3D reregister - could not find collider {:?} in pipeline", self.handle);
+                return;
+            }
+        };
+        self.sync_transforms_to_godot(collider);
+        crate::debug!(bind; "RapierCollider3D reregistered {:?}", handle);
     }
 
     fn attach_extensions_reloaded_signal(&mut self) {
@@ -128,22 +144,21 @@ impl RapierCollider3D {
 
     #[func]
     fn _on_hot_reload(&mut self) {
-        godot_print!("RapierCollider3D _on_hot_reload {:?}", self.handle);
+        crate::debug!("RapierCollider3D _on_hot_reload {:?}", self.handle.clone());
         self.base_mut().set_notify_transform(false);
-        let _ = self.unregister();
-        let _ = self.register();
+        self.reregister();
         self.base_mut().set_notify_transform(true);
     }
 
     fn on_enter_tree(&mut self) {
-        let _ = self.register();
+        self.register();
         self.attach_extensions_reloaded_signal();
         self.base_mut().set_notify_transform(true);
     }
 
     fn on_exit_tree(&mut self) {
         self.base_mut().set_notify_transform(false);
-        let _ = self.unregister();
+        self.unregister();
         self.detach_extensions_reloaded_signal();
     }
 
@@ -193,9 +208,9 @@ impl RapierCollider3D {
             return;
         }
 
-        self.parent = Some(class.handle);
         bind.pipeline.unregister_collider(self);
         let handle = bind.pipeline.register_collider_with_parent(self, class.handle);
+        self.parent = Some(class.handle);
         self.handle = handle;
         self.id = crate::utils::collider_handle_to_id(handle);
         self.notify_parent = true;
@@ -261,17 +276,6 @@ impl RapierCollider3D {
         collider
     }
 
-    pub fn reregister(&mut self) {
-        let mut engine = crate::get_engine!();
-        let mut bind = engine.bind_mut();
-        bind.pipeline.unregister_collider(self);
-        let handle = bind.pipeline.register_collider(self);
-        self.handle = handle;
-        self.id = crate::utils::collider_handle_to_id(handle);
-        let collider = bind.pipeline.get_collider_mut(self.handle).unwrap();
-        self.sync_transforms_to_godot(collider);
-    }
-
     // This is gross - don't want a function for every single property
     // But don't want to define every single property like they are anyway (prefer Shape3Ds or Resources)
     // just wait until https://github.com/godot-rust/gdext/issues/440 is resolved
@@ -279,33 +283,33 @@ impl RapierCollider3D {
     fn set_shape(&mut self, shape: ShapeType) {
         self.shape = shape;
         self.base_mut().update_gizmos();
-        let _ = self.reregister();
+        self.reregister();
     }
 
     #[func]
     fn set_ball_radius(&mut self, radius: f32) {
         self.ball_radius = radius;
         self.base_mut().update_gizmos();
-        let _ = self.reregister();
+        self.reregister();
     }
 
     #[func]
     fn set_cuboid_half_extents(&mut self, half_extents: Vector3) {
         self.cuboid_half_extents = half_extents;
         self.base_mut().update_gizmos();
-        let _ = self.reregister();
+        self.reregister();
     }
 
     #[func]
     fn set_restitution(&mut self, restitution: f32) {
         self.restitution = restitution;
-        let _ = self.reregister();
+        self.reregister();
     }
 
     #[func]
     fn set_friction(&mut self, friction: f32) {
         self.friction = friction;
-        let _ = self.reregister();
+        self.reregister();
     }
 }
 

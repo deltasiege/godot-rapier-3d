@@ -22,89 +22,107 @@ pub enum LogLevel {
     Debug,
 }
 
+// TODO I'm not sure if double surrounding blocks { { } } in the 3rd arms are required
+// to avoid the engine bind leaking out of the macro and causing Godot crashes ?
+
 // TODO - I wanted to generate these macros using a super macro, but apparently repeating args are not able to be nested
 // Is there a cleaner way to do this?
-
 #[macro_export]
 macro_rules! error {
+    ($engine_log_level:expr => $($arg:expr),*) => {
+        crate::log::log($engine_log_level, crate::log::LogLevel::Error, &format!($($arg),*));
+    };
     ($engine_bind:expr; $($arg:expr),*) => {
         crate::log::log($engine_bind.log_level, crate::log::LogLevel::Error, &format!($($arg),*));
     };
     ($($arg:expr),*) => {
         {
-            let engine_result = crate::get_engine_checked!();
-            match engine_result {
-                Ok(engine) => {
-                    let bind = engine.bind();
-                    crate::log::log(bind.log_level, crate::log::LogLevel::Error, &format!($($arg),*));
-                },
-                Err(_) => {
-                    godot_error!("Failed to print error message: {}", &format!($($arg),*));
-                },
-            };
+            {
+                let engine_result = crate::get_engine_checked!();
+                match engine_result {
+                    Ok(engine) => {
+                        crate::log::log(engine.bind().log_level, crate::log::LogLevel::Error, &format!($($arg),*));
+                    },
+                    Err(_) => {
+                        godot_error!("Failed to print error message: {}", &format!($($arg),*));
+                    },
+                };
+            }
         }
     };
 }
 
 #[macro_export]
 macro_rules! warn {
+    ($engine_log_level:expr => $($arg:expr),*) => {
+        crate::log::log($engine_log_level, crate::log::LogLevel::Warn, &format!($($arg),*));
+    };
     ($engine_bind:expr; $($arg:expr),*) => {
         crate::log::log($engine_bind.log_level, crate::log::LogLevel::Warn, &format!($($arg),*));
     };
     ($($arg:expr),*) => {
         {
-            let engine_result = crate::get_engine_checked!();
-            match engine_result {
-                Ok(engine) => {
-                    let bind = engine.bind();
-                    crate::log::log(bind.log_level, crate::log::LogLevel::Warn, &format!($($arg),*));
-                },
-                Err(_) => {
-                    godot_warn!("Failed to print warn message: {}", &format!($($arg),*));
-                },
-            };
+            {
+                let engine_result = crate::get_engine_checked!();
+                match engine_result {
+                    Ok(engine) => {
+                        crate::log::log(engine.bind().log_level, crate::log::LogLevel::Warn, &format!($($arg),*));
+                    },
+                    Err(_) => {
+                        godot_warn!("Failed to print warn message: {}", &format!($($arg),*));
+                    },
+                };
+            }
         }
     };
 }
 
 #[macro_export]
 macro_rules! info {
+    ($engine_log_level:expr => $($arg:expr),*) => {
+        crate::log::log($engine_log_level, crate::log::LogLevel::Info, &format!($($arg),*));
+    };
     ($engine_bind:expr; $($arg:expr),*) => {
         crate::log::log($engine_bind.log_level, crate::log::LogLevel::Info, &format!($($arg),*));
     };
     ($($arg:expr),*) => {
         {
-            let engine_result = crate::get_engine_checked!();
-            match engine_result {
-                Ok(engine) => {
-                    let bind = engine.bind();
-                    crate::log::log(bind.log_level, crate::log::LogLevel::Info, &format!($($arg),*));
-                },
-                Err(_) => {
-                    godot_print!("Failed to print info message: {}", &format!($($arg),*));
-                },
-            };
+            {
+                let engine_result = crate::get_engine_checked!();
+                match engine_result {
+                    Ok(engine) => {
+                        crate::log::log(engine.bind().log_level, crate::log::LogLevel::Info, &format!($($arg),*));
+                    },
+                    Err(_) => {
+                        godot_print!("Failed to print info message: {}", &format!($($arg),*));
+                    },
+                };
+            }
         }
     };
 }
 
 #[macro_export]
 macro_rules! debug {
+    ($engine_log_level:expr => $($arg:expr),*) => {
+        crate::log::log($engine_log_level, crate::log::LogLevel::Debug, &format!($($arg),*));
+    };
     ($engine_bind:expr; $($arg:expr),*) => {
         crate::log::log($engine_bind.log_level, crate::log::LogLevel::Debug, &format!($($arg),*));
     };
     ($($arg:expr),*) => {
         {
-            let engine_result = crate::get_engine_checked!();
-            match engine_result {
-                Ok(engine) => {
-                    let bind = engine.bind();
-                    crate::log::log(bind.log_level, crate::log::LogLevel::Debug, &format!($($arg),*));
-                },
-                Err(_) => {
-                    godot_print!("Failed to print debug message: {}", &format!($($arg),*));
-                },
-            };
+            {
+                let engine_result = crate::get_engine_checked!();
+                match engine_result {
+                    Ok(engine) => {
+                        crate::log::log(engine.bind().log_level, crate::log::LogLevel::Debug, &format!($($arg),*));
+                    },
+                    Err(_) => {
+                        godot_print!("Failed to print debug message: {}", &format!($($arg),*)); // foo
+                    },
+                };
+            }
         }
     };
 }

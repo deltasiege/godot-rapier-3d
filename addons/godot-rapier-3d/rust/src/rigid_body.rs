@@ -58,22 +58,41 @@ impl RapierRigidBody3D {
             Some(rigid_body) => rigid_body,
             None => {
                 godot_error!(
-                    "RapierRigidBody3D on_enter_tree - Could not find rigid body in pipeline after registering"
+                    "RapierRigidBody3D on_enter_tree - could not find rigid body in pipeline after registering"
                 );
                 return;
             }
         };
 
         self.sync_transforms_to_godot(rigid_body, false);
-        godot_print!("RapierRigidBody3D registered {:?}", handle);
+        crate::debug!(bind; "RapierRigidBody3D registered {:?}", self.handle.clone());
     }
 
     fn unregister(&mut self) {
         let mut engine = crate::get_engine!();
-        engine.bind_mut().pipeline.unregister_rigid_body(self);
-        godot_print!("RapierRigidBody3D unregistered {:?}", self.handle);
+        let mut bind = engine.bind_mut();
+        bind.pipeline.unregister_rigid_body(self);
+        crate::debug!(bind; "RapierRigidBody3D unregistered {:?}", self.handle.clone());
         self.handle = RigidBodyHandle::invalid();
         self.id = Array::new();
+    }
+
+    fn reregister(&mut self) {
+        let mut engine = crate::get_engine!();
+        let mut bind = engine.bind_mut();
+        bind.pipeline.unregister_rigid_body(self);
+        let handle = bind.pipeline.register_rigid_body(self);
+        self.handle = handle;
+        self.id = crate::utils::rb_handle_to_id(handle);
+        let rigid_body = match bind.pipeline.get_rigid_body_mut(self.handle) {
+            Some(collider) => collider,
+            None => {
+                crate::error!(bind; "RapierRigidBody3D reregister - could not find rigid body {:?} in pipeline", self.handle);
+                return;
+            }
+        };
+        self.sync_transforms_to_godot(rigid_body, false);
+        crate::debug!(bind; "RapierRigidBody3D reregistered {:?}", handle);
     }
 
     fn attach_extensions_reloaded_signal(&mut self) {
@@ -104,10 +123,9 @@ impl RapierRigidBody3D {
 
     #[func]
     fn _on_hot_reload(&mut self) {
-        godot_print!("RapierRigidBody3D _on_hot_reload {:?}", self.handle);
+        crate::debug!("RapierRigidBody3D _on_hot_reload {:?}", self.handle.clone());
         self.base_mut().set_notify_transform(false);
-        self.unregister();
-        self.register();
+        self.reregister();
         self.base_mut().set_notify_transform(true);
     }
 

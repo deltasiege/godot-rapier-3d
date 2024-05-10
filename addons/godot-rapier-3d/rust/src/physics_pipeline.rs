@@ -3,23 +3,26 @@ use crate::physics_state::GR3DPhysicsState;
 use crate::rigid_body::RapierRigidBody3D;
 use godot::prelude::*;
 use rapier3d::prelude::*;
+use crate::log::LogLevel;
 
 pub struct GR3DPhysicsPipeline {
     pub rigid_body_ids: Dictionary, // gd node instance_id <-> rapier rb_handle_to_id()
     pub collider_ids: Dictionary, // gd node instance_id <-> rapier collider_handle_to_id()
     physics_pipeline: PhysicsPipeline,
     pub state: GR3DPhysicsState,
+    log_level: LogLevel,
     physics_hooks: (),
     event_handler: (),
 }
 
 impl GR3DPhysicsPipeline {
-    pub fn new() -> Self {
+    pub fn new(log_level: LogLevel) -> Self {
         Self {
             rigid_body_ids: Dictionary::new(),
             collider_ids: Dictionary::new(),
             physics_pipeline: PhysicsPipeline::new(),
             state: GR3DPhysicsState::default(),
+            log_level,
             physics_hooks: (),
             event_handler: (),
         }
@@ -60,7 +63,7 @@ impl GR3DPhysicsPipeline {
             let rb = match self.state.rigid_body_set.get(*active_body_handle) {
                 Some(rb) => rb,
                 None => {
-                    godot_error!("Pipeline: could not find active body {:?}", active_body_handle);
+                    crate::error!(self.log_level => "Pipeline: could not find active body {:?}", active_body_handle);
                     continue;
                 }
             };
@@ -81,10 +84,7 @@ impl GR3DPhysicsPipeline {
         let instance_id_var: Variant = match self.rigid_body_ids.find_key_by_value(id.clone()) {
             Some(instance_id) => instance_id,
             None => {
-                godot_error!(
-                    "Pipeline: could not find instance_id for active body {:?}",
-                    id.clone()
-                );
+                crate::error!(self.log_level => "Pipeline: could not find instance_id for active body {:?}", id.clone());
                 return;
             }
         };
@@ -95,7 +95,7 @@ impl GR3DPhysicsPipeline {
         let mut node: Gd<RapierRigidBody3D> = match Gd::try_from_instance_id(instance_id) {
             Ok(node) => node,
             _ => {
-                godot_error!("Pipeline: could not find node for active body {:?}", instance_id);
+                crate::error!(self.log_level => "Pipeline: could not find node for active body {:?}", instance_id);
                 return;
             }
         };
@@ -113,7 +113,7 @@ impl GR3DPhysicsPipeline {
         let handle = self.state.rigid_body_set.insert(rigid_body);
         let id = crate::utils::rb_handle_to_id(handle);
         self.rigid_body_ids.set(instance_id, id);
-        godot_print!("Pipeline: registered rigid body '{:?}'", handle);
+        crate::debug!(self.log_level => "Pipeline: registered rigid body '{:?}'", handle);
         handle
     }
 
@@ -128,7 +128,7 @@ impl GR3DPhysicsPipeline {
             &mut self.state.multibody_joint_set,
             true // true = also remove colliders
         );
-        godot_print!("Pipeline: unregistered rigid body '{:?}'", handle);
+        crate::debug!(self.log_level => "Pipeline: unregistered rigid body '{:?}'", handle);
         self.rigid_body_ids.remove(instance_id);
     }
 
@@ -146,7 +146,7 @@ impl GR3DPhysicsPipeline {
         let handle = self.state.collider_set.insert(collider);
         let id = crate::utils::collider_handle_to_id(handle);
         self.collider_ids.set(instance_id, id);
-        godot_print!("Pipeline: registered collider '{:?}'", handle);
+        crate::debug!(self.log_level => "Pipeline: registered collider '{:?}'", handle);
         handle
     }
 
@@ -154,7 +154,7 @@ impl GR3DPhysicsPipeline {
         let instance_id = class.base().instance_id().to_i64();
         let result = self.collider_ids.contains_key(instance_id);
         if result {
-            godot_print!("Pipeline: collider '{:?}' already registered", class.handle);
+            crate::debug!(self.log_level => "Pipeline: collider '{:?}' already registered", class.handle);
         }
         result
     }
@@ -178,7 +178,7 @@ impl GR3DPhysicsPipeline {
         );
         let id = crate::utils::collider_handle_to_id(handle);
         self.collider_ids.set(instance_id, id);
-        godot_print!("Pipeline: registered collider '{:?}'", handle);
+        crate::debug!(self.log_level => "Pipeline: registered collider '{:?}'", handle);
         handle
     }
 
@@ -200,7 +200,7 @@ impl GR3DPhysicsPipeline {
             false
         ); // false = don't wakeup parent rigid_body
         self.collider_ids.remove(instance_id);
-        godot_print!("Pipeline: unregistered collider '{:?}'", handle);
+        crate::debug!(self.log_level => "Pipeline: unregistered collider '{:?}'", handle);
     }
 
     pub fn get_collider_mut(&mut self, handle: ColliderHandle) -> Option<&mut Collider> {

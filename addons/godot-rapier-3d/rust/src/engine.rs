@@ -9,7 +9,6 @@ use godot::prelude::*;
 pub const ENGINE_SINGLETON_NAME: &str = "Rapier3DEngine";
 
 pub fn register_engine() {
-    godot_print!("Registering Rapier3DEngine singleton");
     Engine::singleton().register_singleton(
         StringName::from(ENGINE_SINGLETON_NAME),
         GR3DEngineSingleton::new_alloc().upcast()
@@ -24,7 +23,6 @@ pub fn unregister_engine() {
         .get_singleton(singleton_name.clone())
         .expect("cannot retrieve the singleton");
 
-    godot_print!("Unregistering Rapier3DEngine singleton");
     engine.unregister_singleton(singleton_name);
     singleton.free();
 }
@@ -41,10 +39,11 @@ pub struct GR3DEngineSingleton {
 #[godot_api]
 impl IObject for GR3DEngineSingleton {
     fn init(base: Base<Object>) -> Self {
+        let log_level = LogLevel::Debug;
         Self {
-            pipeline: GR3DPhysicsPipeline::new(),
+            pipeline: GR3DPhysicsPipeline::new(log_level),
             gizmo_iids: Vec::new(),
-            log_level: LogLevel::Info,
+            log_level,
             base,
         }
     }
