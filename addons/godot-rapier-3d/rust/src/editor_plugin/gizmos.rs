@@ -3,8 +3,9 @@ use godot::engine::EditorNode3DGizmoPlugin;
 use godot::engine::GDScript;
 use godot::prelude::*;
 
-pub const GIZMO_PATHS: &'static [&'static str] =
-    &["res://addons/godot-rapier-3d/gdscript/gizmos/collider3D.gd"];
+pub const GIZMO_PATHS: &'static [&'static str] = &[
+    "res://addons/godot-rapier-3d/gdscript/gizmos/collider3D.gd",
+];
 
 pub fn add_all_gizmos(plugin: &mut GR3DEditorPlugin) {
     for path in GIZMO_PATHS {
@@ -13,34 +14,37 @@ pub fn add_all_gizmos(plugin: &mut GR3DEditorPlugin) {
 }
 
 pub fn remove_all_gizmos(plugin: &mut GR3DEditorPlugin) {
-    let ston = crate::utils::get_engine_singleton();
-    if ston.is_some() {
-        let mut singleton = ston.unwrap();
-        let gizmo_iids = &mut singleton.bind_mut().gizmo_iids;
-        for iid in gizmo_iids.clone() {
-            remove_gizmo(plugin, iid);
-        }
-        gizmo_iids.clear();
+    let mut engine = crate::get_engine!();
+    let mut bind = engine.bind_mut();
+    for iid in bind.gizmo_iids.clone() {
+        remove_gizmo(plugin, iid);
     }
+    bind.gizmo_iids.clear();
 }
 
 fn add_gizmo(plugin: &mut GR3DEditorPlugin, path: &str) {
-    if let Ok(mut gizmo_script) = try_load::<GDScript>(path) {
-        let ston = crate::utils::get_engine_singleton();
-        if ston.is_some() {
-            let mut singleton = ston.unwrap();
-            let gizmo_iids = &mut singleton.bind_mut().gizmo_iids;
-
-            let script_obj: Variant = gizmo_script.instantiate(&[]);
-            let casted = Gd::<EditorNode3DGizmoPlugin>::from_variant(&script_obj);
-            let iid = casted.instance_id().to_i64();
-            plugin.base_mut().add_node_3d_gizmo_plugin(casted);
-            gizmo_iids.push(iid);
-            godot_print!("Added gizmo: {:?}", path);
+    let mut gizmo_script = match try_load::<GDScript>(path) {
+        Ok(script) => script,
+        _ => {
+            godot_error!("Could not load gizmo: {:?}", path);
+            return;
         }
-    } else {
-        godot_error!("Could not load gizmo: {:?}", path);
-    }
+    };
+    let mut engine = crate::get_engine!();
+    let mut bind = engine.bind_mut();
+    let script_obj: Variant = gizmo_script.instantiate(&[]);
+
+    let gizmo = match Gd::<EditorNode3DGizmoPlugin>::try_from_variant(&script_obj) {
+        Ok(gizmo) => gizmo,
+        Err(error) => {
+            godot_error!("Could not process gizmo script {:?}. Error: {:?}", path, error);
+            return;
+        }
+    };
+    let iid = gizmo.instance_id().to_i64();
+    plugin.base_mut().add_node_3d_gizmo_plugin(gizmo);
+    bind.gizmo_iids.push(iid);
+    godot_print!("Added gizmo: {:?}", path);
 }
 
 fn remove_gizmo(plugin: &mut GR3DEditorPlugin, iid: i64) {

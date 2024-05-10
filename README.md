@@ -71,6 +71,10 @@ These features are either important or required for creating networked games tha
 
 Luckily, Godot 4 provides a great [extension system][gdext-link] and [Rapier][rapier-link] provides these missing features. 🚀
 
+## Known issues
+
+- `Project -> Reload current project` can cause the engine to not load properly - errors will print to the godot console. These errors can be safely ignored. To eliminate them, close godot entirely and reopen your project from the project manager.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)

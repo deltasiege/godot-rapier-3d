@@ -24,18 +24,15 @@ pub fn remove_all_autoloads(plugin: &mut GR3DEditorPlugin) {
 fn add_autoload(plugin: &mut GR3DEditorPlugin, name: &str, path: &str) {
     // Call deferred so that Godot editor has time to detect Rust singleton first
     godot_print!("Adding autoload: {} -> {}", name, path);
-    plugin.base_mut().call_deferred(
-        StringName::from("add_autoload_singleton"),
-        &[
-            GString::from(name).to_variant(),
-            GString::from(path).to_variant(),
-        ],
-    );
+    plugin
+        .base_mut()
+        .call_deferred(
+            StringName::from("add_autoload_singleton"),
+            &[GString::from(name).to_variant(), GString::from(path).to_variant()]
+        );
 }
 
 fn remove_autoload(plugin: &mut GR3DEditorPlugin, name: &str) {
     godot_print!("Removing autoload: {}", name);
-    plugin
-        .base_mut()
-        .remove_autoload_singleton(GString::from(name));
+    plugin.base_mut().remove_autoload_singleton(GString::from(name));
 }

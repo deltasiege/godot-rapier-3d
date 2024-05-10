@@ -5,6 +5,7 @@ mod collider;
 mod debug_render_pipeline;
 mod editor_plugin;
 mod engine;
+mod log;
 mod physics_pipeline;
 mod physics_state;
 mod rigid_body;

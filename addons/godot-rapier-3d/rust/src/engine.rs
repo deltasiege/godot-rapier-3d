@@ -1,3 +1,4 @@
+use crate::log::{ LogLevel, Logger };
 use crate::physics_pipeline::GR3DPhysicsPipeline;
 use godot::builtin::PackedByteArray;
 use godot::engine::Engine;
@@ -5,17 +6,19 @@ use godot::engine::IObject;
 use godot::engine::Object;
 use godot::prelude::*;
 
+pub const ENGINE_SINGLETON_NAME: &str = "Rapier3DEngine";
+
 pub fn register_engine() {
     godot_print!("Registering Rapier3DEngine singleton");
     Engine::singleton().register_singleton(
-        crate::utils::get_engine_singleton_name(),
-        GR3DEngineSingleton::new_alloc().upcast(),
+        StringName::from(ENGINE_SINGLETON_NAME),
+        GR3DEngineSingleton::new_alloc().upcast()
     );
 }
 
 pub fn unregister_engine() {
     let mut engine = Engine::singleton();
-    let singleton_name = crate::utils::get_engine_singleton_name();
+    let singleton_name = StringName::from(ENGINE_SINGLETON_NAME);
 
     let singleton = engine
         .get_singleton(singleton_name.clone())
@@ -27,10 +30,11 @@ pub fn unregister_engine() {
 }
 
 #[derive(GodotClass)]
-#[class(base=Object)]
+#[class(base = Object)]
 pub struct GR3DEngineSingleton {
     pub pipeline: GR3DPhysicsPipeline,
     pub gizmo_iids: Vec<i64>, // Remembered so that gizmos can be removed
+    pub logger: Logger,
     base: Base<Object>,
 }
 
@@ -40,6 +44,7 @@ impl IObject for GR3DEngineSingleton {
         Self {
             pipeline: GR3DPhysicsPipeline::new(),
             gizmo_iids: Vec::new(),
+            logger: Logger::new(LogLevel::Info),
             base,
         }
     }
@@ -68,6 +73,11 @@ impl GR3DEngineSingleton {
     }
 
     #[func]
+    pub fn set_log_level(&mut self, level: LogLevel) {
+        self.logger.set_level(level);
+    }
+
+    #[func]
     pub fn print_debug_info(&self) {
         godot_print!(
             "Rigid body ids: {:?}
@@ -84,4 +94,31 @@ Collider ids: {:?}",
             godot_print!("Collider {:?}: {:?}", handle, collider.position());
         }
     }
+}
+
+#[macro_export]
+macro_rules! get_engine {
+    () => {
+        {
+            let gd_pointer = match
+                godot::engine::Engine::singleton().get_singleton(StringName::from("Rapier3DEngine"))
+            {
+                Some(gd_pointer) => gd_pointer,
+                None => {
+                    godot_error!("Could not obtain Rapier3DEngine singleton");
+                    return;
+                }
+            };
+        
+            let singleton = match gd_pointer.try_cast::<crate::engine::GR3DEngineSingleton>() {
+                Ok(singleton) => singleton,
+                Err(_) => {
+                    godot_error!("Could not cast to Rapier3DEngine singleton");
+                    return;
+                }
+            };
+        
+            singleton
+        }
+    };
 }

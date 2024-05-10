@@ -6,7 +6,7 @@ use rapier3d::prelude::*;
 
 pub struct GR3DPhysicsPipeline {
     pub rigid_body_ids: Dictionary, // gd node instance_id <-> rapier rb_handle_to_id()
-    pub collider_ids: Dictionary,   // gd node instance_id <-> rapier collider_handle_to_id()
+    pub collider_ids: Dictionary, // gd node instance_id <-> rapier collider_handle_to_id()
     physics_pipeline: PhysicsPipeline,
     pub state: GR3DPhysicsState,
     physics_hooks: (),
@@ -39,7 +39,7 @@ impl GR3DPhysicsPipeline {
             &mut self.state.ccd_solver,
             Some(&mut self.state.query_pipeline),
             &self.physics_hooks,
-            &self.event_handler,
+            &self.event_handler
         );
 
         self.sync_active_body_positions();
@@ -60,10 +60,7 @@ impl GR3DPhysicsPipeline {
             let rb = match self.state.rigid_body_set.get(*active_body_handle) {
                 Some(rb) => rb,
                 None => {
-                    godot_error!(
-                        "Pipeline: could not find active body {:?}",
-                        active_body_handle
-                    );
+                    godot_error!("Pipeline: could not find active body {:?}", active_body_handle);
                     continue;
                 }
             };
@@ -75,7 +72,7 @@ impl GR3DPhysicsPipeline {
     pub fn sync_transform_to_rapier(
         &self,
         rigid_body_handle: RigidBodyHandle,
-        rigid_body: &RigidBody,
+        rigid_body: &RigidBody
     ) {
         let g_pos = crate::utils::pos_rapier_to_godot(*rigid_body.translation());
         let g_rot = crate::utils::rot_rapier_to_godot(*rigid_body.rotation());
@@ -98,10 +95,7 @@ impl GR3DPhysicsPipeline {
         let mut node: Gd<RapierRigidBody3D> = match Gd::try_from_instance_id(instance_id) {
             Ok(node) => node,
             _ => {
-                godot_error!(
-                    "Pipeline: could not find node for active body {:?}",
-                    instance_id
-                );
+                godot_error!("Pipeline: could not find node for active body {:?}", instance_id);
                 return;
             }
         };
@@ -132,7 +126,7 @@ impl GR3DPhysicsPipeline {
             &mut self.state.collider_set,
             &mut self.state.impulse_joint_set,
             &mut self.state.multibody_joint_set,
-            true, // true = also remove colliders
+            true // true = also remove colliders
         );
         godot_print!("Pipeline: unregistered rigid body '{:?}'", handle);
         self.rigid_body_ids.remove(instance_id);
@@ -169,7 +163,7 @@ impl GR3DPhysicsPipeline {
     pub fn register_collider_with_parent(
         &mut self,
         class: &mut RapierCollider3D,
-        parent_handle: RigidBodyHandle,
+        parent_handle: RigidBodyHandle
     ) -> ColliderHandle {
         if self.collider_is_registered(class) {
             return class.handle;
@@ -180,7 +174,7 @@ impl GR3DPhysicsPipeline {
         let handle = self.state.collider_set.insert_with_parent(
             collider,
             parent_handle,
-            &mut self.state.rigid_body_set,
+            &mut self.state.rigid_body_set
         );
         let id = crate::utils::collider_handle_to_id(handle);
         self.collider_ids.set(instance_id, id);
@@ -191,11 +185,9 @@ impl GR3DPhysicsPipeline {
     pub fn set_collider_parent(
         &mut self,
         collider: ColliderHandle,
-        parent: Option<RigidBodyHandle>,
+        parent: Option<RigidBodyHandle>
     ) {
-        self.state
-            .collider_set
-            .set_parent(collider, parent, &mut self.state.rigid_body_set);
+        self.state.collider_set.set_parent(collider, parent, &mut self.state.rigid_body_set);
     }
 
     pub fn unregister_collider(&mut self, class: &mut RapierCollider3D) {
@@ -205,7 +197,7 @@ impl GR3DPhysicsPipeline {
             handle,
             &mut self.state.island_manager,
             &mut self.state.rigid_body_set,
-            false,
+            false
         ); // false = don't wakeup parent rigid_body
         self.collider_ids.remove(instance_id);
         godot_print!("Pipeline: unregistered collider '{:?}'", handle);

@@ -6,7 +6,7 @@ use rapier3d::pipeline::*;
 use rapier3d::prelude::*;
 
 #[derive(GodotClass)]
-#[class(base=RefCounted)]
+#[class(base = RefCounted)]
 pub struct RapierDebugRenderPipeline {
     debug_render_pipeline: DebugRenderPipeline,
     debug_render_backend: RapierDebugRenderBackend,
@@ -19,7 +19,7 @@ impl IRefCounted for RapierDebugRenderPipeline {
         Self {
             debug_render_pipeline: DebugRenderPipeline::new(
                 DebugRenderStyle::default(),
-                DebugRenderMode::COLLIDER_SHAPES,
+                DebugRenderMode::COLLIDER_SHAPES
             ),
             debug_render_backend: RapierDebugRenderBackend::new(),
             base,
@@ -36,21 +36,17 @@ impl RapierDebugRenderPipeline {
 
     #[func]
     pub fn render_colliders(&mut self) {
-        let ston = crate::utils::get_engine_singleton();
-        if ston.is_some() {
-            let mut singleton = ston.unwrap();
-            let state: &mut GR3DPhysicsState = &mut singleton.bind_mut().pipeline.state;
-            let rigid_body_set: &RigidBodySet = &state.rigid_body_set;
-            let collider_set: &ColliderSet = &state.collider_set;
+        let engine = crate::get_engine!();
+        let bind = engine.bind();
+        let state: &GR3DPhysicsState = &bind.pipeline.state;
+        let rigid_body_set: &RigidBodySet = &state.rigid_body_set;
+        let collider_set: &ColliderSet = &state.collider_set;
 
-            self.debug_render_pipeline.render_colliders(
-                &mut self.debug_render_backend,
-                rigid_body_set,
-                collider_set,
-            );
-        } else {
-            godot_error!("RapierDebugRenderPipeline::render_colliders - Could not access Rapier3DEngine singleton");
-        }
+        self.debug_render_pipeline.render_colliders(
+            &mut self.debug_render_backend,
+            rigid_body_set,
+            collider_set
+        );
     }
 }
 
@@ -72,7 +68,7 @@ impl DebugRenderBackend for RapierDebugRenderBackend {
         _object: DebugRenderObject<'_>,
         a: Point<Real>,
         b: Point<Real>,
-        color: [f32; 4],
+        color: [f32; 4]
     ) {
         let debugger_node = &mut self.debugger_node;
         match debugger_node {
@@ -81,14 +77,19 @@ impl DebugRenderBackend for RapierDebugRenderBackend {
                     Variant::from(Vector3::new(a.x as f32, a.y as f32, a.z as f32)),
                     Variant::from(Vector3::new(b.x as f32, b.y as f32, b.z as f32)),
                     Variant::from(
-                        Color::from_hsv(color[0] as f64, color[1] as f64, color[2] as f64)
-                            .with_alpha(color[3]),
+                        Color::from_hsv(
+                            color[0] as f64,
+                            color[1] as f64,
+                            color[2] as f64
+                        ).with_alpha(color[3])
                     ),
                 ];
                 node.call(StringName::from("_draw_line"), args);
             }
             None => {
-                godot_error!("RapierDebugRenderBackend::draw_line - Trying to draw_line but no debugger node registered");
+                godot_error!(
+                    "RapierDebugRenderBackend::draw_line - Trying to draw_line but no debugger node registered"
+                );
             }
         }
     }

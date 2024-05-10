@@ -1,4 +1,3 @@
-use crate::engine::GR3DEngineSingleton;
 use godot::builtin::Array as GArray;
 use godot::builtin::Quaternion as GQuaternion;
 use godot::builtin::Vector3 as GVector;
@@ -8,30 +7,10 @@ use nalgebra::Vector3 as NAVector;
 use rapier3d::math::Rotation;
 use rapier3d::prelude::*;
 
-pub const ENGINE_SINGLETON_NAME: &str = "Rapier3DEngine";
-
-pub fn get_engine_singleton() -> Option<Gd<GR3DEngineSingleton>> {
-    let gd_pointer = godot::engine::Engine::singleton().get_singleton(get_engine_singleton_name());
-
-    match gd_pointer {
-        Some(gd_pointer) => {
-            let casted = gd_pointer.cast::<GR3DEngineSingleton>();
-            Some(casted)
-        }
-        None => {
-            godot_error!("Could not find Rapier3D singleton");
-            None
-        }
-    }
-}
-
-pub fn get_engine_singleton_name() -> StringName {
-    StringName::from(ENGINE_SINGLETON_NAME)
-}
-
 pub fn rot_godot_to_rapier(rot: GQuaternion) -> Rotation<Real> {
-    let result =
-        Rotation::from_quaternion(NAQuaternion::new(-1.0 * rot.z, rot.y, -1.0 * rot.x, rot.w));
+    let result = Rotation::from_quaternion(
+        NAQuaternion::new(-1.0 * rot.z, rot.y, -1.0 * rot.x, rot.w)
+    );
     result
 }
 

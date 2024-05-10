@@ -8,7 +8,7 @@ use godot::prelude::*;
 use rapier3d::prelude::*;
 
 #[derive(GodotClass)]
-#[class(base=Node3D)]
+#[class(base = Node3D)]
 pub struct RapierCollider3D {
     #[var]
     pub id: Array<Variant>, // ColliderHandle::into_raw_parts
@@ -66,54 +66,54 @@ impl INode3D for RapierCollider3D {
             Node3DNotification::Unparented => self.on_unparented(),
             Node3DNotification::TransformChanged => self.on_transform_changed(),
             _ => {}
-        };
+        }
     }
 }
 
 #[godot_api]
 impl RapierCollider3D {
     fn register(&mut self) {
-        let ston = crate::utils::get_engine_singleton();
-        if ston.is_some() {
-            let mut singleton = ston.unwrap();
-            let pipeline = &mut singleton.bind_mut().pipeline;
-            let handle = pipeline.register_collider(self);
-            self.handle = handle;
-            self.id = crate::utils::collider_handle_to_id(handle);
-
-            let collider = pipeline.get_collider_mut(self.handle);
-
-            match collider {
-                Some(collider) => {
-                    self.sync_transforms_to_godot(collider);
-                }
-                None => {
-                    godot_error!("RapierCollider3D on_enter_tree - could not find collider {:?} after registering", self.handle);
-                    return;
-                }
+        let mut engine = crate::get_engine!();
+        let mut bind = engine.bind_mut();
+        let handle = bind.pipeline.register_collider(self);
+        self.handle = handle;
+        self.id = crate::utils::collider_handle_to_id(handle);
+        let collider = match bind.pipeline.get_collider_mut(self.handle) {
+            Some(collider) => collider,
+            None => {
+                godot_error!(
+                    "RapierCollider3D register - could not find collider {:?} in pipeline",
+                    self.handle
+                );
+                return;
             }
-        }
+        };
+        self.sync_transforms_to_godot(collider);
+        godot_print!("RapierCollider3D registered {:?}", handle);
     }
 
     fn unregister(&mut self) {
-        let ston = crate::utils::get_engine_singleton();
-        if ston.is_some() {
-            ston.unwrap().bind_mut().pipeline.unregister_collider(self);
-        }
+        let mut engine = crate::get_engine!();
+        engine.bind_mut().pipeline.unregister_collider(self);
+        godot_print!("RapierCollider3D unregistered {:?}", self.handle);
+        self.handle = ColliderHandle::invalid();
+        self.id = Array::new();
     }
 
     fn attach_extensions_reloaded_signal(&mut self) {
         let sig = Signal::from_object_signal(
             &GDExtensionManager::singleton(),
-            StringName::from("extensions_reloaded"),
+            StringName::from("extensions_reloaded")
         );
         let cb = Callable::from_object_method(&self.to_gd(), StringName::from("_on_hot_reload"));
         let already_connected = sig.is_connected(cb.clone());
         if already_connected {
             return;
         }
-        GDExtensionManager::singleton()
-            .connect(StringName::from("extensions_reloaded"), cb.clone());
+        GDExtensionManager::singleton().connect(
+            StringName::from("extensions_reloaded"),
+            cb.clone()
+        );
         self.hot_reload_cb = cb;
     }
 
@@ -121,7 +121,7 @@ impl RapierCollider3D {
         if !self.hot_reload_cb.is_null() {
             GDExtensionManager::singleton().disconnect(
                 StringName::from("extensions_reloaded"),
-                self.hot_reload_cb.clone(),
+                self.hot_reload_cb.clone()
             );
         }
     }
@@ -130,20 +130,20 @@ impl RapierCollider3D {
     fn _on_hot_reload(&mut self) {
         godot_print!("RapierCollider3D _on_hot_reload {:?}", self.handle);
         self.base_mut().set_notify_transform(false);
-        self.unregister();
-        self.register();
+        let _ = self.unregister();
+        let _ = self.register();
         self.base_mut().set_notify_transform(true);
     }
 
     fn on_enter_tree(&mut self) {
-        self.register();
+        let _ = self.register();
         self.attach_extensions_reloaded_signal();
         self.base_mut().set_notify_transform(true);
     }
 
     fn on_exit_tree(&mut self) {
         self.base_mut().set_notify_transform(false);
-        self.unregister();
+        let _ = self.unregister();
         self.detach_extensions_reloaded_signal();
     }
 
@@ -152,50 +152,52 @@ impl RapierCollider3D {
             return;
         }
         self.notify_parent = false;
-        let _res = self
-            .base_mut()
-            .try_call_deferred(StringName::from("_on_parented"), &[]); // Collider registering needs to be defferred so that RigidBodies are already registered
+        let _res = self.base_mut().try_call_deferred(StringName::from("_on_parented"), &[]); // Collider registering needs to be defferred so that RigidBodies are already registered
     }
 
     #[func]
     fn _on_parented(&mut self) {
-        let ston = crate::utils::get_engine_singleton();
-        if ston.is_some() {
-            let mut singleton = ston.unwrap();
-            let pipeline = &mut singleton.bind_mut().pipeline;
-
-            let parent = self.base().get_parent_node_3d();
-
-            match parent {
-                Some(parent) => {
-                    let is_rb = parent.is_class(GString::from("RapierRigidBody3D"));
-
-                    match is_rb {
-                        true => {
-                            let casted = parent.cast::<RapierRigidBody3D>();
-                            let class = casted.bind();
-
-                            if self.parent == Some(class.handle) {
-                                return;
-                            }
-
-                            let rb_exists = pipeline.state.rigid_body_set.contains(class.handle);
-                            if !rb_exists {
-                                godot_error!("RapierCollider3D on_parented - trying to parent to invalid rigid body {:?}", class.handle);
-                                return;
-                            }
-                            self.parent = Some(class.handle);
-                            pipeline.unregister_collider(self);
-                            let handle = pipeline.register_collider_with_parent(self, class.handle);
-                            self.handle = handle;
-                            self.id = crate::utils::collider_handle_to_id(handle);
-                        }
-                        false => self.clear_parent(pipeline),
-                    }
-                }
-                None => self.clear_parent(pipeline),
+        let mut engine = crate::get_engine!();
+        let mut bind = engine.bind_mut();
+        let parent = match self.base().get_parent_node_3d() {
+            Some(parent) => parent,
+            None => {
+                self.clear_parent(&mut bind.pipeline);
+                return;
             }
+        };
+        let casted = match parent.is_class(GString::from("RapierRigidBody3D")) {
+            true => parent.cast::<RapierRigidBody3D>(),
+            false => {
+                // Parented to something that is not a rigid body
+                self.clear_parent(&mut bind.pipeline);
+                self.notify_parent = true;
+                return;
+            }
+        };
+        let class = casted.bind();
+
+        if self.parent == Some(class.handle) {
+            // Parenting to already attached parent - do nothing
+            self.notify_parent = true;
+            return;
         }
+
+        if !bind.pipeline.state.rigid_body_set.contains(class.handle) {
+            // Trying to parent to rigid body that doesn't exist
+            godot_error!(
+                "RapierCollider3D _on_parented - could not find rigid body {:?} in pipeline",
+                class.handle
+            );
+            self.notify_parent = true;
+            return;
+        }
+
+        self.parent = Some(class.handle);
+        bind.pipeline.unregister_collider(self);
+        let handle = bind.pipeline.register_collider_with_parent(self, class.handle);
+        self.handle = handle;
+        self.id = crate::utils::collider_handle_to_id(handle);
         self.notify_parent = true;
     }
 
@@ -203,12 +205,9 @@ impl RapierCollider3D {
         if !self.notify_parent {
             return;
         }
-        let ston = crate::utils::get_engine_singleton();
-        if ston.is_some() {
-            let mut singleton = ston.unwrap();
-            let pipeline = &mut singleton.bind_mut().pipeline;
-            self.clear_parent(pipeline);
-        }
+        let mut engine = crate::get_engine!();
+        let mut bind = engine.bind_mut();
+        self.clear_parent(&mut bind.pipeline);
     }
 
     fn clear_parent(&mut self, pipeline: &mut GR3DPhysicsPipeline) {
@@ -217,23 +216,18 @@ impl RapierCollider3D {
     }
 
     fn on_transform_changed(&mut self) {
-        let ston = crate::utils::get_engine_singleton();
-        if ston.is_some() {
-            let mut singleton = ston.unwrap();
-            let pipeline = &mut singleton.bind_mut().pipeline;
-            let collider = pipeline.get_collider_mut(self.handle);
-
-            match collider {
-                Some(collider) => {
-                    self.sync_transforms_to_godot(collider);
-                }
-                None => {
-                    godot_error!(
-                        "RapierCollider3D on_transform_changed - could not find collider {:?} in pipeline",
-                        self.handle
-                    );
-                    return;
-                }
+        let mut engine = crate::get_engine!();
+        let mut bind = engine.bind_mut();
+        match bind.pipeline.get_collider_mut(self.handle) {
+            Some(collider) => {
+                self.sync_transforms_to_godot(collider);
+            }
+            None => {
+                godot_error!(
+                    "RapierCollider3D on_transform_changed - could not find collider {:?} in pipeline",
+                    self.handle
+                );
+                return;
             }
         }
     }
@@ -253,11 +247,12 @@ impl RapierCollider3D {
     pub fn build(&self) -> Collider {
         let shape = match self.shape {
             ShapeType::Ball => SharedShape::ball(self.ball_radius),
-            ShapeType::Cuboid => SharedShape::cuboid(
-                self.cuboid_half_extents.x,
-                self.cuboid_half_extents.y,
-                self.cuboid_half_extents.z,
-            ),
+            ShapeType::Cuboid =>
+                SharedShape::cuboid(
+                    self.cuboid_half_extents.x,
+                    self.cuboid_half_extents.y,
+                    self.cuboid_half_extents.z
+                ),
         };
         let collider = ColliderBuilder::new(shape)
             .restitution(self.restitution)
@@ -267,16 +262,14 @@ impl RapierCollider3D {
     }
 
     pub fn reregister(&mut self) {
-        let ston = crate::utils::get_engine_singleton();
-        if ston.is_some() {
-            let mut singleton = ston.unwrap();
-            let pipeline = &mut singleton.bind_mut().pipeline;
-            pipeline.unregister_collider(self);
-            let handle = pipeline.register_collider(self);
-            self.handle = handle;
-            self.id = crate::utils::collider_handle_to_id(handle);
-            self.sync_transforms_to_godot(pipeline.get_collider_mut(handle).unwrap());
-        }
+        let mut engine = crate::get_engine!();
+        let mut bind = engine.bind_mut();
+        bind.pipeline.unregister_collider(self);
+        let handle = bind.pipeline.register_collider(self);
+        self.handle = handle;
+        self.id = crate::utils::collider_handle_to_id(handle);
+        let collider = bind.pipeline.get_collider_mut(self.handle).unwrap();
+        self.sync_transforms_to_godot(collider);
     }
 
     // This is gross - don't want a function for every single property
@@ -286,33 +279,33 @@ impl RapierCollider3D {
     fn set_shape(&mut self, shape: ShapeType) {
         self.shape = shape;
         self.base_mut().update_gizmos();
-        self.reregister();
+        let _ = self.reregister();
     }
 
     #[func]
     fn set_ball_radius(&mut self, radius: f32) {
         self.ball_radius = radius;
         self.base_mut().update_gizmos();
-        self.reregister();
+        let _ = self.reregister();
     }
 
     #[func]
     fn set_cuboid_half_extents(&mut self, half_extents: Vector3) {
         self.cuboid_half_extents = half_extents;
         self.base_mut().update_gizmos();
-        self.reregister();
+        let _ = self.reregister();
     }
 
     #[func]
     fn set_restitution(&mut self, restitution: f32) {
         self.restitution = restitution;
-        self.reregister();
+        let _ = self.reregister();
     }
 
     #[func]
     fn set_friction(&mut self, friction: f32) {
         self.friction = friction;
-        self.reregister();
+        let _ = self.reregister();
     }
 }
 
