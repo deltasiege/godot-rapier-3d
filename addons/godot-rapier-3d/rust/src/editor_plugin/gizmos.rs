@@ -44,6 +44,7 @@ fn add_gizmo(plugin: &mut GR3DEditorPlugin, path: &str) {
     let iid = gizmo.instance_id().to_i64();
     plugin.base_mut().add_node_3d_gizmo_plugin(gizmo);
     bind.gizmo_iids.push(iid);
+    crate::error!(bind; "Hi error macro {:?}", 24);
     godot_print!("Added gizmo: {:?}", path);
 }
 

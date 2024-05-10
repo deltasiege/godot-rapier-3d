@@ -1,4 +1,4 @@
-use crate::log::{ LogLevel, Logger };
+use crate::log::LogLevel;
 use crate::physics_pipeline::GR3DPhysicsPipeline;
 use godot::builtin::PackedByteArray;
 use godot::engine::Engine;
@@ -34,7 +34,7 @@ pub fn unregister_engine() {
 pub struct GR3DEngineSingleton {
     pub pipeline: GR3DPhysicsPipeline,
     pub gizmo_iids: Vec<i64>, // Remembered so that gizmos can be removed
-    pub logger: Logger,
+    pub log_level: LogLevel,
     base: Base<Object>,
 }
 
@@ -44,7 +44,7 @@ impl IObject for GR3DEngineSingleton {
         Self {
             pipeline: GR3DPhysicsPipeline::new(),
             gizmo_iids: Vec::new(),
-            logger: Logger::new(LogLevel::Info),
+            log_level: LogLevel::Info,
             base,
         }
     }
@@ -70,11 +70,6 @@ impl GR3DEngineSingleton {
         let state = self.pipeline.state.unpack(slice);
         self.pipeline.state = state;
         self.pipeline.sync_all_body_positions();
-    }
-
-    #[func]
-    pub fn set_log_level(&mut self, level: LogLevel) {
-        self.logger.set_level(level);
     }
 
     #[func]
@@ -119,6 +114,31 @@ macro_rules! get_engine {
             };
         
             singleton
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! get_engine_checked {
+    () => {
+        {
+            match
+                godot::engine::Engine::singleton().get_singleton(StringName::from("Rapier3DEngine"))
+            {
+                Some(gd_pointer) => {
+                    match gd_pointer.try_cast::<crate::engine::GR3DEngineSingleton>() {
+                        Ok(singleton) => Ok(singleton),
+                        Err(_) => {
+                            godot_error!("Could not cast to Rapier3DEngine singleton");
+                            Err("Could not cast to Rapier3DEngine singleton")
+                        },
+                    }
+                },
+                None => {
+                    godot_error!("Could not cast to Rapier3DEngine singleton");
+                    Err("Could not cast to Rapier3DEngine singleton")
+                },
+            }
         }
     };
 }
