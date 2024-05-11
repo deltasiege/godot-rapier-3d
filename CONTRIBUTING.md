@@ -50,6 +50,6 @@ Please raise an issue and provide reproducible steps or a minimal reproduction p
 - [ ] Determinism test bench
 - [ ] Collision layers
 - [ ] Save/load snapshots to/from resource files
-- [ ] Editor tool to facilitate simulating in editor
+- [ ] Editor UI to facilitate simulating in editor
 - [ ] Gizmo handles for collider shapes
 - [ ] Add to Godot asset library

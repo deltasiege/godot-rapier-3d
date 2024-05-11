@@ -1,6 +1,5 @@
-[gd_scene load_steps=8 format=3 uid="uid://cwkqaxdhe1ifp"]
+[gd_scene load_steps=7 format=3 uid="uid://cwkqaxdhe1ifp"]
 
-[ext_resource type="PackedScene" uid="uid://qdndetibeu4v" path="res://assets/physics_controls.tscn" id="1_nybqx"]
 [ext_resource type="Texture2D" uid="uid://can4es4ninsif" path="res://assets/wasteland_clouds_puresky_1k.exr" id="2_2tfjf"]
 [ext_resource type="Material" uid="uid://dg4h7q2si3ptc" path="res://assets/dbug_mat_bg.tres" id="2_2y3lv"]
 
@@ -21,8 +20,6 @@ sdfgi_enabled = true
 size = Vector2(100, 100)
 
 [node name="World" type="Node3D"]
-
-[node name="Rapier3DPhysicsPipelineControls" parent="." instance=ExtResource("1_nybqx")]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.808391, 0.328613, -0.488383, 0, 0.829671, 0.558252, 0.588646, -0.451286, 0.670699, 0, 5, 0)

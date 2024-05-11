@@ -7,6 +7,7 @@ var _project_settings = [
 	{ "name": "debug/rapier_3d/debug_in_game", "type": TYPE_BOOL, "default": true },
 	{ "name": "debug/rapier_3d/debug_in_editor", "type": TYPE_BOOL, "default": true },
 	{ "name": "debug/rapier_3d/show_colliders", "type": TYPE_BOOL, "default": true },
+	{ "name": "debug/rapier_3d/show_ui", "type": TYPE_BOOL, "default": true },
 	{ "name": "physics/rapier_3d/gravity_vector", "type": TYPE_VECTOR3, "default": Vector3(0, -9.8, 0) },
 ]
 
