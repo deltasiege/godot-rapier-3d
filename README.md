@@ -1,8 +1,12 @@
 <p align="center">
-<img src="https://github.com/deltasiege/godot-rapier-3d/blob/main/assets/gr3d-logo.svg" width="256px"/>
+<img src="assets/gr3d-logo.svg" width="64px"/>
 </p>
 
 # Godot Rapier 3D 🤺
+
+<p align="center">
+<img src="assets/gr3d-vid.gif"/>
+</p>
 
 ## What is this?
 
@@ -26,7 +30,7 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 
 ## Quickstart
 
-1. Download or clone [addons/godot-rapier-3d](addons/godot-rapier-3d/) to the same directory within your Godot project
+1. Download or clone [addons/godot-rapier-3d](addons/godot-rapier-3d/) to the same directory within your Godot project - [download-directory.github.io/](https://download-directory.github.io/) is great for this
 1. Add some RapierRigidBody3D nodes to your scene and add a RapierCollider3D node as a child of each
 1. Call `Rapier3D.step()` from within a `_physics_process()` function, or as often as you like
 
@@ -39,7 +43,7 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 
 Your physics objects should simulate! 🎉
 
-Configure more options by searching for `Rapier 3D` in your project settings
+Configure simulation and debug options by searching for `Rapier 3D` in your project settings
 
 ## Saving and loading state
 
