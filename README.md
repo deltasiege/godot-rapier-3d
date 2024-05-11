@@ -35,6 +35,8 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 
 Your physics objects should simulate! 🎉
 
+Configure more options by searching for `Rapier 3D` in your project settings
+
 ## Saving and loading state
 
 Call `Rapier3D.get_state()` anywhere in your code to get a [`PackedByteArray`](https://docs.godotengine.org/en/stable/classes/class_packedbytearray.html) representing the current physics state.
