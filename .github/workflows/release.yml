@@ -1,0 +1,116 @@
+# https://github.com/marketplace/actions/build-rust-projects-with-cross
+# https://github.com/houseabsolute/precious/blob/master/.github/workflows/ci.yml
+name: Release binaries
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "addons/godot-rapier-3d/rust/**"
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+" # Regex for a version number such as 0.2.1
+
+defaults:
+  run:
+    working-directory: addons/godot-rapier-3d/rust
+
+jobs:
+  release:
+    name: Release - ${{ matrix.release_for }}
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      matrix:
+        include:
+          - release_for: linux-x32-gnu
+            runner: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            compiler: cross
+            archive: linux-gnu-x86_32.tar.gz
+            bin: libgodot_rapier_3d.so
+
+          # - release_for: macos-x64-darwin
+          #   os: macos-latest
+          #   target: x86_64-apple-darwin
+          #   bin: godot_rapier_3d.macos.release.framework
+          #   archive: macos-darwin-x86_64.tar.gz
+
+          # - release_for: windows-x64-gnu
+          #   os: windows-latest
+          #   target: x86_64-pc-windows-gnu
+          #   bin: godot_rapier_3d.windows.release.x86_64.dll
+          #   archive: windows-gnu-x86_64.zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Cross
+        if: matrix.compiler == 'cross'
+        shell: bash
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+          cargo binstall --no-confirm cross
+
+      # - name: Determine version
+      #   shell: bash
+      #   run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      # - name: Build binary
+      #   uses: houseabsolute/actions-rust-cross@v0
+      #   with:
+      #     command: build
+      #     target: ${{ matrix.target }}
+      #     args: "--locked --release"
+      #     strip: true
+      #     working-directory: "addons/godot-rapier-3d/rust"
+
+      - name: Build binary
+        run: ${{ matrix.compiler }} build --verbose --locked --release --target ${{ matrix.target }}
+
+      - name: List target dir
+        shell: bash
+        run: |
+          ls -la ./target
+          echo ---
+          ls -la ./target/release
+          echo ---
+          ls -la ./target/${{ matrix.target }}/release
+
+      - name: Package as archive
+        shell: bash
+        run: |
+          cd target/${{ matrix.target }}/release
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+            7z a ../../../godot_rapier_3d-${{ matrix.archive }} ${{ matrix.bin }}
+          else
+            tar czvf ../../../godot_rapier_3d-${{ matrix.archive }} ${{ matrix.bin }}
+          fi
+          cd -
+
+      - name: List dirs
+        shell: bash
+        run: |
+          echo './'
+          ls -la ./
+          echo ---
+          echo './target/<matrix.target>/release'
+          ls -la ./target/${{ matrix.target }}/release
+        if: failure()
+
+      - name: Publish release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot_rapier_3d-${{ matrix.release_for }}
+          path: "addons/godot-rapier-3d/rust/godot_rapier_3d-*"
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: "addons/godot-rapier-3d/rust/godot_rapier_3d-*"
+          body_path: CHANGES.md
