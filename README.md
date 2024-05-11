@@ -1,7 +1,3 @@
-<p align="center">
-<img src="assets/gr3d-logo.svg" width="64px"/>
-</p>
-
 # Godot Rapier 3D 🤺
 
 <p align="center">
