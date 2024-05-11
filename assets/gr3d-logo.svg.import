@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bwhp6xiqft1av"
-path="res://.godot/imported/rapier-logo.svg-5effccbe9b50a581a417e42e750b4651.ctex"
+uid="uid://b0ty462ppixyk"
+path="res://.godot/imported/gr3d-logo.svg-9a1833ebe2ab97eef8bfa5f6612532f2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/godot-rapier-3d/icons/rapier-logo.svg"
-dest_files=["res://.godot/imported/rapier-logo.svg-5effccbe9b50a581a417e42e750b4651.ctex"]
+source_file="res://assets/gr3d-logo.svg"
+dest_files=["res://.godot/imported/gr3d-logo.svg-9a1833ebe2ab97eef8bfa5f6612532f2.ctex"]
 
 [params]
 

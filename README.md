@@ -1,3 +1,7 @@
+<p align="center">
+<img src="https://github.com/deltasiege/godot-rapier-3d/blob/main/assets/gr3d-logo.svg" width="256px"/>
+</p>
+
 # Godot Rapier 3D 🤺
 
 ## What is this?

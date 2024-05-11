@@ -8,6 +8,3 @@
 [node name="FlyCam" parent="." instance=ExtResource("2_6eyky")]
 
 [node name="World" parent="." instance=ExtResource("4_qrxp7")]
-
-[node name="RapierRigidBody3D" type="RapierRigidBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.46362, 0)
