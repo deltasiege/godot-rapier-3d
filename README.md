@@ -31,6 +31,7 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 ## Quickstart
 
 1. Download or clone [addons/godot-rapier-3d](addons/godot-rapier-3d/) to the same directory within your Godot project - [download-directory.github.io/](https://download-directory.github.io/) is great for this
+1. (temporary! downloadable release binaries coming soon) - Install rust and run `cargo build` in the `addons/godot-rapier-3d/rust` directory
 1. Add some RapierRigidBody3D nodes to your scene and add a RapierCollider3D node as a child of each
 1. Call `Rapier3D.step()` from within a `_physics_process()` function, or as often as you like
 
