@@ -16,7 +16,7 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 
 ### Features
 
-- Cross platform determinism
+- Cross platform determinism (TBC)
 - Physics state manual stepping
 - Physics state saving & loading
 
