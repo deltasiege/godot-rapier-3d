@@ -133,7 +133,7 @@ macro_rules! debug {
                         crate::log::log(engine.bind().log_level, crate::log::LogLevel::Debug, &format!($($arg),*));
                     },
                     Err(_) => {
-                        godot_print!("Failed to print debug message: {}", &format!($($arg),*)); // foo
+                        godot_print!("Failed to print debug message: {}", &format!($($arg),*));
                     },
                 };
             }

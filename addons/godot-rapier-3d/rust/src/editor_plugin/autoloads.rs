@@ -8,10 +8,18 @@ pub const AUTOLOAD_PATHS: &'static [&'static str] = &[
 ];
 
 pub fn add_all_autoloads(plugin: &mut GR3DEditorPlugin) {
+    let singleton_list: PackedStringArray = godot::engine::Engine
+        ::singleton()
+        .get_singleton_list()
+        .clone();
+
     for idx in 0..AUTOLOAD_NAMES.len() {
         let name = AUTOLOAD_NAMES[idx];
         let path = AUTOLOAD_PATHS[idx];
-        add_autoload(plugin, name, path);
+        let exists = singleton_list.contains(GString::from(name));
+        if !exists {
+            add_autoload(plugin, name, path);
+        }
     }
 }
 

@@ -31,7 +31,7 @@ impl IRefCounted for RapierDebugRenderPipeline {
 impl RapierDebugRenderPipeline {
     #[func]
     pub fn register_debugger(&mut self, debugger_node: Gd<Node3D>) {
-        self.debug_render_backend.debugger_node = Some(debugger_node); //.cast::<Node3D>()
+        self.debug_render_backend.debugger_node = Some(debugger_node);
     }
 
     #[func]

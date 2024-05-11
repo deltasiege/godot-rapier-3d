@@ -24,6 +24,7 @@ func _exit_tree():
 	ProjectSettings.disconnect("settings_changed", self._on_settings_changed)
 	debug_lines_node.free()
 	debug_ui_node.free()
+	debug_render_pipeline = null
 
 func _on_settings_changed():
 	run_in_game = ProjectSettings.get_setting("debug/rapier_3d/debug_in_game")
