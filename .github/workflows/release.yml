@@ -10,9 +10,11 @@ on:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+" # Regex for a version number such as 0.2.1
 
-defaults:
-  run:
-    working-directory: addons/godot-rapier-3d/rust
+env:
+  ADDON_DIR: addons/godot-rapier-3d
+  RUST_DIR: addons/godot-rapier-3d/rust
+  BIN_DIR: addons/godot-rapier-3d/bin
+  # CARGO_TARGET_DIR: ../bin # addons/godot-rapier-3d/bin (relative to RUST_DIR)
 
 jobs:
   release:
@@ -22,24 +24,54 @@ jobs:
     strategy:
       matrix:
         include:
-          - release_for: linux-x32-gnu
+          - release_for: linux-32-gnu
             runner: ubuntu-latest
             target: i686-unknown-linux-gnu
             compiler: cross
             archive: linux-gnu-x86_32.tar.gz
             bin: libgodot_rapier_3d.so
 
-          # - release_for: macos-x64-darwin
-          #   os: macos-latest
-          #   target: x86_64-apple-darwin
-          #   bin: godot_rapier_3d.macos.release.framework
-          #   archive: macos-darwin-x86_64.tar.gz
+          - release_for: linux-64-gnu
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            compiler: cross
+            archive: linux-gnu-x86_64.tar.gz
+            bin: libgodot_rapier_3d.so
 
-          # - release_for: windows-x64-gnu
-          #   os: windows-latest
-          #   target: x86_64-pc-windows-gnu
-          #   bin: godot_rapier_3d.windows.release.x86_64.dll
-          #   archive: windows-gnu-x86_64.zip
+          - release_for: linux-64-arm
+            runner: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            compiler: cross
+            archive: linux-arm-x86_64.tar.gz
+            bin: libgodot_rapier_3d.so
+
+          - release_for: windows-32-msvc
+            runner: windows-latest
+            target: i686-pc-windows-msvc
+            compiler: cross
+            archive: windows-msvc-x86_32.zip
+            bin: godot_rapier_3d.dll
+
+          - release_for: windows-64-msvc
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            compiler: cross
+            archive: windows-msvc-x86_64.zip
+            bin: godot_rapier_3d.dll
+
+          - release_for: macos-amd64
+            runner: macos-latest
+            target: x86_64-apple-darwin
+            compiler: cross
+            bin: libgodot_rapier_3d.dylib
+            archive: macos-amd-x86_64.tar.gz
+
+          - release_for: macos-arm64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+            compiler: cross
+            bin: libgodot_rapier_3d.dylib
+            archive: macos-arm-x86_64.tar.gz
 
     steps:
       - uses: actions/checkout@v4
@@ -55,62 +87,47 @@ jobs:
         run: |
           curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
           cargo binstall --no-confirm cross
-
-      # - name: Determine version
-      #   shell: bash
-      #   run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-
-      # - name: Build binary
-      #   uses: houseabsolute/actions-rust-cross@v0
-      #   with:
-      #     command: build
-      #     target: ${{ matrix.target }}
-      #     args: "--locked --release"
-      #     strip: true
-      #     working-directory: "addons/godot-rapier-3d/rust"
+        working-directory: ${{ env.RUST_DIR }}
 
       - name: Build binary
         run: ${{ matrix.compiler }} build --verbose --locked --release --target ${{ matrix.target }}
+        working-directory: ${{ env.RUST_DIR }}
 
-      - name: List target dir
+      - name: Move binary
         shell: bash
         run: |
-          ls -la ./target
-          echo ---
-          ls -la ./target/release
-          echo ---
-          ls -la ./target/${{ matrix.target }}/release
+          mkdir ${{ env.BIN_DIR }}
+          mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin }} ${{ env.BIN_DIR }}
 
       - name: Package as archive
         shell: bash
         run: |
-          cd target/${{ matrix.target }}/release
           if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
-            7z a ../../../godot_rapier_3d-${{ matrix.archive }} ${{ matrix.bin }}
+            7z a godot-rapier-3d--${{ matrix.archive }} -xr!rust ./addons/
           else
-            tar czvf ../../../godot_rapier_3d-${{ matrix.archive }} ${{ matrix.bin }}
+            tar czvf godot-rapier-3d--${{ matrix.archive }} --exclude=rust ./addons/godot-rapier-3d/
           fi
-          cd -
 
       - name: List dirs
         shell: bash
         run: |
-          echo './'
+          echo 'ls -la ./'
           ls -la ./
           echo ---
-          echo './target/<matrix.target>/release'
-          ls -la ./target/${{ matrix.target }}/release
+          echo 'ls -la ./ ${{ env.RUST_DIR }}'
+          ls -la ./ ${{ env.RUST_DIR }}
         if: failure()
 
       - name: Publish release artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: godot_rapier_3d-${{ matrix.release_for }}
-          path: "addons/godot-rapier-3d/rust/godot_rapier_3d-*"
+          name: godot-rapier-3d-${{ matrix.release_for }}
+          path: "godot-rapier-3d-*"
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          files: "addons/godot-rapier-3d/rust/godot_rapier_3d-*"
+          files: "godot-rapier-3d-*"
           body_path: CHANGES.md
+          generate_release_notes: true
