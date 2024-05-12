@@ -77,7 +77,7 @@ These features are either important or required for creating networked games tha
 
 Luckily, Godot 4 provides a great [extension system][gdext-link] and [Rapier][rapier-link] provides these missing features. 🚀
 
-### Limitations
+## Limitations
 
 - No mobile support ([godot-rust](https://github.com/godot-rust/gdext/issues/24))
 
