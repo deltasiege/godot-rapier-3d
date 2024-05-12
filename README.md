@@ -12,13 +12,9 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 
 ### Features
 
-- Cross platform determinism (TBC)
+- Cross platform determinism (TBC - needs testing)
 - Physics state manual stepping
 - Physics state saving & loading
-
-### Limitations
-
-- No mobile support ([godot-rust](https://github.com/godot-rust/gdext/issues/24))
 
 ### Requirements
 
@@ -26,9 +22,9 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 
 ## Quickstart
 
-1. Download the latest release
+1. Download the [latest release](https://github.com/deltasiege/godot-rapier-3d/releases/latest)
 1. Extract the release archive into your godot project's root directory
-1. If your Godot project is already open, you may get console errors. Don't panic, just reload your project
+1. If your Godot project is already open, you may get console errors. These can be safely ignored by starting your game or reloading your project
 1. Add RapierRigidBody3D nodes to your scene and some RapierCollider3D + MeshInstance3D nodes as children of the rigid bodies
 1. Run your game
 
@@ -36,9 +32,7 @@ Your physics objects should simulate! 🎉
 
 ## Configuring
 
-By default, the Rapier3DDebugger autoload will start the physics simulation for you. To get more control over when you simulate, search for `Rapier 3D` in your project settings.
-
-Disable either the `Run in Game` or `Show UI` settings to prevent the debugger from simulating for you.
+By default, the `Rapier3DDebugger` autoload will start the physics simulation for you. To get more control over when you simulate, search for `Rapier 3D` in your project settings and disable either `Run in Game` or `Show UI` under the Debug category.
 
 Now you can call `Rapier3D.step()` from within any `_physics_process()` function, or as often as you like. This function advances the physics simulation by 1 step.
 
@@ -82,6 +76,10 @@ Currently Godot does not support [on-demand physics simulation](https://github.c
 These features are either important or required for creating networked games that use physics, depending on the chosen network architecture of your game.
 
 Luckily, Godot 4 provides a great [extension system][gdext-link] and [Rapier][rapier-link] provides these missing features. 🚀
+
+### Limitations
+
+- No mobile support ([godot-rust](https://github.com/godot-rust/gdext/issues/24))
 
 ## Known issues
 
