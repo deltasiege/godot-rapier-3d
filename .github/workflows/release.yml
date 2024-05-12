@@ -14,7 +14,6 @@ env:
   ADDON_DIR: addons/godot-rapier-3d
   RUST_DIR: addons/godot-rapier-3d/rust
   BIN_DIR: addons/godot-rapier-3d/bin
-  # CARGO_TARGET_DIR: ../bin # addons/godot-rapier-3d/bin (relative to RUST_DIR)
 
 jobs:
   release:
@@ -99,13 +98,20 @@ jobs:
           mkdir ${{ env.BIN_DIR }}
           mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin }} ${{ env.BIN_DIR }}
 
+      - name: Replace .gdextension config
+        shell: bash
+        run: |
+          rm godot-rapier-3d.gdextension
+          mv godot-rapier-3d.gdext.dist godot-rapier-3d.gdextension
+
       - name: Package as archive
         shell: bash
         run: |
           if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
             7z a godot-rapier-3d--${{ matrix.archive }} -xr!rust ./addons/
+            7z a godot-rapier-3d--${{ matrix.archive }} godot-rapier-3d.gdextension
           else
-            tar czvf godot-rapier-3d--${{ matrix.archive }} --exclude=rust ./addons/godot-rapier-3d/
+            tar czvf godot-rapier-3d--${{ matrix.archive }} --exclude=rust ./addons/godot-rapier-3d/ godot-rapier-3d.gdextension
           fi
 
       - name: List dirs
