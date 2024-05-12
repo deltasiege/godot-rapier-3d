@@ -1,6 +1,7 @@
 extends SubViewportContainer
 
 var play = false
+var should_show = false
 var initial_snapshot
 var snapshot
 var snapshot_hash
@@ -10,6 +11,8 @@ var snapshot_hash
 @onready var canvas = $SubViewport/CanvasLayer
 
 func _ready():
+	_update_should_show()
+	if !should_show: return
 	Rapier3D.physics_ready.connect(_on_physics_ready)
 	if !Engine.is_editor_hint(): 
 		play_button.set_pressed(true)
@@ -19,6 +22,7 @@ func _on_physics_ready():
 	initial_snapshot = _save()
 
 func _physics_process(_delta):
+	if !should_show: return
 	if play: Rapier3D.step()
 
 func _save() -> PackedByteArray:
@@ -30,13 +34,17 @@ func _save() -> PackedByteArray:
 func _load(snap):
 	Rapier3D.set_state(snap)
 
-func _on_settings_changed():
-	var should_show = true
+func _on_settings_changed(): _update_should_show()
+
+func _update_should_show():
 	var run_in_game = ProjectSettings.get_setting("debug/rapier_3d/debug_in_game")
 	var run_in_editor = ProjectSettings.get_setting("debug/rapier_3d/debug_in_editor")
-	canvas.visible = ProjectSettings.get_setting("debug/rapier_3d/show_ui")
+	var show_ui = ProjectSettings.get_setting("debug/rapier_3d/show_ui")
 	if Engine.is_editor_hint() and !run_in_editor: should_show = false
 	elif !Engine.is_editor_hint() and !run_in_game: should_show = false
+	elif !show_ui: should_show = false
+	else: should_show = true
+	canvas.visible = should_show
 
 func _on_reset_pressed(): _load(initial_snapshot)
 func _on_step_button_pressed(): Rapier3D.step()

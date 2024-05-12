@@ -8,7 +8,7 @@ on:
     paths:
       - "addons/godot-rapier-3d/rust/**"
     tags:
-      - "[0-9]+.[0-9]+.[0-9]+" # Regex for a version number such as 0.2.1
+      - "v[0-9]+.[0-9]+.[0-9]+" # Regex for a version number such as 0.2.1
 
 env:
   ADDON_DIR: addons/godot-rapier-3d
