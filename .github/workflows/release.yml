@@ -8,7 +8,7 @@ on:
     paths:
       - "addons/godot-rapier-3d/rust/**"
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+" # Regex for a version number such as 0.2.1
+      - "v[0-9]+.[0-9]+.[0-9]+" # Regex for a version number such as v0.2.1
 
 env:
   ADDON_DIR: addons/godot-rapier-3d
@@ -120,8 +120,8 @@ jobs:
           echo 'ls -la ./'
           ls -la ./
           echo ---
-          echo 'ls -la ./ ${{ env.RUST_DIR }}'
-          ls -la ./ ${{ env.RUST_DIR }}
+          echo 'ls -la ${{ env.RUST_DIR }}'
+          ls -la ${{ env.RUST_DIR }}
         if: failure()
 
       - name: Publish release artifacts
