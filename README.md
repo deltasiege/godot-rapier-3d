@@ -26,21 +26,26 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 
 ## Quickstart
 
-1. Download or clone [addons/godot-rapier-3d](addons/godot-rapier-3d/) to the same directory within your Godot project - [download-directory.github.io/](https://download-directory.github.io/) is great for this
-1. (temporary! downloadable release binaries coming soon) - Install rust and run `cargo build` in the `addons/godot-rapier-3d/rust` directory
-1. Add some RapierRigidBody3D nodes to your scene and add a RapierCollider3D node as a child of each
-1. Call `Rapier3D.step()` from within a `_physics_process()` function, or as often as you like
-
-   ```gdscript
-   func _physics_process(_delta):
-     Rapier3D.step()
-   ```
-
+1. Download the latest release
+1. Extract the release archive into your godot project's root directory
+1. If your Godot project is already open, you may get console errors. Don't panic, just reload your project
+1. Add RapierRigidBody3D nodes to your scene and some RapierCollider3D + MeshInstance3D nodes as children of the rigid bodies
 1. Run your game
 
 Your physics objects should simulate! 🎉
 
-Configure simulation and debug options by searching for `Rapier 3D` in your project settings
+## Configuring
+
+By default, the Rapier3DDebugger autoload will start the physics simulation for you. To get more control over when you simulate, search for `Rapier 3D` in your project settings.
+
+Disable either the `Run in Game` or `Show UI` settings to prevent the debugger from simulating for you.
+
+Now you can call `Rapier3D.step()` from within any `_physics_process()` function, or as often as you like. This function advances the physics simulation by 1 step.
+
+```gdscript
+func _physics_process(_delta):
+  Rapier3D.step()
+```
 
 ## Saving and loading state
 
