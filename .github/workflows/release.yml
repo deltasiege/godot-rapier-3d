@@ -1,5 +1,3 @@
-# https://github.com/marketplace/actions/build-rust-projects-with-cross
-# https://github.com/houseabsolute/precious/blob/master/.github/workflows/ci.yml
 name: Release binaries
 
 on:
@@ -104,6 +102,16 @@ jobs:
           rm godot-rapier-3d.gdextension
           mv godot-rapier-3d.gdext.dist godot-rapier-3d.gdextension
 
+      - name: Add VERSION.txt
+        shell: bash
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          ${{ env.VERSION }} > ${{ env.ADDON_DIR }}/VERSION.txt
+
+      - name: Copy LICENSE.txt
+        shell: bash
+        run: cp LICENSE.txt ${{ env.ADDON_DIR }}
+
       - name: Package as archive
         shell: bash
         run: |
@@ -122,6 +130,9 @@ jobs:
           echo ---
           echo 'ls -la ${{ env.RUST_DIR }}'
           ls -la ${{ env.RUST_DIR }}
+          echo ---
+          echo 'ls -la ${{ env.ADDON_DIR }}'
+          ls -la ${{ env.ADDON_DIR }}
         if: failure()
 
       - name: Publish release artifacts

@@ -11,6 +11,7 @@
 
 ## Guidelines
 
+- Follow [semver](https://semver.org/) when releasing new versions
 - If functionality doesn't need to directly interact with Rapier and doesn't need to be optimized, prefer writing it in GDScript
 
 ## Development quickstart
