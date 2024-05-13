@@ -4,9 +4,11 @@ var play = false
 var should_show = false
 var initial_snapshot
 var snapshot
-var snapshot_hash
+var rapier_hash
+var godot_hash
 
-@onready var hash_label = $SubViewport/CanvasLayer/Panel/MarginContainer/GridContainer/Hash
+@onready var rapier_hash_label = $SubViewport/CanvasLayer/Panel/MarginContainer/GridContainer/RapierHash
+@onready var godot_hash_label = $SubViewport/CanvasLayer/Panel/MarginContainer/GridContainer/GodotHash
 @onready var play_button = $SubViewport/CanvasLayer/Panel/MarginContainer/GridContainer/PlayButton
 @onready var canvas = $SubViewport/CanvasLayer
 
@@ -27,8 +29,11 @@ func _physics_process(_delta):
 
 func _save() -> PackedByteArray:
 	var snap = Rapier3D.get_state()
-	snapshot_hash = Rapier3D.get_hash(snap)
-	hash_label.text = "Hash: " + str(snapshot_hash)
+	var godot_snap = Rapier3D.get_godot_state()
+	rapier_hash = Rapier3D.get_hash(snap)
+	godot_hash = Rapier3D.get_godot_hash(godot_snap)
+	rapier_hash_label.text = "Rapier hash: " + str(rapier_hash)
+	godot_hash_label.text = "Godot hash: " + str(godot_hash)
 	return snap
 
 func _load(snap):

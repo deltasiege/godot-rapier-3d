@@ -43,9 +43,13 @@ layout_mode = 2
 layout_mode = 2
 text = "Godot Rapier 3D"
 
-[node name="Hash" type="Label" parent="SubViewport/CanvasLayer/Panel/MarginContainer/GridContainer"]
+[node name="RapierHash" type="Label" parent="SubViewport/CanvasLayer/Panel/MarginContainer/GridContainer"]
 layout_mode = 2
-text = "Hash: "
+text = "Rapier hash: "
+
+[node name="GodotHash" type="Label" parent="SubViewport/CanvasLayer/Panel/MarginContainer/GridContainer"]
+layout_mode = 2
+text = "Godot hash: "
 
 [node name="PlayButton" type="CheckButton" parent="SubViewport/CanvasLayer/Panel/MarginContainer/GridContainer"]
 layout_mode = 2

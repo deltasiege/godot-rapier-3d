@@ -20,6 +20,10 @@ config/icon="res://assets/gr3d-logo.svg"
 Rapier3D="*res://addons/godot-rapier-3d/Rapier3D.gd"
 Rapier3DDebugger="*res://addons/godot-rapier-3d/Rapier3DDebugger.gd"
 
+[debug]
+
+rapier_3d/show_ui=false
+
 [editor_plugins]
 
 enabled=PackedStringArray()

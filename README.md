@@ -24,7 +24,7 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 
 1. Download the [latest release](https://github.com/deltasiege/godot-rapier-3d/releases/latest)
 1. Extract the release archive into your godot project's root directory
-1. If your Godot project is already open, you may get console errors. These can be safely ignored by starting your game or reloading your project
+1. If your Godot project is already open, you may get console errors. These can be safely ignored by reloading your project
 1. Add RapierRigidBody3D nodes to your scene and some RapierCollider3D + MeshInstance3D nodes as children of the rigid bodies
 1. Run your game
 
@@ -32,7 +32,7 @@ Your physics objects should simulate! 🎉
 
 ## Configuring
 
-By default, the `Rapier3DDebugger` autoload will start the physics simulation for you. To get more control over when you simulate, search for `Rapier 3D` in your project settings and disable either `Run in Game` or `Show UI` under the Debug category.
+By default, the `Rapier3DDebugger` autoload will start the physics simulation for you. To get more control over when you simulate, search for `Rapier 3D` in your project settings and disable either `Debug in Game` or `Show UI` under the Debug category.
 
 Now you can call `Rapier3D.step()` from within any `_physics_process()` function, or as often as you like. This function advances the physics simulation by 1 step.
 
@@ -91,10 +91,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Attributions
 
+- [gdext](https://github.com/godot-rust/gdext) discord community
+  - [Lili Zoey](https://github.com/lilizoey)
+  - [Bromeon](https://github.com/Bromeon)
 - [dsnopek](https://github.com/dsnopek) and [SGPhysics2D](https://www.snopekgames.com/tutorial/2021/getting-started-sg-physics-2d-and-deterministic-physics-godot)
 - [GameDevelopmentCenter](https://www.youtube.com/c/GameDevelopmentCenter)
 - [appsinacup/godot-rapier-2](https://github.com/appsinacup/godot-rapier-2d)
 - [ilyas-taouaou/rapier-gdext](https://github.com/ilyas-taouaou/rapier-gdext)
+
+Thanks very much for your help
 
 [rapier-link]: https://rapier.rs/
 [godot-link]: https://godotengine.org/
