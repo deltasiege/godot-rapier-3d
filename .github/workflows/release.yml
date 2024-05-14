@@ -41,6 +41,13 @@ jobs:
             archive: linux-arm-x86_64.tar.gz
             bin: libgodot_rapier_3d.so
 
+          - release_for: linux-64-rv
+            runner: ubuntu-latest
+            target: riscv64gc-unknown-linux-gnu
+            compiler: cross
+            archive: linux-rv-x86_64.tar.gz
+            bin: libgodot_rapier_3d.so
+
           - release_for: windows-32-msvc
             runner: windows-latest
             target: i686-pc-windows-msvc
