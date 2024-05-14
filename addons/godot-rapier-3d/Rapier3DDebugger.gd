@@ -9,6 +9,9 @@ const physics_controls = preload("res://addons/godot-rapier-3d/gdscript/physics_
 @onready var run_in_game = ProjectSettings.get_setting("debug/rapier_3d/debug_in_game")
 @onready var run_in_editor = ProjectSettings.get_setting("debug/rapier_3d/debug_in_editor")
 @onready var show_colliders = ProjectSettings.get_setting("debug/rapier_3d/show_colliders")
+@onready var show_ui = ProjectSettings.get_setting("debug/rapier_3d/show_ui")
+
+signal settings_changed
 
 var debug_render_pipeline
 var debug_lines_node
@@ -30,8 +33,10 @@ func _on_settings_changed():
 	run_in_game = ProjectSettings.get_setting("debug/rapier_3d/debug_in_game")
 	run_in_editor = ProjectSettings.get_setting("debug/rapier_3d/debug_in_editor")
 	show_colliders = ProjectSettings.get_setting("debug/rapier_3d/show_colliders")
+	show_ui = ProjectSettings.get_setting("debug/rapier_3d/show_ui")
 	if debug_lines_node != null: debug_lines_node.clear_lines()
 	if is_instance_valid(Rapier3DEngine): Rapier3DEngine.set_log_level(ProjectSettings.get_setting("debug/rapier_3d/logging_level"))
+	settings_changed.emit()
 
 func _spawn_ui():
 	debug_ui_node = physics_controls.instantiate()

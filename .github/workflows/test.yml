@@ -1,0 +1,74 @@
+name: Test
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    name: Test - ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            pack: linux-64-gnu
+            pack_ext: .tar.gz
+            export_templates_path: ${{ env.HOME }}/.local/share/godot/export_templates/*.tpz
+
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            pack: windows-64-msvc
+            pack_ext: .zip
+            export_templates_path: ${{ env.HOME }}/AppData/Roaming/Godot/export_templates/*.tpz
+
+          # - runner: macos-latest
+          #   target: x86_64-apple-darwin
+          #   export_templates_path: ${{ env.HOME }}/Applications/Godot.app/Contents/Resources/templates
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1 # https://bun.sh/guides/runtime/cicd
+
+      - name: Cache dependencies
+        id: cache-dependencies
+        uses: actions/cache@v4
+        with:
+          key: dependencies-${{ matrix.runner }}
+          path: |
+            ${{ matrix.export_templates_path }}
+            ci/bin/Godot*.zip
+
+      - name: Download Godot and export templates
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        shell: bash
+        run: bun ci/dependencies.ts ${{ matrix.target }}
+
+      - name: Download gr3d package
+        uses: actions/download-artifact@v4
+        with:
+          pattern: godot-rapier-3d-${{ matrix.pack }}${{ matrix.pack_ext }}
+
+      - name: Clear landing zone
+        shell: bash
+        run: |
+          rm godot-rapier-3d.gdextension
+          rm -rf ./addons/godot-rapier-3d
+
+      - name: Unpack archive
+        shell: bash
+        run: |
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+            7z e godot-rapier-3d-${{ matrix.pack }}${{ matrix.pack_ext }}
+          else
+            tar xzvf godot-rapier-3d-${{ matrix.pack }}${{ matrix.pack_ext }}
+          fi
+
+      - name: bun build-tests.ts
+        run: bun ci/build-tests.ts ${{ matrix.target }}
+
+      - name: bun run-tests.ts
+        run: bun ci/run-tests.ts ${{ matrix.target }}
+
+      - name: bun compare-reports.ts
+        run: bun ci/compare-reports.ts

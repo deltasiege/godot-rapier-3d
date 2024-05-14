@@ -42,9 +42,9 @@ func _load(snap):
 func _on_settings_changed(): _update_should_show()
 
 func _update_should_show():
-	var run_in_game = ProjectSettings.get_setting("debug/rapier_3d/debug_in_game")
-	var run_in_editor = ProjectSettings.get_setting("debug/rapier_3d/debug_in_editor")
-	var show_ui = ProjectSettings.get_setting("debug/rapier_3d/show_ui")
+	var run_in_game = Rapier3DDebugger.run_in_game
+	var run_in_editor = Rapier3DDebugger.run_in_editor
+	var show_ui = Rapier3DDebugger.show_ui
 	if Engine.is_editor_hint() and !run_in_editor: should_show = false
 	elif !Engine.is_editor_hint() and !run_in_game: should_show = false
 	elif !show_ui: should_show = false
@@ -57,5 +57,5 @@ func _on_save_button_pressed(): snapshot = _save()
 func _on_load_button_pressed(): _load(snapshot)
 func _on_play_button_toggled(toggled_on): play = toggled_on
 
-func _enter_tree(): ProjectSettings.connect("settings_changed", self._on_settings_changed)
-func _exit_tree(): ProjectSettings.disconnect("settings_changed", self._on_settings_changed)
+func _enter_tree(): Rapier3DDebugger.connect("settings_changed", self._on_settings_changed)
+func _exit_tree(): Rapier3DDebugger.disconnect("settings_changed", self._on_settings_changed)
