@@ -23,6 +23,7 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 ## Quickstart
 
 1. Download the [latest release](https://github.com/deltasiege/godot-rapier-3d/releases/latest)
+   Note: You will need to download the binary for each platform you want to export your game to
 1. Extract the release archive into your godot project's root directory
 1. If your Godot project is already open, you may get console errors. These can be safely ignored by reloading your project
 1. Add RapierRigidBody3D nodes to your scene and some RapierCollider3D + MeshInstance3D nodes as children of the rigid bodies

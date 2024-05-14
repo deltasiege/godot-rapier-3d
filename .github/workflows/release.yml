@@ -1,4 +1,4 @@
-name: Release binaries
+name: Release
 
 on:
   workflow_dispatch:
@@ -14,10 +14,9 @@ env:
   BIN_DIR: addons/godot-rapier-3d/bin
 
 jobs:
-  release:
-    name: Release - ${{ matrix.release_for }}
+  build_single:
+    name: Build - ${{ matrix.release_for }}
     runs-on: ${{ matrix.runner }}
-
     strategy:
       matrix:
         include:
@@ -86,15 +85,15 @@ jobs:
           cargo binstall --no-confirm cross
         working-directory: ${{ env.RUST_DIR }}
 
-      - name: Build binary
+      - name: Build rust binary
         run: ${{ matrix.compiler }} build --verbose --locked --release --target ${{ matrix.target }}
         working-directory: ${{ env.RUST_DIR }}
 
-      - name: Move binary
+      - name: Move rust binary
         shell: bash
         run: |
           mkdir ${{ env.BIN_DIR }}
-          mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin }} ${{ env.BIN_DIR }}
+          mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin }} ${{ env.BIN_DIR }}/${{ matrix.target }}-${{ matrix.bin }}
 
       - name: Replace .gdextension config
         shell: bash
@@ -135,11 +134,82 @@ jobs:
           ls -la ${{ env.ADDON_DIR }}
         if: failure()
 
-      - name: Publish release artifacts
+      - name: Upload rust binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gr3d-rust-binary-${{ matrix.release_for }}
+          path: "${{ env.BIN_DIR }}/*godot_rapier_3d*"
+
+      - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
           name: godot-rapier-3d-${{ matrix.release_for }}
           path: "godot-rapier-3d-*"
+
+  # ---
+
+  build_all:
+    name: Build all (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    needs: build_single
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            ext: .tar.gz
+          - runner: windows-latest
+            ext: .zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all rust binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          pattern: gr3d-rust-binary-*
+          path: ${{ env.BIN_DIR }}
+
+      - name: Add VERSION.txt
+        shell: bash
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          ${{ env.VERSION }} > ${{ env.ADDON_DIR }}/VERSION.txt
+
+      - name: Copy LICENSE.txt
+        shell: bash
+        run: cp LICENSE.txt ${{ env.ADDON_DIR }}
+
+      - name: Package as archive
+        shell: bash
+        run: |
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+            7z a godot-rapier-3d--all${{ matrix.ext }} -xr!rust ./addons/
+            7z a godot-rapier-3d--all${{ matrix.ext }} -xr!rust godot-rapier-3d.gdextension
+          else
+            tar czvf godot-rapier-3d--all${{ matrix.ext }} --exclude=rust ./addons/godot-rapier-3d/ godot-rapier-3d.gdextension
+          fi
+
+      - name: Upload all package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-rapier-3d--all${{ matrix.ext }}
+          path: "godot-rapier-3d--all${{ matrix.ext }}"
+
+  # ---
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [build_single, build_all]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all packages
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          pattern: godot-rapier-3d-*
 
       - name: Release
         uses: softprops/action-gh-release@v2
