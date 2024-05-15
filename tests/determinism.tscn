@@ -1,0 +1,91 @@
+[gd_scene load_steps=3 format=3 uid="uid://b1q8u4fca6jg1"]
+
+[ext_resource type="Script" path="res://tests/sim_test.gd" id="1_dyqow"]
+[ext_resource type="PackedScene" uid="uid://bll017w15kfkw" path="res://assets/flycam.tscn" id="2_yypeh"]
+
+[node name="Determinism" type="Node3D"]
+script = ExtResource("1_dyqow")
+
+[node name="FlyCam" parent="." instance=ExtResource("2_yypeh")]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 20)
+
+[node name="Ground" type="RapierCollider3D" parent="."]
+shape = "Cuboid"
+cuboid_half_extents = Vector3(200, 1, 200)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
+
+[node name="Ball" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball"]
+
+[node name="Ball2" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.14202, 2.32379, 0)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball2"]
+ball_radius = 1.0
+
+[node name="Ball3" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.284277, 5.6396, 0.755208)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball3"]
+ball_radius = 2.0
+
+[node name="Ball4" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(0.540505, 0, -0.841341, 0, 1, 0, 0.841341, 0, 0.540505, 0.0207715, 1, 1.31979)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball4"]
+
+[node name="Ball5" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(0.540505, 0, -0.841341, 0, 1, 0, 0.841341, 0, 0.540505, 0.638038, 2.32379, 2.28062)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball5"]
+
+[node name="Ball6" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(0.540505, 0, -0.841341, 0, 1, 0, 0.841341, 0, 0.540505, -0.523195, 2.57541, 1.24434)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball6"]
+
+[node name="Ball7" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 4.44253)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball7"]
+
+[node name="Ball8" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.14202, 2.32379, 4.44253)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball8"]
+ball_radius = 1.0
+
+[node name="Ball9" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.94715, 2.80819, 5.19774)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball9"]
+ball_radius = 2.0
+
+[node name="Ball10" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(0.540505, 0, -0.841341, 0, 1, 0, 0.841341, 0, 0.540505, 0.0207715, 1, 5.76232)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball10"]
+
+[node name="Cube" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(0.451736, 0.459593, -0.764663, -0.713177, 0.700984, 0, 0.536016, 0.54534, 0.644431, -2.32325, 3.08325, -0.339704)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Cube"]
+shape = "Cuboid"
+cuboid_half_extents = Vector3(1, 1, 1)
+
+[node name="Cube2" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(-0.6412, 0.604272, 0.472988, -0.313427, 0.356387, -0.8802, -0.700447, -0.712631, -0.0391203, 0.728005, 10.338, 0.828321)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Cube2"]
+shape = "Cuboid"
+cuboid_half_extents = Vector3(1, 1, 1)
+
+[node name="Cube3" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(-0.6412, 0.604272, 0.472988, -0.313427, 0.356387, -0.8802, -0.700447, -0.712631, -0.0391203, -7.31396, 6.47176, 11.4373)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Cube3"]
+shape = "Cuboid"
+cuboid_half_extents = Vector3(2, 2, 2)
+transform = Transform3D(1, 2.98023e-08, 1.49012e-08, -2.98023e-08, 1, 1.86265e-08, -2.6077e-08, 1.49012e-08, 1, 0, 0, 0)

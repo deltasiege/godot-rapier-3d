@@ -1,0 +1,130 @@
+name: Test
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    name: Test - ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            pack: linux-gnu-x86_64
+            pack_ext: .tar.gz
+
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            pack: windows-msvc-x86_64
+            pack_ext: .zip
+
+          # - runner: macos-latest
+          #   target: x86_64-apple-darwin
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1 # https://bun.sh/guides/runtime/cicd
+
+      - name: Cache dependencies
+        id: cache-export-templates
+        uses: actions/cache@v4
+        with:
+          key: dependencies-${{ matrix.runner }}
+          path: |
+            ci/bin/*export_templates.tpz
+            ci/bin/Godot*.zip
+
+      - name: Download Godot and export templates
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        shell: bash
+        run: bun ci/dependencies.ts ${{ matrix.target }}
+
+      - name: Download gr3d package
+        uses: actions/download-artifact@v4
+        with:
+          name: godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+
+      - name: Clear landing zone
+        shell: bash
+        run: |
+          rm godot-rapier-3d.gdextension
+          rm -rf ./addons/godot-rapier-3d
+
+      - name: Unpack archive
+        shell: bash
+        run: |
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+            7z l godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+            7z x -y godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+          else
+            tar ztvf godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+            tar xzvf godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+          fi
+
+      - name: Rename .gdextension config
+        shell: bash
+        run: |
+          mv godot-rapier-3d.gdext.dist godot-rapier-3d.gdextension
+
+      - name: bun build-tests.ts
+        run: bun ci/build-tests.ts ${{ matrix.target }}
+
+      - name: bun run-tests.ts
+        run: bun ci/run-tests.ts ${{ matrix.target }}
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ matrix.target }}
+          path: "build/reports/*report.txt"
+
+      - name: List dirs
+        shell: bash
+        run: |
+          pwd
+          echo 'ls -la ./'
+          ls -la ./
+          echo ---
+          echo 'ls -la ./ci/bin'
+          ls -la ./ci/bin || true
+          echo ---
+          echo 'ls -la ./addons/godot-rapier-3d/bin'
+          ls -la ./addons/godot-rapier-3d/bin || true
+          echo ---
+          echo 'ls -la ./build'
+          ls -la ./build || true
+          echo ---
+          echo 'ls -la ./build/reports'
+          ls -la ./build/reports || true
+        if: always()
+
+      - name: Cat godot-rapier-3d.gdextension
+        shell: bash
+        run: cat godot-rapier-3d.gdextension || true
+        if: always()
+
+  analyze:
+    name: Analyze results
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1 # https://bun.sh/guides/runtime/cicd
+
+      - name: Download all reports
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          pattern: report-*
+          path: build/reports
+
+      - name: bun compare-reports.ts
+        run: bun ci/compare-reports.ts
+
+      - name: Upload diffs
+        uses: actions/upload-artifact@v4
+        with:
+          name: diffs
+          path: "build/reports/*comparison.diff"

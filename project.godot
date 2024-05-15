@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="godot-rapier-3d"
-run/main_scene="res://demos/main.tscn"
+run/main_scene="res://tests/index.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 config/icon="res://assets/gr3d-logo.svg"
 
@@ -20,10 +20,10 @@ config/icon="res://assets/gr3d-logo.svg"
 Rapier3D="*res://addons/godot-rapier-3d/Rapier3D.gd"
 Rapier3DDebugger="*res://addons/godot-rapier-3d/Rapier3DDebugger.gd"
 
-[debug]
-
-rapier_3d/show_ui=false
-
 [editor_plugins]
 
 enabled=PackedStringArray()
+
+[filesystem]
+
+import/blender/enabled=false
