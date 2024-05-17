@@ -12,7 +12,7 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 
 ### Features
 
-- Cross platform determinism (TBC - needs testing)
+- Cross platform determinism (confirmed via [actions](https://github.com/deltasiege/godot-rapier-3d/actions/workflows/build-and-test.yml)!)
 - Physics state manual stepping
 - Physics state saving & loading
 
@@ -54,21 +54,12 @@ Obtain a [hash](https://docs.godotengine.org/en/stable/classes/class_array.html#
 var initial_snapshot
 
 func _ready():
-	Rapier3D.physics_ready.connect(_on_physics_ready)
-
-func _on_physics_ready():
   initial_snapshot = Rapier3D.get_state()
   var hash = Rapier3D.get_hash(initial_snapshot)
 
 func _on_foo():
   Rapier3D.set_state(initial_snapshot)
 ```
-
-### Why `_on_physics_ready`?
-
-Colliders need 1 extra frame to attach to physics bodies. Therefore it's recommended that you don't use `Rapier3D.get_state()` within a `_ready()` function because colliders will not be attached yet.
-
-Instead, you should connect to the `Rapier3D.physics_ready` signal as shown above.
 
 ## Why does this exist?
 
@@ -81,10 +72,6 @@ Luckily, Godot 4 provides a great [extension system][gdext-link] and [Rapier][ra
 ## Limitations
 
 - No mobile support ([godot-rust](https://github.com/godot-rust/gdext/issues/24))
-
-## Known issues
-
-- `Project -> Reload current project` can cause the engine to not load properly - errors will print to the godot console. These errors can be safely ignored. To eliminate them, close godot entirely and reopen your project from the project manager.
 
 ## Contributing
 

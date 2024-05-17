@@ -69,4 +69,9 @@ func _draw_line(a, b, color):
 
 func _should_run():
 	if Engine.is_editor_hint(): return run_in_editor
-	else: return run_in_game
+	else: 
+		var current_scene = get_tree().current_scene
+		var scene_path = current_scene.scene_file_path
+		var is_test_scene = scene_path.contains("res://tests/")
+		if is_test_scene: return false
+		return run_in_game

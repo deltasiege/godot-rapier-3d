@@ -1,15 +1,20 @@
 use crate::engine::{register_engine, unregister_engine};
 use godot::prelude::*;
 
-mod collider;
-mod debug_render_pipeline;
 mod editor_plugin;
 mod engine;
-mod log;
-mod physics_pipeline;
-mod physics_state;
-mod rigid_body;
+mod lookups;
+mod objects;
+mod pipeline;
+mod queue;
 mod utils;
+
+pub use engine::get_engine;
+pub use lookups::{IDBridge, LookupIdentifier, Lookups};
+pub use objects::{ObjectKind, PhysicsObject};
+pub use pipeline::{GR3DPhysicsPipeline, GR3DPhysicsState};
+pub use queue::ActionQueue;
+pub use utils::{cuid2, handle_error};
 
 struct GodotRapier3D;
 

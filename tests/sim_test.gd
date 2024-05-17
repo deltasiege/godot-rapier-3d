@@ -11,9 +11,6 @@ var report_abs_path
 var report_generated := false
 
 func _ready():
-	await get_tree().process_frame
-	Rapier3DDebugger.show_ui = false
-	Rapier3DDebugger.settings_changed.emit()
 	Engine.set_physics_ticks_per_second(fps)
 	print("Simulating: '", name, "' for ", total_steps, " steps at: " + str(Engine.physics_ticks_per_second) + " physics ticks per second")
 	var dt = Time.get_datetime_string_from_system(true).replace(":", "_")
@@ -46,7 +43,8 @@ func get_env_info():
 		"get_version: " + OS.get_version(),
 		"get_processor_count: " + str(OS.get_processor_count()),
 		"get_processor_name: " + OS.get_processor_name(),
-		"get_video_adapter_driver_info: " + ", ".join(OS.get_video_adapter_driver_info())
+		"get_video_adapter_driver_info: " + ", ".join(OS.get_video_adapter_driver_info()),
+		"fps: " + str(Engine.physics_ticks_per_second),
 	]
 
 func save_report(entries: Array, path: String):

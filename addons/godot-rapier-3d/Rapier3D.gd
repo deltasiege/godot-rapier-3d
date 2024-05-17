@@ -1,13 +1,14 @@
+@tool
 extends Node3D
 
 const utils = preload("res://addons/godot-rapier-3d/gdscript/utils.gd")
 const physics_state = preload("res://addons/godot-rapier-3d/gdscript/physics_state.gd")
 
-signal physics_ready
+func _ready():
+	Rapier3DEngine._process()
 
 func _physics_process(_delta):
-	if Engine.get_physics_frames() != 1: return # Need to wait a few frames for colliders to properly mount in the tree
-	physics_ready.emit()
+	Rapier3DEngine._process()
 
 func step() -> void:
 	Rapier3DEngine.step()

@@ -23,9 +23,11 @@ transform = Transform3D(1, 0, 0, 0, 0.984808, 0.173648, 0, -0.173648, 0.984808, 
 [node name="World" parent="." instance=ExtResource("4_vx8g6")]
 
 [node name="Ball" type="RapierRigidBody3D" parent="."]
+id = "juavrifwxk6asz4kp7t5t9qu"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
 
 [node name="RapierCollider3D" type="RapierCollider3D" parent="Ball"]
+id = "nphatyucnvkbk5npv096vzxl"
 restitution = 0.85
 ball_radius = 0.51
 
@@ -34,9 +36,11 @@ material_override = ExtResource("3_cldhj")
 mesh = SubResource("SphereMesh_yjjeh")
 
 [node name="Cube" type="RapierRigidBody3D" parent="."]
+id = "vkk7n0pv1mf0cpm1kn13qqdm"
 transform = Transform3D(0.853553, -0.146447, 0.5, 0.5, 0.5, -0.707107, -0.146447, 0.853553, 0.5, 0, 10, 0)
 
 [node name="RapierCollider3D" type="RapierCollider3D" parent="Cube"]
+id = "elbk7azvsv1rvrshft4gg00a"
 shape = "Cuboid"
 restitution = 0.2
 
@@ -45,18 +49,22 @@ material_override = ExtResource("3_cldhj")
 mesh = SubResource("BoxMesh_v2q8u")
 
 [node name="BigCube" type="RapierRigidBody3D" parent="."]
+id = "emr8mwt8ytrdzxv63csyehau"
 transform = Transform3D(0.765839, 0.255643, 0.590031, -0.592616, 0.636751, 0.493309, -0.249592, -0.727457, 0.639148, 0, 6, 0)
 
 [node name="RapierCollider3D" type="RapierCollider3D" parent="BigCube"]
+id = "fzpdgfk8vww6tjlltawr7opy"
 shape = "Cuboid"
 restitution = 0.05
 cuboid_half_extents = Vector3(1, 1, 1)
+transform = Transform3D(1, 2.98023e-08, 1.49012e-08, -1.49012e-08, 1, 2.98023e-08, 1.49012e-08, -2.98023e-08, 1, 0, 0, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="BigCube"]
 material_override = ExtResource("3_cldhj")
 mesh = SubResource("BoxMesh_53fml")
 
 [node name="LWall" type="RapierCollider3D" parent="."]
+id = "gq37zqn0rnuw045f9x6ia4gk"
 shape = "Cuboid"
 cuboid_half_extents = Vector3(4, 2, 0.5)
 transform = Transform3D(0.939692, 0, 0.34202, 0, 1, 0, -0.34202, 0, 0.939692, -4, 2, -3)
@@ -66,6 +74,7 @@ material_override = ExtResource("3_diwkp")
 mesh = SubResource("BoxMesh_fmibp")
 
 [node name="RWall" type="RapierCollider3D" parent="."]
+id = "woz3ic9m91zgi2019k7e9vib"
 shape = "Cuboid"
 cuboid_half_extents = Vector3(4, 2, 0.5)
 transform = Transform3D(0.819152, 0, -0.573576, 0, 1, 0, 0.573576, 0, 0.819152, 4.5, 2, -2)

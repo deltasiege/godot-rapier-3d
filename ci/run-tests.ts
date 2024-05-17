@@ -17,7 +17,7 @@ async function main() {
   console.log(`\nRenaming reports`);
   await globRename(
     join(reportsDir, "*report.txt"),
-    join(reportsDir, `${target}-${Date.now()}-report.txt`)
+    join(reportsDir, `${target}-${Date.now()}-report-done.txt`)
   );
 }
 

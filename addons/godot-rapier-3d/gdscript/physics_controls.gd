@@ -15,13 +15,10 @@ var godot_hash
 func _ready():
 	_update_should_show()
 	if !should_show: return
-	Rapier3D.physics_ready.connect(_on_physics_ready)
+	initial_snapshot = _save()
 	if !Engine.is_editor_hint(): 
 		play_button.set_pressed(true)
 		play = true
-
-func _on_physics_ready():
-	initial_snapshot = _save()
 
 func _physics_process(_delta):
 	if !should_show: return
