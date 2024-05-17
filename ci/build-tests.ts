@@ -6,13 +6,8 @@ import type { Target } from ".";
 import { resolve } from "path";
 
 async function main() {
-  const timeout = setTimeout(() => {
-    console.error("Bun timeout after 10 minutes");
-    process.exit();
-  }, 10 * 60 * 1000);
-
   const target = Bun.argv[2] as Target;
-  if (!validTarget(target)) return;
+  if (!validTarget(target)) process.exit();
   const { projectDir, projectBinExt, buildDir, ciBinDir, godot } =
     getData(target);
   const binPath = resolve(ciBinDir, godot.binary);
@@ -20,22 +15,26 @@ async function main() {
 
   await openProject(binPath, projectDir);
 
-  console.log("Sleeping for 2 seconds");
-  await Bun.sleep(2000);
+  console.log("---> Sleeping for 1 second");
+  await Bun.sleep(1000);
 
-  await openProject(binPath, projectDir);
-
-  await createDir(buildDir);
   await buildProject(target, binPath, projectDir, destPath);
-  clearTimeout(timeout);
 }
 
 async function openProject(binPath: string, srcDir: string) {
-  console.log("\nOpening project in Godot editor\n");
-  console.log(
-    `\n"${binPath}" --quit-after 20 --verbose --headless -e --path ${srcDir}\n`
-  );
-  await $`"${binPath}" --quit-after 20 --verbose --headless -e --path ${srcDir}`.nothrow();
+  console.log("\n---> Opening project in Godot editor\n");
+  const args = [
+    binPath,
+    "--quit-after",
+    "2",
+    "--headless",
+    "-e",
+    "--path",
+    srcDir,
+  ];
+  console.log(args.join(" ") + "\n");
+  const proc = Bun.spawn(args);
+  await proc.exited;
 }
 
 async function buildProject(
@@ -44,12 +43,19 @@ async function buildProject(
   srcDir: string,
   destPath: string
 ) {
-  console.log(`\nBuilding tests for ${target}: \n`);
-
-  console.log(
-    `\n"${binPath}" --headless --path ${srcDir} --export-release tests--${target} ${destPath}`
-  );
-  await $`"${binPath}" --headless --path ${srcDir} --export-release tests--${target} ${destPath}`;
+  console.log(`\n---> Building tests for ${target}\n`);
+  const args = [
+    binPath,
+    "--headless",
+    "--path",
+    srcDir,
+    "--export-release",
+    `tests--${target}`,
+    destPath,
+  ];
+  console.log(args.join(" ") + "\n");
+  const proc = Bun.spawn(args);
+  await proc.exited;
 }
 
-await main();
+main();

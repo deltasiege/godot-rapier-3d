@@ -14,10 +14,10 @@ async function main() {
   console.log(`Running: ${binPath}" --headless ++ --test=determinism`);
   await $`"${binPath}" --headless ++ --test=determinism`.cwd(buildDir);
 
-  console.log(`Renaming reports`);
+  console.log(`\nRenaming reports`);
   await globRename(
     join(reportsDir, "*report.txt"),
-    join(reportsDir, `${target}-report.txt`)
+    join(reportsDir, `${target}-${Date.now()}-report.txt`)
   );
 }
 

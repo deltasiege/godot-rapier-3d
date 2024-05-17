@@ -1,5 +1,7 @@
 # Godot 4+ specific ignores
-.godot/
+.godot/**
+!.godot/extension_list.cfg
+!.godot/global_script_class_cache.cfg
 build/**
 !build/.gdignore
 bin/
