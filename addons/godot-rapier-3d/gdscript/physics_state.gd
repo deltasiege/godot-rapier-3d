@@ -1,6 +1,6 @@
 const utils = preload("res://addons/godot-rapier-3d/gdscript/utils.gd")
 
-static func _get_physics_state(root: Node3D):
+static func _get_physics_state(root: Node):
 	var state = PackedByteArray()
 	var physics_objects = _get_all_physics_objects(root)
 	var sorted = _sort_by_iid(physics_objects)

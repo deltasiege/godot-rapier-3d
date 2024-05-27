@@ -17,17 +17,15 @@ pub struct GR3DPhysicsState {
 }
 
 impl GR3DPhysicsState {
-    pub fn pack(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
+    pub fn pack(&self) -> Result<Vec<u8>, bincode::Error> {
+        bincode::serialize(self)
     }
 
-    pub fn unpack(&self, data: &[u8]) -> Self {
-        bincode::deserialize(data).unwrap()
+    pub fn unpack(&self, data: &[u8]) -> Result<Self, bincode::Error> {
+        bincode::deserialize(data)
     }
-}
 
-impl Default for GR3DPhysicsState {
-    fn default() -> Self {
+    pub fn default() -> Self {
         Self {
             rigid_body_set: RigidBodySet::new(),
             collider_set: ColliderSet::new(),
@@ -43,3 +41,21 @@ impl Default for GR3DPhysicsState {
         }
     }
 }
+
+// impl Default for GR3DPhysicsState {
+//     fn default() -> Self {
+//         Self {
+//             rigid_body_set: RigidBodySet::new(),
+//             collider_set: ColliderSet::new(),
+//             gravity: Vector::new(0.0, -9.81, 0.0),
+//             island_manager: IslandManager::new(),
+//             integration_parameters: IntegrationParameters::default(),
+//             broad_phase: BroadPhase::new(),
+//             narrow_phase: NarrowPhase::new(),
+//             impulse_joint_set: ImpulseJointSet::new(),
+//             multibody_joint_set: MultibodyJointSet::new(),
+//             ccd_solver: CCDSolver::new(),
+//             query_pipeline: QueryPipeline::new(),
+//         }
+//     }
+// }

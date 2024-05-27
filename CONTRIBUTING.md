@@ -13,6 +13,7 @@
 
 - Follow [semver](https://semver.org/) when releasing new versions
 - If functionality doesn't need to directly interact with Rapier and doesn't need to be optimized, prefer writing it in GDScript
+- Any mutations to the Rapier pipeline need to be fed through the action queue in order to ensure determinism
 
 ## Development quickstart
 
@@ -24,22 +25,6 @@
 ## Bugs
 
 Please raise an issue and provide reproducible steps or a minimal reproduction project, which is a small Godot project which reproduces the issue, with no unnecessary files included.
-
-## Known issues
-
-- Using any of the logging macros (`crate::error!` etc.) grabs a mutable reference to the engine singleton. If you already have done this in the same function, Godot will crash. You instead need to pass the engine bind:
-
-  ```rust
-  fn my_func() {
-    let mut engine = crate::get_engine!();
-    let mut bind = engine.bind_mut();
-    // ...stuff...
-    // crate::error!("This will crash Godot"); // INCORRECT
-    crate::error!(bind; "This is fine");
-  }
-  ```
-
-  the `get_engine!` macro should be upgraded to prevent such double access cases
 
 ## Roadmap
 

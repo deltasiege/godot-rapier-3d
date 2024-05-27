@@ -1,17 +1,16 @@
-use crate::log::LogLevel;
-use crate::physics_pipeline::GR3DPhysicsPipeline;
+use crate::utils::{init_logger, LogLevel};
+use crate::{ActionQueue, GR3DPhysicsPipeline, Lookups};
 use godot::builtin::PackedByteArray;
-use godot::engine::Engine;
-use godot::engine::IObject;
-use godot::engine::Object;
+use godot::engine::{Engine, IObject, Object};
 use godot::prelude::*;
 
 pub const ENGINE_SINGLETON_NAME: &str = "Rapier3DEngine";
 
 pub fn register_engine() {
+    init_logger();
     Engine::singleton().register_singleton(
         StringName::from(ENGINE_SINGLETON_NAME),
-        GR3DEngineSingleton::new_alloc().upcast()
+        GR3DEngineSingleton::new_alloc().upcast(),
     );
 }
 
@@ -30,21 +29,21 @@ pub fn unregister_engine() {
 #[derive(GodotClass)]
 #[class(base = Object)]
 pub struct GR3DEngineSingleton {
+    pub lookups: Lookups,
     pub pipeline: GR3DPhysicsPipeline,
+    pub action_queue: ActionQueue,
     pub gizmo_iids: Vec<i64>, // Remembered so that gizmos can be removed
-    pub log_level: LogLevel,
     base: Base<Object>,
 }
 
 #[godot_api]
 impl IObject for GR3DEngineSingleton {
     fn init(base: Base<Object>) -> Self {
-        let log_level = LogLevel::Info;
-
         Self {
-            pipeline: GR3DPhysicsPipeline::new(log_level),
+            lookups: Lookups::new(),
+            pipeline: GR3DPhysicsPipeline::new(),
+            action_queue: ActionQueue::new(),
             gizmo_iids: Vec::new(),
-            log_level,
             base,
         }
     }
@@ -53,99 +52,73 @@ impl IObject for GR3DEngineSingleton {
 #[godot_api]
 impl GR3DEngineSingleton {
     #[func]
+    // Advances the physics simulation 1 step
     pub fn step(&mut self) {
-        self.pipeline.step();
+        self.action_queue.push_step_action();
     }
 
     #[func]
     pub fn get_state(&self) -> PackedByteArray {
-        let vec = self.pipeline.state.pack();
-        let slice = vec.as_slice();
-        PackedByteArray::from(slice)
+        match self.pipeline.state.pack() {
+            Ok(vec) => {
+                let slice = vec.as_slice();
+                PackedByteArray::from(slice)
+            }
+            Err(e) => {
+                log::error!("Could not get state: {:?}", e);
+                PackedByteArray::new()
+            }
+        }
     }
 
+    // TODO will need orchestration?
     #[func]
     pub fn set_state(&mut self, data: PackedByteArray) {
         let slice = data.as_slice();
-        let state = self.pipeline.state.unpack(slice);
-        self.pipeline.state = state;
-        self.pipeline.sync_all_body_positions();
+        match self.pipeline.state.unpack(slice) {
+            Ok(state) => {
+                self.pipeline.state = state;
+                self.pipeline.sync_all_g2r(&self.lookups);
+            }
+            Err(e) => {
+                log::error!("Could not set state: {:?}", e);
+                return;
+            }
+        };
     }
 
     #[func]
-    pub fn set_log_level(&mut self, log_level: i32) {
-        let level = LogLevel::try_from(log_level).unwrap_or(LogLevel::Debug);
-        self.log_level = level;
-        self.pipeline.log_level = level;
+    // Process physics objects (must be done in determinstic order)
+    pub fn _process(&mut self) {
+        self.action_queue
+            ._process(&mut self.pipeline, &mut self.lookups);
     }
 
     #[func]
     pub fn print_debug_info(&self) {
-        godot_print!(
-            "Rigid body ids: {:?}
-Collider ids: {:?}",
-            self.pipeline.rigid_body_ids,
-            self.pipeline.collider_ids
+        log::debug!(
+            "Lookups: {:#?}\nPipeline: {}",
+            self.lookups.get_all_cuids(),
+            self.pipeline
+                .get_debug_info()
+                .ok()
+                .ok_or("Could not get debug info")
+                .unwrap()
         );
+    }
 
-        for (handle, rb) in self.pipeline.state.rigid_body_set.iter() {
-            godot_print!("Rigid body {:?}: {:?}", handle, rb.position());
-        }
-
-        for (handle, collider) in self.pipeline.state.collider_set.iter() {
-            godot_print!("Collider {:?}: {:?}", handle, collider.position());
-        }
+    #[func]
+    pub fn set_log_level(&mut self, level: LogLevel) {
+        crate::utils::set_log_level(level);
     }
 }
 
-#[macro_export]
-macro_rules! get_engine {
-    () => {
-        {
-            let gd_pointer = match
-                godot::engine::Engine::singleton().get_singleton(StringName::from("Rapier3DEngine"))
-            {
-                Some(gd_pointer) => gd_pointer,
-                None => {
-                    godot_error!("Could not obtain Rapier3DEngine singleton");
-                    return;
-                }
-            };
-        
-            let singleton = match gd_pointer.try_cast::<crate::engine::GR3DEngineSingleton>() {
-                Ok(singleton) => singleton,
-                Err(_) => {
-                    godot_error!("Could not cast to Rapier3DEngine singleton");
-                    return;
-                }
-            };
-        
-            singleton
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! get_engine_checked {
-    () => {
-        {
-            match
-                godot::engine::Engine::singleton().get_singleton(StringName::from("Rapier3DEngine"))
-            {
-                Some(gd_pointer) => {
-                    match gd_pointer.try_cast::<crate::engine::GR3DEngineSingleton>() {
-                        Ok(singleton) => Ok(singleton),
-                        Err(_) => {
-                            godot_error!("Could not cast to Rapier3DEngine singleton");
-                            Err("Could not cast to Rapier3DEngine singleton")
-                        },
-                    }
-                },
-                None => {
-                    godot_error!("Could not cast to Rapier3DEngine singleton");
-                    Err("Could not cast to Rapier3DEngine singleton")
-                },
-            }
-        }
-    };
+pub fn get_engine() -> Result<Gd<GR3DEngineSingleton>, &'static str> {
+    match Engine::singleton().get_singleton(StringName::from("Rapier3DEngine")) {
+        Some(gd_pointer) => match gd_pointer.try_cast::<GR3DEngineSingleton>() {
+            Ok(singleton) => Ok(singleton),
+            Err(_) => Err("Could not cast to Rapier3DEngine singleton"),
+        },
+        None => Err("Could not retrieve Rapier3DEngine singleton"),
+    }
 }

@@ -8,8 +8,7 @@ pub const AUTOLOAD_PATHS: &'static [&'static str] = &[
 ];
 
 pub fn add_all_autoloads(plugin: &mut GR3DEditorPlugin) {
-    let singleton_list: PackedStringArray = godot::engine::Engine
-        ::singleton()
+    let singleton_list: PackedStringArray = godot::engine::Engine::singleton()
         .get_singleton_list()
         .clone();
 
@@ -31,16 +30,19 @@ pub fn remove_all_autoloads(plugin: &mut GR3DEditorPlugin) {
 
 fn add_autoload(plugin: &mut GR3DEditorPlugin, name: &str, path: &str) {
     // Call deferred so that Godot editor has time to detect Rust singleton first
-    crate::debug!("Adding autoload: {} -> {}", name, path);
-    plugin
-        .base_mut()
-        .call_deferred(
-            StringName::from("add_autoload_singleton"),
-            &[GString::from(name).to_variant(), GString::from(path).to_variant()]
-        );
+    log::debug!("Adding autoload: {} -> {}", name, path);
+    plugin.base_mut().call_deferred(
+        StringName::from("add_autoload_singleton"),
+        &[
+            GString::from(name).to_variant(),
+            GString::from(path).to_variant(),
+        ],
+    );
 }
 
 fn remove_autoload(plugin: &mut GR3DEditorPlugin, name: &str) {
-    crate::debug!("Removing autoload: {}", name);
-    plugin.base_mut().remove_autoload_singleton(GString::from(name));
+    log::debug!("Removing autoload: {}", name);
+    plugin
+        .base_mut()
+        .remove_autoload_singleton(GString::from(name));
 }
