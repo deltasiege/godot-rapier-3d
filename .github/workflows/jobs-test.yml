@@ -1,4 +1,4 @@
-name: Test
+name: jobs/test
 
 on:
   workflow_call:
@@ -78,7 +78,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: report-${{ matrix.target }}
-          path: "build/reports/*report.txt"
+          path: "build/reports/*report-done.txt"
 
       - name: List dirs
         shell: bash

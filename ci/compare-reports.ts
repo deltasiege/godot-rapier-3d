@@ -17,7 +17,7 @@ function getCombos(array: any[]) {
 
 async function main() {
   const { buildDir } = getData();
-  const searchPath = join(buildDir, "reports", "**report.txt");
+  const searchPath = join(buildDir, "reports", "**report-done.txt");
   console.log(`Looking in ${searchPath} for reports`);
   const reports = await glob(searchPath, { windowsPathsNoEscape: true });
   if (!reports.length) {

@@ -1,0 +1,25 @@
+name: jobs/release
+
+on:
+  workflow_call:
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all packages
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          pattern: godot-rapier-3d-*
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: "godot-rapier-3d-*"
+          body_path: CHANGES.md
+          generate_release_notes: true

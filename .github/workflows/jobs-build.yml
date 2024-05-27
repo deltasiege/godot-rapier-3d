@@ -1,4 +1,4 @@
-name: Build
+name: jobs/build
 
 on:
   workflow_call:
