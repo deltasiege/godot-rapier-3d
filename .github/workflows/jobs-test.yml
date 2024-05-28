@@ -123,8 +123,12 @@ jobs:
       - name: bun compare-reports.ts
         run: bun ci/compare-reports.ts
 
+      - name: cat *--comparison.diff
+        shell: bash
+        run: cat build/reports/*comparison.diff
+
       - name: Upload diffs
         uses: actions/upload-artifact@v4
         with:
-          name: diffs
+          name: determinism diffs
           path: "build/reports/*comparison.diff"
