@@ -12,9 +12,9 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 
 ### Features
 
-- Cross platform determinism (confirmed via [actions](https://github.com/deltasiege/godot-rapier-3d/actions/workflows/build-and-test.yml)!)
-- Physics state manual stepping
-- Physics state saving & loading
+- Cross platform determinism ✔️ (confirmed via [actions](https://github.com/deltasiege/godot-rapier-3d/actions/workflows/build-and-test.yml)!)
+- Physics state manual stepping ✔️
+- Physics state saving & loading ✔️
 
 ### Requirements
 
