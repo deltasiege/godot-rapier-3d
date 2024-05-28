@@ -56,7 +56,8 @@ impl From<&Actionable> for ObjectBridge {
             Actionable::Collider(_)
             | Actionable::ColliderWithParent(_, _)
             | Actionable::ColliderIDWithParentID(_, _)
-            | Actionable::ColliderHandle(_) => ObjectBridge::from(ObjectKind::Collider),
+            | Actionable::ColliderHandle(_)
+            | Actionable::ColliderShape(_) => ObjectBridge::from(ObjectKind::Collider),
             Actionable::NodePos(kind, _) => ObjectBridge::from(kind.clone()),
             Actionable::Invalid => ObjectBridge::invalid(),
             Actionable::Step => ObjectBridge::invalid(),
@@ -84,7 +85,8 @@ impl From<&Actionable> for ObjectKind {
             Actionable::Collider(_)
             | Actionable::ColliderWithParent(_, _)
             | Actionable::ColliderIDWithParentID(_, _)
-            | Actionable::ColliderHandle(_) => ObjectKind::Collider,
+            | Actionable::ColliderHandle(_)
+            | Actionable::ColliderShape(_) => ObjectKind::Collider,
             Actionable::NodePos(kind, _) => kind.clone(),
             Actionable::Invalid => ObjectKind::Invalid,
             Actionable::Step => ObjectKind::Invalid,

@@ -116,6 +116,22 @@ pub fn process_sync_action(
 
             set_object_position(handle, position, false, state)?;
         }
+        Actionable::ColliderShape(shape) => {
+            let id_bridge = lookups
+                .get(
+                    ObjectKind::Collider,
+                    crate::LookupIdentifier::ID,
+                    &action.inner_cuid,
+                )
+                .ok_or("Could not find handle in lookups")?;
+
+            let handle = Handle {
+                kind: object_bridge.handle_kind,
+                raw: id_bridge.handle_raw,
+            };
+
+            set_collider_shape(handle, shape, state)?;
+        }
         _ => {
             return Err("Invalid Actionable type".to_string());
         }

@@ -1,4 +1,5 @@
-use crate::queue::Actionable;
+use crate::queue::{Actionable, CanDispatchActions};
+use crate::utils::{HasCUID2Field, HasHandleField};
 use crate::{ObjectKind, PhysicsObject};
 use godot::engine::notify::Node3DNotification;
 use godot::engine::{INode3D, Node3D};
@@ -59,6 +60,23 @@ impl PhysicsObject for RapierRigidBody3D {
         ObjectKind::RigidBody
     }
 
+    fn get_hot_reload_cb(&self) -> Callable {
+        self.hot_reload_cb.clone()
+    }
+
+    fn set_hot_reload_cb(&mut self, cb: Callable) {
+        self.hot_reload_cb = cb;
+    }
+
+    fn build(&self) -> Actionable {
+        let rb = RigidBodyBuilder::new(self.body_type.clone().into())
+            .additional_mass(self.additional_mass)
+            .build();
+        Actionable::RigidBody(rb)
+    }
+}
+
+impl HasCUID2Field for RapierRigidBody3D {
     fn get_cuid2(&self) -> String {
         self.id.to_string()
     }
@@ -66,7 +84,9 @@ impl PhysicsObject for RapierRigidBody3D {
     fn set_cuid2(&mut self, cuid2: String) {
         self.id = GString::from(cuid2);
     }
+}
 
+impl HasHandleField for RapierRigidBody3D {
     fn get_handle(&self) -> Handle {
         self.handle.clone()
     }
@@ -83,22 +103,9 @@ impl PhysicsObject for RapierRigidBody3D {
             ),
         }
     }
-
-    fn get_hot_reload_cb(&self) -> Callable {
-        self.hot_reload_cb.clone()
-    }
-
-    fn set_hot_reload_cb(&mut self, cb: Callable) {
-        self.hot_reload_cb = cb;
-    }
-
-    fn build(&self) -> Actionable {
-        let rb = RigidBodyBuilder::new(self.body_type.clone().into())
-            .additional_mass(self.additional_mass)
-            .build();
-        Actionable::RigidBody(rb)
-    }
 }
+
+impl CanDispatchActions for RapierRigidBody3D {}
 
 #[derive(GodotConvert, Var, Export, Debug, Clone)]
 #[godot(via = GString)]

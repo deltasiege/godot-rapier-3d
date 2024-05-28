@@ -30,3 +30,13 @@ where
         Err(e) => Err(e.to_string()),
     }
 }
+
+pub trait HasCUID2Field {
+    fn get_cuid2(&self) -> String;
+    fn set_cuid2(&mut self, cuid2: String);
+}
+
+pub trait HasHandleField {
+    fn get_handle(&self) -> Handle;
+    fn set_handle(&mut self, handle: Handle);
+}

@@ -3,6 +3,10 @@ use std::any::type_name;
 use std::cmp::Ordering;
 use std::fmt::{self, Display, Formatter};
 
+use godot::obj::WithBaseField;
+
+use crate::utils::HasCUID2Field;
+
 use super::Actionable;
 
 #[derive(Debug)]
@@ -47,5 +51,15 @@ impl Ord for Action {
         self.data
             .cmp(&other.data)
             .then_with(|| self.inner_cuid.cmp(&other.inner_cuid))
+    }
+}
+
+pub trait CanDispatchActions: WithBaseField + HasCUID2Field {
+    fn get_action(&self, data: Actionable) -> Action {
+        Action {
+            inner_cuid: self.get_cuid2(),
+            inner_iid: self.base().instance_id().to_i64(),
+            data,
+        }
     }
 }

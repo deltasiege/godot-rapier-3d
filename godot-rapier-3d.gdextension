@@ -6,6 +6,10 @@ reloadable = true
 [icons]
 RapierRigidBody3D = "res://addons/godot-rapier-3d/icons/rb3d.svg"
 RapierCollider3D = "res://addons/godot-rapier-3d/icons/col3d.svg"
+RapierBoxShape3D = "res://addons/godot-rapier-3d/icons/box_shape3d.svg"
+RapierCapsuleShape3D = "res://addons/godot-rapier-3d/icons/capsule_shape3d.svg"
+RapierCylinderShape3D = "res://addons/godot-rapier-3d/icons/cylinder_shape3d.svg"
+RapierSphereShape3D = "res://addons/godot-rapier-3d/icons/sphere_shape3d.svg"
 
 [libraries]
 linux.debug.x86_64 =     "res://addons/godot-rapier-3d/rust/target/debug/libgodot_rapier_3d.so"

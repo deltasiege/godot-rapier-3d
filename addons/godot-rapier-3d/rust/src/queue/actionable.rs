@@ -4,7 +4,7 @@ use std::fmt;
 use crate::objects::{Handle, HandleKind};
 use crate::ObjectKind;
 use rapier3d::dynamics::{RigidBody, RigidBodyHandle};
-use rapier3d::geometry::{Collider, ColliderHandle};
+use rapier3d::geometry::{Collider, ColliderHandle, SharedShape};
 use rapier3d::math::{Isometry, Real};
 
 pub enum Actionable {
@@ -13,6 +13,7 @@ pub enum Actionable {
     Collider(Collider),
     ColliderWithParent(Collider, RigidBodyHandle),
     ColliderIDWithParentID(String, Option<String>),
+    ColliderShape(SharedShape),
     ColliderHandle(ColliderHandle),
     NodePos(ObjectKind, Isometry<Real>),
     Step,
@@ -106,6 +107,7 @@ impl fmt::Debug for Actionable {
             Self::ColliderIDWithParentID(handle, parent) => {
                 write!(f, "ColliderIDWithParentID: {:?} {:?}", handle, parent)
             }
+            Self::ColliderShape(shape) => write!(f, "ColliderShape: {:?}", shape),
             Self::ColliderHandle(handle) => write!(f, "ColliderHandle: {:?}", handle),
             Self::NodePos(kind, pos) => write!(f, "NodePos: {:?} {:?}", kind, pos),
             Self::Step => write!(f, "Step"),
@@ -124,6 +126,7 @@ impl fmt::Display for Actionable {
             Self::ColliderIDWithParentID(_, _) => {
                 write!(f, "Actionable::ColliderIDWithParentID")
             }
+            Self::ColliderShape(_) => write!(f, "Actionable::ColliderShape"),
             Self::ColliderHandle(_) => write!(f, "Actionable::ColliderHandle"),
             Self::NodePos(_, _) => write!(f, "Actionable::NodePos"),
             Self::Step => write!(f, "Actionable::Step"),
