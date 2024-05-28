@@ -21,5 +21,4 @@ jobs:
         with:
           draft: true
           files: "godot-rapier-3d-*"
-          body_path: CHANGES.md
           generate_release_notes: true
