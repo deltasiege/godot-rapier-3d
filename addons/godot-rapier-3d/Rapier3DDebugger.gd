@@ -22,6 +22,7 @@ func _enter_tree():
 	project_settings_node.add_project_settings()
 	project_settings_node.free()
 	ProjectSettings.connect("settings_changed", self._on_settings_changed)
+	update_log_level()
 
 func _exit_tree():
 	ProjectSettings.disconnect("settings_changed", self._on_settings_changed)
@@ -35,8 +36,11 @@ func _on_settings_changed():
 	show_colliders = ProjectSettings.get_setting("debug/rapier_3d/show_colliders")
 	show_ui = ProjectSettings.get_setting("debug/rapier_3d/show_ui")
 	if debug_lines_node != null: debug_lines_node.clear_lines()
-	if is_instance_valid(Rapier3DEngine): Rapier3DEngine.set_log_level(ProjectSettings.get_setting("debug/rapier_3d/logging_level"))
+	update_log_level()
 	settings_changed.emit()
+
+func update_log_level():
+	if is_instance_valid(Rapier3DEngine): Rapier3DEngine.set_log_level(ProjectSettings.get_setting("debug/rapier_3d/logging_level"))
 
 func _spawn_ui():
 	debug_ui_node = physics_controls.instantiate()
