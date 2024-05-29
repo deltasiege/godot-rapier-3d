@@ -15,13 +15,13 @@ jobs:
     strategy:
       matrix:
         include:
-          # - release_for: linux-32-gnu
-          #   runner: ubuntu-latest
-          #   target: i686-unknown-linux-gnu
-          #   compiler: cross
-          #   archive: linux-gnu-x86_32
-          #   archive_ext: .tar.gz
-          #   bin: libgodot_rapier_3d.so
+          - release_for: linux-32-gnu
+            runner: ubuntu-latest
+            target: i686-unknown-linux-gnu
+            compiler: cross
+            archive: linux-gnu-x86_32
+            archive_ext: .tar.gz
+            bin: libgodot_rapier_3d.so
 
           - release_for: linux-64-gnu
             runner: ubuntu-latest
@@ -31,29 +31,29 @@ jobs:
             archive_ext: .tar.gz
             bin: libgodot_rapier_3d.so
 
-          # - release_for: linux-64-arm
-          #   runner: ubuntu-latest
-          #   target: aarch64-unknown-linux-gnu
-          #   compiler: cross
-          #   archive: linux-arm-x86_64
-          #   archive_ext: .tar.gz
-          #   bin: libgodot_rapier_3d.so
+          - release_for: linux-64-arm
+            runner: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            compiler: cross
+            archive: linux-arm-x86_64
+            archive_ext: .tar.gz
+            bin: libgodot_rapier_3d.so
 
-          # - release_for: linux-64-rv
-          #   runner: ubuntu-latest
-          #   target: riscv64gc-unknown-linux-gnu
-          #   compiler: cross
-          #   archive: linux-rv-x86_64
-          #   archive_ext: .tar.gz
-          #   bin: libgodot_rapier_3d.so
+          - release_for: linux-64-rv
+            runner: ubuntu-latest
+            target: riscv64gc-unknown-linux-gnu
+            compiler: cross
+            archive: linux-rv-x86_64
+            archive_ext: .tar.gz
+            bin: libgodot_rapier_3d.so
 
-          # - release_for: windows-32-msvc
-          #   runner: windows-latest
-          #   target: i686-pc-windows-msvc
-          #   compiler: cross
-          #   archive: windows-msvc-x86_32
-          #   archive_ext: .zip
-          #   bin: godot_rapier_3d.dll
+          - release_for: windows-32-msvc
+            runner: windows-latest
+            target: i686-pc-windows-msvc
+            compiler: cross
+            archive: windows-msvc-x86_32
+            archive_ext: .zip
+            bin: godot_rapier_3d.dll
 
           - release_for: windows-64-msvc
             runner: windows-latest
