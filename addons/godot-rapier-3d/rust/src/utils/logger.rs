@@ -25,9 +25,9 @@ impl log::Log for GR3DLogger {
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
             match record.level() {
-                Level::Error => godot_error!("{}", record.args()),
-                Level::Warn => godot_warn!("{}", record.args()),
-                _ => godot_print!("[{}]: {}", record.level(), record.args()),
+                Level::Error => godot_error!("[GR3D]: {}", record.args()),
+                Level::Warn => godot_warn!("[GR3D]: {}", record.args()),
+                _ => godot_print!("[GR3D][{}]: {}", record.level(), record.args()),
             }
         }
     }

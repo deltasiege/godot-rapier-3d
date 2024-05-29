@@ -8,7 +8,7 @@ use process::{process_insert_action, process_parent_action, process_remove_actio
 mod action;
 mod actionable;
 mod process;
-pub use action::Action;
+pub use action::{Action, CanDispatchActions};
 pub use actionable::Actionable;
 
 use self::process::process_sim_action;

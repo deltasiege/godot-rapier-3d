@@ -1,7 +1,7 @@
 use crate::objects::{Handle, RapierCollider3D, RapierRigidBody3D};
 use crate::queue::Actionable;
-use crate::utils::node_from_instance_id;
-use crate::{GR3DPhysicsState, IDBridge, Lookups, ObjectKind, PhysicsObject};
+use crate::utils::{node_from_instance_id, HasHandleField};
+use crate::{GR3DPhysicsState, IDBridge, Lookups, ObjectKind};
 use godot::obj::InstanceId;
 use godot::prelude::*;
 

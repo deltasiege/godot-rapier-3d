@@ -1,6 +1,6 @@
 use crate::engine::get_engine;
-use crate::queue::{Action, Actionable, QueueName};
-use crate::utils::{isometry_to_transform, transform_to_isometry};
+use crate::queue::{Actionable, CanDispatchActions, QueueName};
+use crate::utils::{isometry_to_transform, transform_to_isometry, HasCUID2Field, HasHandleField};
 use crate::LookupIdentifier;
 use godot::builtin::Transform3D;
 use godot::engine::{GDExtensionManager, Node3D};
@@ -9,6 +9,7 @@ use godot::prelude::*;
 use rapier3d::math::{Isometry, Real};
 
 mod collider;
+mod collider_shape;
 mod handle;
 mod object_bridge;
 mod rigid_body;
@@ -19,13 +20,11 @@ pub use object_bridge::{ObjectBridge, ObjectKind};
 pub use rigid_body::RapierRigidBody3D;
 
 // Implemented by all classes that inherit a Godot node and have an underlying Rapier object
-pub trait PhysicsObject: WithBaseField<Base = Node3D> {
+pub trait PhysicsObject:
+    WithBaseField<Base = Node3D> + CanDispatchActions + HasCUID2Field + HasHandleField
+{
     // Required
     fn get_kind(&self) -> ObjectKind;
-    fn get_cuid2(&self) -> String;
-    fn set_cuid2(&mut self, cuid2: String);
-    fn get_handle(&self) -> Handle;
-    fn set_handle(&mut self, handle: Handle);
     fn get_hot_reload_cb(&self) -> Callable;
     fn set_hot_reload_cb(&mut self, cb: Callable);
     fn build(&self) -> Actionable;
@@ -40,7 +39,7 @@ pub trait PhysicsObject: WithBaseField<Base = Node3D> {
             .is_some())
     }
 
-    fn attach_extensions_reloaded_signal(&mut self) {
+    fn attach_extensions_reloaded(&mut self) {
         let sig = Signal::from_object_signal(
             &GDExtensionManager::singleton(),
             StringName::from("extensions_reloaded"),
@@ -55,7 +54,7 @@ pub trait PhysicsObject: WithBaseField<Base = Node3D> {
         self.set_hot_reload_cb(cb);
     }
 
-    fn detach_extensions_reloaded_signal(&mut self) {
+    fn detach_extensions_reloaded(&mut self) {
         if !self.get_hot_reload_cb().is_null() {
             GDExtensionManager::singleton().disconnect(
                 StringName::from("extensions_reloaded"),
@@ -73,27 +72,19 @@ pub trait PhysicsObject: WithBaseField<Base = Node3D> {
 
     fn on_enter_tree(&mut self) {
         self.register().map_err(crate::handle_error).ok();
-        self.attach_extensions_reloaded_signal();
+        self.attach_extensions_reloaded();
         self.sync_r2g().map_err(crate::handle_error).ok();
     }
 
     fn on_exit_tree(&mut self) {
         self.base_mut().set_notify_transform(false);
         self.unregister().map_err(crate::handle_error).ok();
-        self.detach_extensions_reloaded_signal();
+        self.detach_extensions_reloaded();
     }
 
     fn on_transform_changed(&mut self) {
         // Change rapier transform to match godot transform
         self.sync_r2g().map_err(crate::handle_error).ok();
-    }
-
-    fn get_action(&self, data: Actionable) -> Action {
-        Action {
-            inner_cuid: self.get_cuid2(),
-            inner_iid: self.base().instance_id().to_i64(),
-            data,
-        }
     }
 
     fn get_rapier_position(&self) -> Result<Isometry<Real>, String> {

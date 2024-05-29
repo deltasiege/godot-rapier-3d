@@ -1,5 +1,5 @@
 use rapier3d::dynamics::RigidBodyHandle;
-use rapier3d::geometry::ColliderHandle;
+use rapier3d::geometry::{ColliderHandle, SharedShape};
 use rapier3d::math::{Isometry, Real};
 
 use crate::objects::{Handle, HandleKind};
@@ -30,4 +30,17 @@ pub fn set_object_position(
         }
         _ => Err("Invalid handle type".to_string()),
     }
+}
+
+pub fn set_collider_shape(
+    handle: Handle,
+    shape: SharedShape,
+    state: &mut GR3DPhysicsState,
+) -> Result<(), String> {
+    let collider = state
+        .collider_set
+        .get_mut(ColliderHandle::from(handle))
+        .ok_or("Could not find collider in pipeline")?;
+    collider.set_shape(shape);
+    Ok(())
 }
