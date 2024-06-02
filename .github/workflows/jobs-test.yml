@@ -1,0 +1,256 @@
+name: jobs/test
+
+on:
+  workflow_call:
+
+jobs:
+  build-tests:
+    name: Build test binary - ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            targets: x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu
+            pack: all
+            pack_ext: .tar.gz
+
+          - runner: windows-latest
+            targets: x86_64-pc-windows-msvc
+            pack: all
+            pack_ext: .zip
+
+          - runner: macos-latest
+            targets: aarch64-apple-darwin
+            pack: all
+            pack_ext: .zip
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1 # https://bun.sh/guides/runtime/cicd
+
+      - name: Cache dependencies
+        id: cache-dependencies
+        uses: actions/cache@v4
+        with:
+          key: dependencies-${{ matrix.runner }}
+          path: |
+            ci/bin/*export_templates.tpz
+            ci/bin/Godot*.zip
+
+      - name: Download Godot and export templates
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        shell: bash
+        run: bun ci/download-dependencies.ts ${{ matrix.targets }}
+
+      - name: Extract Godot and export templates
+        shell: bash
+        run: bun ci/extract-dependencies.ts ${{ matrix.targets }}
+
+      - name: Download gr3d package
+        uses: actions/download-artifact@v4
+        with:
+          name: godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+
+      - name: Clear landing zone
+        shell: bash
+        run: |
+          rm godot-rapier-3d.gdextension
+          rm -rf ./addons/godot-rapier-3d
+
+      - name: Unpack archive
+        shell: bash
+        run: |
+          if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
+            7z l godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+            7z x -y godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+          else
+            tar ztvf godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+            tar xzvf godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+          fi
+
+      - name: Rename .gdextension config
+        shell: bash
+        run: mv godot-rapier-3d.gdext.test godot-rapier-3d.gdextension
+
+      - name: bun build-tests.ts
+        shell: bash
+        run: bun ci/build-tests.ts ${{ matrix.targets }}
+        timeout-minutes: 5 # Timeout for windows hanging after finish
+
+      - name: Upload test binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: gr3d-test-binaries-${{ matrix.runner }}
+          path: |
+            build/gr3d-tests-*
+            build/*godot_rapier_3d.*
+
+      - name: bun ci/debug.ts
+        shell: bash
+        run: bun ci/debug.ts
+        if: always()
+
+  # native -------------
+  test-native:
+    name: Run native tests - ${{ matrix.target }}
+    needs: build-tests
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+
+          - runner: windows-latest
+            target: x86_64-pc-windows-msvc
+
+          - runner: macos-latest
+            target: aarch64-apple-darwin
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1 # https://bun.sh/guides/runtime/cicd
+
+      - name: Download test binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: gr3d-test-binaries-${{ matrix.runner }}
+          path: build
+
+      - name: Extract MacOS test binary
+        if: matrix.runner == 'macos-latest'
+        shell: bash
+        run: |
+          tar tzvf build/gr3d-tests-${{ matrix.target }}.zip -C build
+          tar xzvf build/gr3d-tests-${{ matrix.target }}.zip -C build
+
+      - name: Make test binaries executeable
+        run: chmod +x ./build/gr3d-tests-*
+
+      - name: bun run-tests.ts
+        shell: bash
+        run: bun ci/run-tests.ts ${{ matrix.target }}
+        timeout-minutes: 2 # Timeout for windows hanging after finish
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ matrix.target }}
+          path: "build/reports/*report.txt"
+
+      - name: bun ci/debug.ts
+        shell: bash
+        run: bun ci/debug.ts
+        if: always()
+
+  # emulated -------------
+  test-emulated:
+    name: Run QEMU tests - ${{ matrix.target }}
+    needs: build-tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            pack: linux-arm-x86_64
+            pack_ext: .tar.gz
+            arch: aarch64
+            distro: ubuntu_latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1 # https://bun.sh/guides/runtime/cicd
+
+      - name: Download test binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: gr3d-test-binaries-${{ matrix.runner }}
+          path: build
+
+      - name: Make test binaries executeable
+        run: chmod +x ./build/gr3d-tests-*
+
+      - name: Make run tests script executable
+        run: chmod +x ./ci/run-tests.sh
+
+      - uses: uraimo/run-on-arch-action@v2
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
+          githubToken: ${{ github.token }}
+          setup: |
+            mkdir -p "${HOME}/.bun/bin"
+          dockerRunArgs: |
+            --volume "${PWD}/build:/build"
+            --volume "${HOME}/.bun/bin:${HOME}/.bun/bin"
+          install: |
+            case "${{ matrix.distro }}" in
+              ubuntu*|jessie|stretch|buster|bullseye)
+                apt-get update -q -y
+                ;;
+              fedora*)
+                dnf -y update
+                ;;
+              alpine*)
+                apk update
+                ;;
+            esac
+          run: |
+            echo 'uname -a:'
+            uname -a
+            echo 'arch:'
+            arch
+            echo 'pwd:'
+            pwd
+
+            echo './ci/run-tests.sh ${{ matrix.target }}'
+            ./ci/run-tests.sh ${{ matrix.target }}
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ matrix.target }}
+          path: "build/reports/*report.txt"
+
+      - name: bun ci/debug.ts
+        shell: bash
+        run: bun ci/debug.ts
+        if: always()
+
+  analyze:
+    name: Analyze results
+    needs: [test-native, test-emulated]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1 # https://bun.sh/guides/runtime/cicd
+
+      - name: Download all reports
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          pattern: report-*
+          path: build/reports
+
+      - name: bun compare-reports.ts
+        run: bun ci/compare-reports.ts
+
+      - name: cat *--comparison.diff
+        run: cat build/reports/*comparison.diff
+
+      # TODO push this determinism report data to web interface instead
+      - name: Create determinism diffs packages
+        run: 7z a determinism-diffs.zip ./build/reports/*comparison.diff
+
+      - name: Upload determinism-diffs
+        uses: actions/upload-artifact@v4
+        with:
+          name: determinism-diffs
+          path: "determinism-diffs.zip"
+
+      - name: bun ci/debug.ts
+        shell: bash
+        run: bun ci/debug.ts
+        if: always()

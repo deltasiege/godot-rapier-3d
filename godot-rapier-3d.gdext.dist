@@ -1,0 +1,30 @@
+[configuration]
+entry_symbol = "gdext_rust_init"
+compatibility_minimum = 4.2
+reloadable = true
+
+[icons]
+RapierRigidBody3D = "res://addons/godot-rapier-3d/icons/object_rigid_body.svg"
+RapierCollider3D = "res://addons/godot-rapier-3d/icons/object_collider.svg"
+RapierBoxShape3D = "res://addons/godot-rapier-3d/icons/shape_box.svg"
+RapierCapsuleShape3D = "res://addons/godot-rapier-3d/icons/shape_capsule.svg"
+RapierCylinderShape3D = "res://addons/godot-rapier-3d/icons/shape_cylinder.svg"
+RapierSphereShape3D = "res://addons/godot-rapier-3d/icons/shape_sphere.svg"
+
+[libraries]
+linux.debug.x86_32 =     "res://addons/godot-rapier-3d/bin/i686-unknown-linux-gnu-libgodot_rapier_3d.so"
+linux.release.x86_32 =   "res://addons/godot-rapier-3d/bin/i686-unknown-linux-gnu-libgodot_rapier_3d.so"
+linux.debug.x86_64 =     "res://addons/godot-rapier-3d/bin/x86_64-unknown-linux-gnu-libgodot_rapier_3d.so"
+linux.release.x86_64 =   "res://addons/godot-rapier-3d/bin/x86_64-unknown-linux-gnu-libgodot_rapier_3d.so"
+linux.debug.arm64 =      "res://addons/godot-rapier-3d/bin/aarch64-unknown-linux-gnu-libgodot_rapier_3d.so"
+linux.release.arm64 =    "res://addons/godot-rapier-3d/bin/aarch64-unknown-linux-gnu-libgodot_rapier_3d.so"
+macos.debug =            "res://addons/godot-rapier-3d/bin/aarch64-apple-darwin-libgodot_rapier_3d.dylib"
+macos.release =          "res://addons/godot-rapier-3d/bin/aarch64-apple-darwin-libgodot_rapier_3d.dylib"
+macos.debug.x86_64 =     "res://addons/godot-rapier-3d/bin/x86_64-apple-darwin-libgodot_rapier_3d.dylib"
+macos.release.x86_64 =   "res://addons/godot-rapier-3d/bin/x86_64-apple-darwin-libgodot_rapier_3d.dylib"
+macos.debug.arm64 =      "res://addons/godot-rapier-3d/bin/aarch64-apple-darwin-libgodot_rapier_3d.dylib"
+macos.release.arm64 =    "res://addons/godot-rapier-3d/bin/aarch64-apple-darwin-libgodot_rapier_3d.dylib"
+windows.debug.x86_32 =   "res://addons/godot-rapier-3d/bin/i686-pc-windows-msvc-godot_rapier_3d.dll"
+windows.release.x86_32 = "res://addons/godot-rapier-3d/bin/i686-pc-windows-msvc-godot_rapier_3d.dll"
+windows.debug.x86_64 =   "res://addons/godot-rapier-3d/bin/x86_64-pc-windows-msvc-godot_rapier_3d.dll"
+windows.release.x86_64 = "res://addons/godot-rapier-3d/bin/x86_64-pc-windows-msvc-godot_rapier_3d.dll"

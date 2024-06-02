@@ -1,0 +1,27 @@
+name: Full CI
+
+on:
+  push:
+    paths:
+      - "addons/godot-rapier-3d/**"
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+" # Regex for a version number such as v0.2.1
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  build:
+    uses: ./.github/workflows/jobs-build.yml
+
+  test:
+    uses: ./.github/workflows/jobs-test.yml
+    needs: [build]
+
+  release:
+    uses: ./.github/workflows/jobs-release.yml
+    needs: [build, test]

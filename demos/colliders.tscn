@@ -1,0 +1,108 @@
+[gd_scene load_steps=16 format=3 uid="uid://bwcdw2syew3r6"]
+
+[ext_resource type="PackedScene" uid="uid://bll017w15kfkw" path="res://tests/assets/flycam.tscn" id="1_sir15"]
+[ext_resource type="Material" uid="uid://c6qus6d8wc43p" path="res://demos/assets/dbug_mat_high.tres" id="3_cldhj"]
+[ext_resource type="Material" uid="uid://c0t4kx1mtvmwy" path="res://demos/assets/dbug_mat_mid.tres" id="3_diwkp"]
+[ext_resource type="PackedScene" uid="uid://cwkqaxdhe1ifp" path="res://demos/assets/world.tscn" id="4_vx8g6"]
+
+[sub_resource type="RapierSphereShape3D" id="RapierSphereShape3D_kfpn5"]
+radius = 0.51
+
+[sub_resource type="SphereMesh" id="SphereMesh_yjjeh"]
+
+[sub_resource type="RapierBoxShape3D" id="RapierBoxShape3D_pwg2i"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_v2q8u"]
+
+[sub_resource type="RapierCapsuleShape3D" id="RapierCapsuleShape3D_ayisc"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_0qgcc"]
+
+[sub_resource type="RapierCylinderShape3D" id="RapierCylinderShape3D_lktfs"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_sf4bl"]
+
+[sub_resource type="RapierBoxShape3D" id="RapierBoxShape3D_85hoe"]
+size = Vector3(8, 4, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_fmibp"]
+size = Vector3(8, 4, 1)
+
+[sub_resource type="RapierBoxShape3D" id="RapierBoxShape3D_p1m5n"]
+size = Vector3(8, 4, 1)
+
+[node name="Colliders" type="Node3D"]
+
+[node name="FlyCam" parent="." instance=ExtResource("1_sir15")]
+transform = Transform3D(1, 0, 0, 0, 0.984808, 0.173648, 0, -0.173648, 0.984808, 0, 5, 10)
+
+[node name="World" parent="." instance=ExtResource("4_vx8g6")]
+
+[node name="Ball" type="RapierRigidBody3D" parent="."]
+id = "juavrifwxk6asz4kp7t5t9qu"
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Ball"]
+id = "nphatyucnvkbk5npv096vzxl"
+shape = SubResource("RapierSphereShape3D_kfpn5")
+restitution = 0.85
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ball"]
+material_override = ExtResource("3_cldhj")
+mesh = SubResource("SphereMesh_yjjeh")
+
+[node name="Cube" type="RapierRigidBody3D" parent="."]
+id = "vkk7n0pv1mf0cpm1kn13qqdm"
+transform = Transform3D(0.449345, -0.135501, 0.883022, 0.813797, 0.469846, -0.34202, -0.36854, 0.872286, 0.321394, 0, 4, 0)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Cube"]
+id = "elbk7azvsv1rvrshft4gg00a"
+shape = SubResource("RapierBoxShape3D_pwg2i")
+restitution = 0.2
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Cube"]
+material_override = ExtResource("3_cldhj")
+mesh = SubResource("BoxMesh_v2q8u")
+
+[node name="Capsule" type="RapierRigidBody3D" parent="."]
+id = "u1mhfh1vxdh3fzreg2pxnwky"
+transform = Transform3D(0.135501, 0.449345, -0.883022, -0.469846, 0.813798, 0.34202, 0.872286, 0.368541, 0.321394, -2, 4, 0)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Capsule"]
+id = "l13myoesl804porf1m9h2yfg"
+shape = SubResource("RapierCapsuleShape3D_ayisc")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Capsule"]
+transform = Transform3D(0.965926, 2.98023e-08, 0.258819, 7.45058e-09, 1, -5.96046e-08, -0.258819, 8.19564e-08, 0.965926, 0, 0, 0)
+material_override = ExtResource("3_cldhj")
+mesh = SubResource("CapsuleMesh_0qgcc")
+
+[node name="Cylinder" type="RapierRigidBody3D" parent="."]
+id = "bdvba5zgzf2fmibtq3vxl5b8"
+transform = Transform3D(0.613882, -0.323992, -0.719846, 0.719846, 0.604023, 0.34202, 0.323992, -0.728139, 0.604023, 2, 4, 0)
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="Cylinder"]
+id = "lwpnfi8p01uxk5xkb50w2uwu"
+shape = SubResource("RapierCylinderShape3D_lktfs")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Cylinder"]
+material_override = ExtResource("3_cldhj")
+mesh = SubResource("CylinderMesh_sf4bl")
+
+[node name="LWall" type="RapierCollider3D" parent="."]
+id = "gq37zqn0rnuw045f9x6ia4gk"
+shape = SubResource("RapierBoxShape3D_85hoe")
+transform = Transform3D(0.939692, 0, 0.34202, 0, 1, 0, -0.34202, 0, 0.939692, -4, 2, -3)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="LWall"]
+material_override = ExtResource("3_diwkp")
+mesh = SubResource("BoxMesh_fmibp")
+
+[node name="RWall" type="RapierCollider3D" parent="."]
+id = "woz3ic9m91zgi2019k7e9vib"
+shape = SubResource("RapierBoxShape3D_p1m5n")
+transform = Transform3D(0.819152, 0, -0.573576, 0, 1, 0, 0.573576, 0, 0.819152, 4.5, 2, -2)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RWall"]
+material_override = ExtResource("3_diwkp")
+mesh = SubResource("BoxMesh_fmibp")

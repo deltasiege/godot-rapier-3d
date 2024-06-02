@@ -1,0 +1,28 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="godot-rapier-3d"
+run/main_scene="res://tests/index.tscn"
+config/features=PackedStringArray("4.2", "GL Compatibility")
+
+[autoload]
+
+Rapier3D="*res://addons/godot-rapier-3d/Rapier3D.gd"
+Rapier3DDebugger="*res://addons/godot-rapier-3d/Rapier3DDebugger.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray()
+
+[filesystem]
+
+import/blender/enabled=false
