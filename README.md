@@ -8,9 +8,17 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 
 ### Features
 
-- Cross platform determinism ✔️ (confirmed via [actions](https://github.com/deltasiege/godot-rapier-3d/actions/workflows/build-and-test.yml)!)
+- Cross platform determinism ✔️
 - Physics state manual stepping ✔️
 - Physics state saving & loading ✔️
+
+### Determinism
+
+Confirmed via automated [Github Actions](https://github.com/deltasiege/godot-rapier-3d/actions) tests across:
+- Windows, MacOS, Linux
+- arm64 / x86_64 architectures
+
+Each release contains a `determinism-diffs.zip` artifact that contains determinism test results
 
 ### Requirements
 
@@ -63,7 +71,9 @@ This extension is currently under heavy development, compatibility when upgradin
 - [x] Snapshots & stepping
 - [x] Determinism automated testing
 - [x] Collider shapes
-- [ ] Forces and manipulating rigidbodies
+- [ ] [Character controller](https://rapier.rs/docs/user_guides/rust/character_controller)
+- [ ] Sensors/Areas
+- [ ] Apply forces to rigidbodies
 - [ ] Visualize active vs inactive bodies
 - [ ] Collision layers
 - [ ] Save/load snapshots to/from resource files
@@ -82,7 +92,6 @@ Luckily, Godot 4 provides a great [extension system][gdext-link] and [Rapier][ra
 ## Limitations
 
 - No mobile support ([godot-rust](https://github.com/godot-rust/gdext/issues/24))
-- `rv64`, `ppc64` and `ppc32` architecture automated testing for determinism [not yet officially supported](https://github.com/godotengine/godot-proposals/issues/3374#issuecomment-2142165372)
 
 ## Contributing
 
