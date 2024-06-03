@@ -57,11 +57,11 @@ func _on_button_pressed():
 
 ### Determinism
 
-Confirmed via automated [Github Actions](https://github.com/deltasiege/godot-rapier-3d/actions) tests across:
+Confirmed via [Github Actions](https://github.com/deltasiege/godot-rapier-3d/actions) across:
 - Windows, MacOS, Linux
 - arm64 / x86_64 architectures
 
-Each release contains a `determinism-diffs.zip` artifact that contains determinism test results
+Each release has a `determinism-diffs.zip` artifact that contains determinism test results
 
 ## Roadmap
 
