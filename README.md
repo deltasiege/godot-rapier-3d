@@ -12,14 +12,6 @@ It is _not_ a drop-in replacement for the Godot physics engine. Rapier nodes ope
 - Physics state manual stepping ✔️
 - Physics state saving & loading ✔️
 
-### Determinism
-
-Confirmed via automated [Github Actions](https://github.com/deltasiege/godot-rapier-3d/actions) tests across:
-- Windows, MacOS, Linux
-- arm64 / x86_64 architectures
-
-Each release contains a `determinism-diffs.zip` artifact that contains determinism test results
-
 ### Requirements
 
 - Godot 4.2.2 or later
@@ -59,9 +51,17 @@ func _ready():
   initial_snapshot = Rapier3D.get_state()
   var hash = Rapier3D.get_hash(initial_snapshot)
 
-func _on_foo():
+func _on_button_pressed():
   Rapier3D.set_state(initial_snapshot)
 ```
+
+### Determinism
+
+Confirmed via automated [Github Actions](https://github.com/deltasiege/godot-rapier-3d/actions) tests across:
+- Windows, MacOS, Linux
+- arm64 / x86_64 architectures
+
+Each release contains a `determinism-diffs.zip` artifact that contains determinism test results
 
 ## Roadmap
 
@@ -100,14 +100,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 ## Attributions
 
 - [gdext](https://github.com/godot-rust/gdext) discord community
-  - [Lili Zoey](https://github.com/lilizoey)
-  - [Bromeon](https://github.com/Bromeon)
+- [Dimforge](https://dimforge.com/) discord community
 - [dsnopek](https://github.com/dsnopek) and [SGPhysics2D](https://www.snopekgames.com/tutorial/2021/getting-started-sg-physics-2d-and-deterministic-physics-godot)
 - [GameDevelopmentCenter](https://www.youtube.com/c/GameDevelopmentCenter)
 - [appsinacup/godot-rapier-2](https://github.com/appsinacup/godot-rapier-2d)
 - [ilyas-taouaou/rapier-gdext](https://github.com/ilyas-taouaou/rapier-gdext)
-
-Thanks very much for your help
 
 [rapier-link]: https://rapier.rs/
 [godot-link]: https://godotengine.org/
