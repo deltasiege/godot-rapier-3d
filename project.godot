@@ -19,6 +19,10 @@ config/features=PackedStringArray("4.2", "GL Compatibility")
 Rapier3D="*res://addons/godot-rapier-3d/Rapier3D.gd"
 Rapier3DDebugger="*res://addons/godot-rapier-3d/Rapier3DDebugger.gd"
 
+[debug]
+
+rapier_3d/logging_level="Debug"
+
 [editor_plugins]
 
 enabled=PackedStringArray()

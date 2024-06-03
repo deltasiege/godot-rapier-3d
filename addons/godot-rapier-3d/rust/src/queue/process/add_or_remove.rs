@@ -1,8 +1,8 @@
-use crate::objects::{Handle, RapierCollider3D, RapierRigidBody3D};
+use crate::objects::Handle;
 use crate::queue::Actionable;
-use crate::utils::{node_from_instance_id, HasHandleField};
+use crate::utils::{node_from_instance_id, HasCUID2Field, HasHandleField};
 use crate::{GR3DPhysicsState, IDBridge, Lookups, ObjectKind};
-use godot::obj::InstanceId;
+use godot::obj::{InstanceId, WithBaseField};
 use godot::prelude::*;
 
 // Returns input cuid2 if the CUID2 is unique, otherwise generates and returns a new one
@@ -65,42 +65,31 @@ pub fn remove_from_set(object: Actionable, state: &mut GR3DPhysicsState) -> Resu
     }
 }
 
-pub fn attach_handle_to_node(
-    object_kind: ObjectKind,
+pub fn attach_cuid2_to_node<T: HasCUID2Field + WithBaseField<Base = Node3D>>(
+    cuid2: String,
+    instance_id: i64,
+) -> Result<(), String> {
+    let iid = InstanceId::from_i64(instance_id);
+    let mut node = node_from_instance_id::<T>(iid)?;
+    node.bind_mut().set_cuid2(cuid2);
+    Ok(())
+}
+
+pub fn attach_handle_to_node<T: HasHandleField + WithBaseField<Base = Node3D>>(
     handle: Handle,
     instance_id: i64,
 ) -> Result<(), String> {
     let iid = InstanceId::from_i64(instance_id);
-    match object_kind {
-        ObjectKind::RigidBody => {
-            let mut node = node_from_instance_id::<RapierRigidBody3D>(iid)?;
-            node.bind_mut().set_handle(handle);
-            node.bind_mut()
-                .base_mut()
-                .try_call_deferred(
-                    StringName::from("set_notify_transform"),
-                    &[Variant::from(true)],
-                )
-                .map_err(|e| format!("[AQ]: Could not set notify transform on node: {:?}", e))?;
-            Ok(())
-        }
-        ObjectKind::Collider => {
-            let mut node = node_from_instance_id::<RapierCollider3D>(iid)?;
-            node.bind_mut().set_handle(handle);
-            node.bind_mut()
-                .base_mut()
-                .try_call_deferred(
-                    StringName::from("set_notify_transform"),
-                    &[Variant::from(true)],
-                )
-                .map_err(|e| format!("[AQ]: Could not set notify transform on node: {:?}", e))?;
-            Ok(())
-        }
-        _ => Err(format!(
-            "[AQ]: Could not attach handle to '{:?}' node",
-            object_kind
-        )),
-    }
+    let mut node = node_from_instance_id::<T>(iid)?;
+    node.bind_mut().set_handle(handle);
+    node.bind_mut()
+        .base_mut()
+        .try_call_deferred(
+            StringName::from("set_notify_transform"),
+            &[Variant::from(true)],
+        )
+        .map_err(|e| format!("[AQ]: Could not set notify transform on node: {:?}", e))?;
+    Ok(())
 }
 
 pub fn insert_lookup(

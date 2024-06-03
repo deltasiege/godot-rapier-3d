@@ -1,16 +1,12 @@
+use crate::objects::{Handle, ObjectBridge, RapierCollider3D, RapierRigidBody3D};
+use crate::queue::Action;
+use crate::{GR3DPhysicsPipeline, GR3DPhysicsState, LookupIdentifier, Lookups, ObjectKind};
 use rapier3d::dynamics::RigidBodyHandle;
 use rapier3d::geometry::ColliderHandle;
 
 use self::add_or_remove::*;
 use self::sim::*;
 use self::sync::*;
-use crate::objects::{Handle, ObjectBridge};
-use crate::queue::Action;
-use crate::GR3DPhysicsPipeline;
-use crate::LookupIdentifier;
-use crate::ObjectKind;
-use crate::{GR3DPhysicsState, Lookups};
-
 use super::Actionable;
 
 mod add_or_remove;
@@ -26,7 +22,18 @@ pub fn process_insert_action(
     let cuid2 = ensure_unique_cuid2(action.inner_cuid, lookups);
     let handle = insert_into_set(action.data, state)?;
     let iid = action.inner_iid.clone();
-    attach_handle_to_node(object_bridge.object_kind.clone(), handle.clone(), iid)?;
+    match object_bridge.object_kind {
+        ObjectKind::RigidBody => {
+            attach_cuid2_to_node::<RapierRigidBody3D>(cuid2.clone(), iid)?;
+            attach_handle_to_node::<RapierRigidBody3D>(handle.clone(), iid)?;
+        }
+        ObjectKind::Collider => {
+            attach_cuid2_to_node::<RapierCollider3D>(cuid2.clone(), iid)?;
+            attach_handle_to_node::<RapierCollider3D>(handle.clone(), iid)?;
+        }
+        _ => {}
+    }
+
     insert_lookup(object_bridge.object_kind, lookups, cuid2, handle.raw, iid)?;
     Ok(())
 }

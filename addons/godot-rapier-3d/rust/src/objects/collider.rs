@@ -87,8 +87,17 @@ impl RapierCollider3D {
         self.on_hot_reload();
     }
 
+    #[func]
+    fn _sync_r2g(&mut self) {
+        self.sync_r2g().map_err(crate::handle_error).ok();
+    }
+
     fn on_parented(&mut self) {
         self.push_parent_action().map_err(crate::handle_error).ok();
+        self.base_mut()
+            .try_call_deferred(StringName::from("_sync_r2g"), &[])
+            .map_err(|e| format!("Error when syncing collider after parenting: {:?}", e))
+            .ok();
     }
 
     fn push_parent_action(&mut self) -> Result<(), String> {
