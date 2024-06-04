@@ -8,6 +8,7 @@ use godot::obj::WithBaseField;
 use godot::prelude::*;
 use rapier3d::math::{Isometry, Real};
 
+mod character;
 mod collider;
 mod collider_shape;
 mod handle;

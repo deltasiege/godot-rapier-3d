@@ -97,6 +97,21 @@ impl GR3DPhysicsPipeline {
         Ok(())
     }
 
+    // Returns the shape of a given collider
+    pub fn get_collider(&self, handle: Handle) -> Result<&Collider, String> {
+        self.state
+            .collider_set
+            .get(ColliderHandle::from(handle.clone()))
+            .ok_or(format!("Could not find collider {:?} in pipeline", handle))
+    }
+
+    pub fn get_collider_mut(&mut self, handle: Handle) -> Result<&mut Collider, String> {
+        self.state
+            .collider_set
+            .get_mut(ColliderHandle::from(handle.clone()))
+            .ok_or(format!("Could not find collider {:?} in pipeline", handle))
+    }
+
     pub fn get_debug_info(&self) -> Result<String, String> {
         let engine = crate::engine::get_engine()?;
         let mut ret_map = HashMap::new();

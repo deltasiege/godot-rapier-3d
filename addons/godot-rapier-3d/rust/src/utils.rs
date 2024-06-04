@@ -1,6 +1,6 @@
 use godot::builtin::{Basis, Quaternion as GQuaternion, Transform3D, Vector3 as GVector};
 use nalgebra::geometry::Quaternion as NAQuaternion;
-use rapier3d::math::{Isometry, Real, Rotation, Translation};
+use rapier3d::math::{Isometry, Real, Rotation, Translation, Vector as RVector};
 use rapier3d::prelude::*;
 
 mod id;
@@ -36,4 +36,9 @@ pub fn isometry_to_transform(isometry: Isometry<Real>) -> Transform3D {
         )),
         origin: GVector::new(vec.x, vec.y, vec.z),
     }
+}
+
+// Converts Godot Vector3 to Rapier Vector
+pub fn vec_g2r(vec: GVector) -> RVector<Real> {
+    RVector::new(vec.x, vec.y, vec.z)
 }

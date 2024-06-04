@@ -1,0 +1,44 @@
+[gd_scene load_steps=8 format=3 uid="uid://cjckg85bwq3ia"]
+
+[ext_resource type="PackedScene" uid="uid://cwkqaxdhe1ifp" path="res://demos/assets/world.tscn" id="1_6qram"]
+[ext_resource type="PackedScene" uid="uid://bll017w15kfkw" path="res://tests/assets/flycam.tscn" id="1_x7w8h"]
+[ext_resource type="Script" path="res://demos/assets/character.gd" id="3_pj5vo"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_qehe6"]
+
+[sub_resource type="RapierCapsuleShape3D" id="RapierCapsuleShape3D_sjbxu"]
+radius = 0.51
+
+[sub_resource type="RapierBoxShape3D" id="RapierBoxShape3D_ixcf0"]
+size = Vector3(8, 4, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_rcy1y"]
+size = Vector3(8, 4, 1)
+
+[node name="CharacterController" type="Node3D"]
+
+[node name="FlyCam" parent="." instance=ExtResource("1_x7w8h")]
+
+[node name="World" parent="." instance=ExtResource("1_6qram")]
+
+[node name="RapierCharacterBody3D" type="RapierCharacterBody3D" parent="."]
+id = "t4bygdtxzx1o6ciohi7d45kf"
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+script = ExtResource("3_pj5vo")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RapierCharacterBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_qehe6")
+
+[node name="RapierCollider3D" type="RapierCollider3D" parent="RapierCharacterBody3D"]
+id = "pb4pg3khgwgl5s456w1t14di"
+shape = SubResource("RapierCapsuleShape3D_sjbxu")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="Wall" type="RapierCollider3D" parent="."]
+id = "eq0ow58hbjpbpwhiz841h6a9"
+shape = SubResource("RapierBoxShape3D_ixcf0")
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 5, 2, 5)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Wall"]
+mesh = SubResource("BoxMesh_rcy1y")

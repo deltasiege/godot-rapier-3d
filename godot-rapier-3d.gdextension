@@ -10,6 +10,7 @@ RapierBoxShape3D = "res://addons/godot-rapier-3d/icons/shape_box.svg"
 RapierCapsuleShape3D = "res://addons/godot-rapier-3d/icons/shape_capsule.svg"
 RapierCylinderShape3D = "res://addons/godot-rapier-3d/icons/shape_cylinder.svg"
 RapierSphereShape3D = "res://addons/godot-rapier-3d/icons/shape_sphere.svg"
+RapierCharacterBody3D = "res://addons/godot-rapier-3d/icons/object_character_body.svg"
 
 [libraries]
 linux.debug.x86_32 =     "res://addons/godot-rapier-3d/rust/target/debug/libgodot_rapier_3d.so"
