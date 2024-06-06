@@ -30,7 +30,7 @@ impl INode3D for RapierRigidBody3D {
         Self {
             id: GString::from(crate::cuid2()),
             handle: Handle::invalid(),
-            body_type: RBType::Dynamic,
+            body_type: RBType::default(),
             additional_mass: 0.0,
             hot_reload_cb: Callable::invalid(),
             base,
@@ -115,6 +115,12 @@ pub enum RBType {
     Fixed,
     KinematicPositionBased,
     KinematicVelocityBased,
+}
+
+impl Default for RBType {
+    fn default() -> Self {
+        RBType::Dynamic
+    }
 }
 
 impl Into<RigidBodyType> for RBType {

@@ -21,17 +21,19 @@ size = Vector3(8, 4, 1)
 
 [node name="World" parent="." instance=ExtResource("1_6qram")]
 
-[node name="RapierCharacterBody3D" type="RapierCharacterBody3D" parent="."]
+[node name="CharacterBody3D" type="CharacterBody3D" parent="World"]
+
+[node name="RapierCharacterBody3D2" type="RapierCharacterBody3D" parent="."]
 id = "t4bygdtxzx1o6ciohi7d45kf"
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.28715, 0)
 script = ExtResource("3_pj5vo")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="RapierCharacterBody3D"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RapierCharacterBody3D2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 mesh = SubResource("CapsuleMesh_qehe6")
 
-[node name="RapierCollider3D" type="RapierCollider3D" parent="RapierCharacterBody3D"]
-id = "pb4pg3khgwgl5s456w1t14di"
+[node name="RapierCollider3D" type="RapierCollider3D" parent="RapierCharacterBody3D2"]
+id = "qn4iqz0se5iuvc7ycv8ne0ha"
 shape = SubResource("RapierCapsuleShape3D_sjbxu")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 

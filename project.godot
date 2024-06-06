@@ -22,7 +22,7 @@ Rapier3DDebugger="*res://addons/godot-rapier-3d/Rapier3DDebugger.gd"
 [debug]
 
 rapier_3d/logging_level="Debug"
-rapier_3d/debug_in_game=false
+rapier_3d/show_ui=false
 
 [editor_plugins]
 

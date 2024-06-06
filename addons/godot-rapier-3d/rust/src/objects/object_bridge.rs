@@ -4,7 +4,6 @@ use std::fmt;
 
 #[derive(Debug, Clone)]
 pub struct ObjectBridge {
-    pub class: ObjectClass,
     pub handle_kind: HandleKind,
     pub object_kind: ObjectKind,
 }
@@ -12,24 +11,26 @@ pub struct ObjectBridge {
 impl ObjectBridge {
     pub fn invalid() -> ObjectBridge {
         ObjectBridge {
-            class: ObjectClass::RapierRigidBody3D,
             handle_kind: HandleKind::Invalid,
             object_kind: ObjectKind::Invalid,
         }
     }
 }
 
+// TODO remove object bridge and just do From impl
 impl From<ObjectKind> for ObjectBridge {
     fn from(object_kind: ObjectKind) -> Self {
         match object_kind {
             ObjectKind::RigidBody => ObjectBridge {
-                class: ObjectClass::RapierRigidBody3D,
                 handle_kind: HandleKind::RigidBodyHandle,
                 object_kind,
             },
             ObjectKind::Collider => ObjectBridge {
-                class: ObjectClass::RapierCollider3D,
                 handle_kind: HandleKind::ColliderHandle,
+                object_kind,
+            },
+            ObjectKind::Character => ObjectBridge {
+                handle_kind: HandleKind::RigidBodyHandle,
                 object_kind,
             },
             ObjectKind::Invalid => ObjectBridge::invalid(),
@@ -65,16 +66,11 @@ impl From<&Actionable> for ObjectBridge {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum ObjectClass {
-    RapierRigidBody3D,
-    RapierCollider3D,
-}
-
 #[derive(Eq, PartialEq, Debug, Hash, Clone)]
 pub enum ObjectKind {
     RigidBody,
     Collider,
+    Character,
     Invalid,
 }
 

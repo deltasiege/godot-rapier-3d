@@ -70,6 +70,7 @@ This extension is currently under heavy development, compatibility when upgradin
 - [ ] Editor UI to facilitate simulating in editor
 - [ ] Gizmo handles for collider shapes
 - [ ] Add to Godot asset library
+- [ ] [Property comments](https://github.com/godot-rust/gdext/issues/178)
 
 ## Why does this exist?
 
