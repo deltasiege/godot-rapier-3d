@@ -113,8 +113,6 @@ impl CanDispatchActions for RapierRigidBody3D {}
 pub enum RBType {
     Dynamic,
     Fixed,
-    KinematicPositionBased,
-    KinematicVelocityBased,
 }
 
 impl Default for RBType {
@@ -128,8 +126,6 @@ impl Into<RigidBodyType> for RBType {
         match self {
             RBType::Dynamic => RigidBodyType::Dynamic,
             RBType::Fixed => RigidBodyType::Fixed,
-            RBType::KinematicPositionBased => RigidBodyType::KinematicPositionBased,
-            RBType::KinematicVelocityBased => RigidBodyType::KinematicVelocityBased,
         }
     }
 }

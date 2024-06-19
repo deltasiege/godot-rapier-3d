@@ -1,12 +1,8 @@
-use crate::objects::RapierCollider3D;
-use crate::queue::{Actionable, CanDispatchActions};
-use crate::utils::{
-    get_shallow_children_of_type, isometry_to_transform, HasCUID2Field, HasHandleField,
-};
+use crate::queue::{Actionable, CanDispatchActions, QueueName};
+use crate::utils::{vec_g2r, HasCUID2Field, HasHandleField};
 use crate::{ObjectKind, PhysicsObject};
 use godot::engine::notify::Node3DNotification;
 use godot::engine::{INode3D, Node3D};
-use godot::obj::WithBaseField;
 use godot::prelude::*;
 use nalgebra::RealField;
 use rapier3d::control::{CharacterAutostep, CharacterLength, KinematicCharacterController};
@@ -14,24 +10,9 @@ use rapier3d::prelude::*;
 
 use super::{Handle, HandleKind};
 
-// rigidbody bake into character (only allow one per character)
-// colliders as children ? or maybe only shape needed?
-// when told to move, get children via godot and cast them to RapierCollider3D
-// get collider handle(s) from RapierCollider3D
-// pass via action:
-// collider handle(s)
-// character mass (self)
-
-// later in queue
-// pull collider(s) out of state using collider handle in action
-// get &dyn Shape from Collider.shape(&self)
-// get current position from Collider.position(&self)
-// get mass from Collider.mass_properties(&self).mass + character mass
-
 #[derive(GodotClass)]
 #[class(base = Node3D)]
 pub struct RapierCharacterBody3D {
-    // My comment
     #[export]
     #[var(usage_flags = [EDITOR, STORAGE, READ_ONLY])]
     pub id: GString, // https://crates.io/crates/cuid2
@@ -49,9 +30,9 @@ pub struct RapierCharacterBody3D {
     #[export]
     climb_steps: bool,
     #[export]
-    max_step_height: Real, // Relative to character length
+    max_step_height: Real,
     #[export]
-    min_step_width: Real, // Relative to character length
+    min_step_width: Real,
     #[export]
     step_reference: FrameOfReference,
     #[export]
@@ -76,7 +57,6 @@ pub struct RapierCharacterBody3D {
 
     handle: Handle,
     hot_reload_cb: Callable,
-    colliders: Vec<Gd<RapierCollider3D>>,
     base: Base<Node3D>,
 }
 
@@ -104,14 +84,13 @@ impl INode3D for RapierCharacterBody3D {
             normal_nudge_factor: 1.0e-4,
             handle: Handle::invalid(),
             hot_reload_cb: Callable::invalid(),
-            colliders: Vec::new(),
             base,
         }
     }
 
     fn on_notification(&mut self, what: Node3DNotification) {
         match what {
-            Node3DNotification::ENTER_TREE => self.on_enter_tree(),
+            Node3DNotification::ENTER_TREE => self._on_enter_tree(),
             Node3DNotification::EXIT_TREE => self.on_exit_tree(),
             Node3DNotification::TRANSFORM_CHANGED => self.on_transform_changed(),
             _ => {}
@@ -155,96 +134,30 @@ impl RapierCharacterBody3D {
         };
     }
 
-    fn update_colliders(&mut self) {
-        self.colliders = get_shallow_children_of_type::<RapierCollider3D>(&self.base());
-        // TODO instead get registered collider children in rapier
-    }
-
-    fn on_enter_tree(&mut self) {
-        // TODO register rigidbody
+    fn _on_enter_tree(&mut self) {
         self.update_character_controller();
-        self.update_colliders();
-    }
-
-    fn on_exit_tree(&mut self) {
-        // TODO unregister rigidbody
-        self.colliders = Vec::new();
-    }
-
-    fn on_transform_changed(&mut self) {
-        // TODO sync rigidbody in rapier
+        self.on_enter_tree();
     }
 
     #[func]
-    fn move_and_slide(&mut self, velocity: Vector3, delta_time: f32) {
-        let handles = self
-            .colliders
-            .iter()
-            .filter_map(|c| {
-                let handle = c.bind().handle.clone();
-                match handle.kind {
-                    HandleKind::Invalid => None,
-                    _ => Some(handle),
-                }
-            })
-            .collect::<Vec<Handle>>();
-
-        // handles come from state instead
-
-        for handle in handles {
-            let mut engine = crate::get_engine().unwrap();
-            let mut bind = engine.bind_mut();
-            let collider = bind.pipeline.get_collider(handle.clone()).unwrap();
-            let collider_shape = collider.shape();
-            let collider_pos = collider.position();
-            // let mass = collider.mass_properties().mass() + self.mass;
-
-            let result = self.character_controller.move_shape(
-                delta_time,
-                &bind.pipeline.state.rigid_body_set,
-                &bind.pipeline.state.collider_set,
-                &bind.pipeline.state.query_pipeline,
-                collider_shape,
-                collider_pos,
-                crate::utils::vec_g2r(velocity),
-                QueryFilter::default(),
-                // QueryFilter::default().exclude_rigid_body(),
-                |_| {},
-            );
-
-            let mut new_pos = collider_pos.clone();
-            new_pos.append_translation_mut(&Translation::from(result.translation));
-
-            godot_print!("autostep: {:?}", self.character_controller.autostep);
-            godot_print!("old_pos: {:?}", collider_pos.translation.vector);
-            godot_print!("new_pos: {:?}", new_pos.translation.vector);
-
-            // bind.pipeline
-            //     .get_collider_mut(handle)
-            //     .unwrap()
-            //     .set_position(new_pos);
-
-            // !@ set rigidbody instead
-
-            self.base_mut()
-                .set_global_transform(isometry_to_transform(new_pos));
-
-            // TODO - use action queue instead
-            // - use rigidbody (i think required for collision?)
-            // - hopping why?
-
-            // engine.bind_mut().action_queue.add_action(
-            //     self.get_action(Actionable::MoveCharacter {
-            //         collider_handle,
-            //         shape,
-            //         position,
-            //         mass,
-            //         velocity,
-            //         delta_time,
-            //     }),
-            //     &QueueName::Sync,
-            // );
+    fn move_character(&mut self, amount: Vector3, delta_time: f32) {
+        if amount == Vector3::ZERO {
+            return;
         }
+
+        self.dispatch_action(
+            Actionable::MoveCharacter {
+                cuid2: self.get_cuid2(),
+                controller: self.character_controller,
+                amount: vec_g2r(amount),
+                delta_time,
+            },
+            &QueueName::Sim,
+        )
+        .map_err(crate::handle_error)
+        .ok();
+
+        self.sync_g2r().map_err(crate::handle_error).ok();
     }
 }
 
@@ -265,7 +178,7 @@ impl PhysicsObject for RapierCharacterBody3D {
         let rb = RigidBodyBuilder::new(self.character_type.clone().into())
             .additional_mass(self.additional_mass)
             .build();
-        Actionable::RigidBody(rb)
+        Actionable::Character(rb)
     }
 }
 

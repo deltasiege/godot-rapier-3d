@@ -18,7 +18,7 @@ pub fn ensure_unique_cuid2(cuid2: String, lookups: &Lookups) -> String {
 
 pub fn insert_into_set(object: Actionable, state: &mut GR3DPhysicsState) -> Result<Handle, String> {
     match object {
-        Actionable::RigidBody(rb) => {
+        Actionable::RigidBody(rb) | Actionable::Character(rb) => {
             let handle = state.rigid_body_set.insert(rb);
             Ok(Handle::from(&handle))
         }

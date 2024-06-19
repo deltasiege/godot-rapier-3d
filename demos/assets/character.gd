@@ -1,5 +1,12 @@
 extends RapierCharacterBody3D
 
-func _physics_process(delta):
-	if Engine.get_physics_frames() % 5 != 0: return
-	move_and_slide(Vector3(1, 0, 1) * 0.1, delta)
+@export var speed = 0.1
+@export var deceleration = 5.0
+var velocity = Vector3.ZERO
+
+func _physics_process(_delta):
+	var input = Input.get_vector("left", "right", "forward", "back")
+	var dir = Vector3(input.x, 0, input.y)
+	if dir != Vector3.ZERO: velocity = dir * speed
+	else: velocity = velocity.move_toward(Vector3.ZERO, deceleration)
+	move_character(velocity, 1)

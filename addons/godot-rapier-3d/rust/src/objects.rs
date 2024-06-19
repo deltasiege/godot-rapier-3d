@@ -12,12 +12,13 @@ mod character;
 mod collider;
 mod collider_shape;
 mod handle;
-mod object_bridge;
+mod object_kind;
 mod rigid_body;
 
+pub use character::RapierCharacterBody3D;
 pub use collider::RapierCollider3D;
 pub use handle::{Handle, HandleKind};
-pub use object_bridge::{ObjectBridge, ObjectKind};
+pub use object_kind::ObjectKind;
 pub use rigid_body::RapierRigidBody3D;
 
 // Implemented by all classes that inherit a Godot node and have an underlying Rapier object
@@ -160,7 +161,7 @@ pub trait PhysicsObject:
 
     // Changes godot transforms to match rapier transforms
     fn sync_g2r(&mut self) -> Result<(), String> {
-        log::debug!(
+        log::trace!(
             "Syncing g2r for {:?} {:?}",
             self.get_kind(),
             self.get_cuid2()

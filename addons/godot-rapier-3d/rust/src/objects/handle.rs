@@ -3,13 +3,7 @@ use rapier3d::geometry::ColliderHandle;
 use std::fmt;
 
 use crate::queue::Actionable;
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum HandleKind {
-    RigidBodyHandle,
-    ColliderHandle,
-    Invalid,
-}
+use crate::ObjectKind;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Handle {
@@ -58,12 +52,24 @@ impl From<&ColliderHandle> for Handle {
 
 impl From<Handle> for RigidBodyHandle {
     fn from(handle: Handle) -> Self {
+        RigidBodyHandle::from(&handle)
+    }
+}
+
+impl From<&Handle> for RigidBodyHandle {
+    fn from(handle: &Handle) -> Self {
         RigidBodyHandle::from_raw_parts(handle.raw[0], handle.raw[1])
     }
 }
 
 impl From<Handle> for ColliderHandle {
     fn from(handle: Handle) -> Self {
+        ColliderHandle::from(&handle)
+    }
+}
+
+impl From<&Handle> for ColliderHandle {
+    fn from(handle: &Handle) -> Self {
         ColliderHandle::from_raw_parts(handle.raw[0], handle.raw[1])
     }
 }
@@ -83,6 +89,29 @@ impl From<Actionable> for Handle {
             Actionable::RigidBodyHandle(handle) => Handle::from(&handle),
             Actionable::ColliderHandle(handle) => Handle::from(&handle),
             _ => Handle::invalid(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum HandleKind {
+    RigidBodyHandle,
+    ColliderHandle,
+    Invalid,
+}
+
+impl From<ObjectKind> for HandleKind {
+    fn from(object_kind: ObjectKind) -> Self {
+        HandleKind::from(&object_kind)
+    }
+}
+
+impl From<&ObjectKind> for HandleKind {
+    fn from(object_kind: &ObjectKind) -> Self {
+        match object_kind {
+            ObjectKind::RigidBody | ObjectKind::Character => HandleKind::RigidBodyHandle,
+            ObjectKind::Collider => HandleKind::ColliderHandle,
+            ObjectKind::Invalid => HandleKind::Invalid,
         }
     }
 }

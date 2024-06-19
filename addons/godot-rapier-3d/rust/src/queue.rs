@@ -13,9 +13,11 @@ pub use actionable::Actionable;
 
 use self::process::process_sim_action;
 
-// Purpose of this struct is to store pending actions that need to be processed by the physics pipeline.
-// All modifications of the pipeline need to be done in a deterministic order to ensure determinism of the simulation.
-// Note: all actions are r2g (change rapier to match godot) since only Rapier modifications need to be queued.
+/*
+    Purpose of this struct is to store pending actions that need to be processed by the physics pipeline.
+    All modifications of the pipeline need to be done in a deterministic order to ensure determinism of the simulation.
+    Note: all actions are r2g (change rapier to match godot) since only Rapier modifications need to be queued.
+*/
 
 pub struct ActionQueue {
     pub queues: HashMap<QueueName, Vec<Action>>,
@@ -28,7 +30,7 @@ impl ActionQueue {
                 (QueueName::Insert, Vec::new()),
                 (QueueName::Remove, Vec::new()),
                 (QueueName::Parent, Vec::new()),
-                (QueueName::Sync, Vec::new()),
+                (QueueName::Sync, Vec::new()), // R2G only
                 (QueueName::Sim, Vec::new()),
             ]),
         }
@@ -56,9 +58,6 @@ impl ActionQueue {
     fn sort(&mut self) {
         for (queue_name, queue) in self.queues.iter_mut() {
             if queue.is_empty() {
-                continue;
-            }
-            if queue_name == &QueueName::Sim {
                 continue;
             }
             log::trace!(

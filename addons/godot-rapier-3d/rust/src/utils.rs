@@ -1,6 +1,4 @@
 use godot::builtin::{Basis, Quaternion as GQuaternion, Transform3D, Vector3 as GVector};
-use godot::engine::{Node, Node3D};
-use godot::obj::{Gd, Inherits, WithBaseField};
 use nalgebra::geometry::Quaternion as NAQuaternion;
 use rapier3d::math::{Isometry, Real, Rotation, Translation, Vector as RVector};
 use rapier3d::prelude::*;
@@ -43,22 +41,4 @@ pub fn isometry_to_transform(isometry: Isometry<Real>) -> Transform3D {
 // Converts Godot Vector3 to Rapier Vector
 pub fn vec_g2r(vec: GVector) -> RVector<Real> {
     RVector::new(vec.x, vec.y, vec.z)
-}
-
-// Returns the immediate children of a node that are of a specific type
-pub fn get_shallow_children_of_type<T: WithBaseField<Base = Node3D> + Inherits<Node>>(
-    node: &Node3D,
-) -> Vec<Gd<T>> {
-    let mut children = Vec::new();
-    for i in 0..node.get_child_count() {
-        let child = match node.get_child(i) {
-            Some(child) => child,
-            None => continue,
-        };
-        match child.try_cast::<T>() {
-            Ok(c) => children.push(c),
-            Err(_) => continue,
-        }
-    }
-    children
 }

@@ -1,46 +1,63 @@
-[gd_scene load_steps=8 format=3 uid="uid://cjckg85bwq3ia"]
+[gd_scene load_steps=9 format=3 uid="uid://cjckg85bwq3ia"]
 
-[ext_resource type="PackedScene" uid="uid://cwkqaxdhe1ifp" path="res://demos/assets/world.tscn" id="1_6qram"]
 [ext_resource type="PackedScene" uid="uid://bll017w15kfkw" path="res://tests/assets/flycam.tscn" id="1_x7w8h"]
 [ext_resource type="Script" path="res://demos/assets/character.gd" id="3_pj5vo"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_qehe6"]
 
-[sub_resource type="RapierCapsuleShape3D" id="RapierCapsuleShape3D_sjbxu"]
-radius = 0.51
+[sub_resource type="RapierBoxShape3D" id="RapierBoxShape3D_576cv"]
+size = Vector3(4, 10, 4)
 
-[sub_resource type="RapierBoxShape3D" id="RapierBoxShape3D_ixcf0"]
-size = Vector3(8, 4, 1)
+[sub_resource type="RapierBoxShape3D" id="RapierBoxShape3D_eg2fy"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_rcy1y"]
-size = Vector3(8, 4, 1)
+[sub_resource type="BoxMesh" id="BoxMesh_f1b3r"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_n2xrr"]
+size = Vector3(100, 0.1, 0.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_60hei"]
+size = Vector3(0.1, 0.1, 100)
 
 [node name="CharacterController" type="Node3D"]
 
 [node name="FlyCam" parent="." instance=ExtResource("1_x7w8h")]
 
-[node name="World" parent="." instance=ExtResource("1_6qram")]
-
-[node name="CharacterBody3D" type="CharacterBody3D" parent="World"]
-
-[node name="RapierCharacterBody3D2" type="RapierCharacterBody3D" parent="."]
+[node name="RapierCharacterBody3D3" type="RapierCharacterBody3D" parent="."]
 id = "t4bygdtxzx1o6ciohi7d45kf"
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.28715, 0)
+character_type = "KinematicPositionBased"
+offset = 0.1
+offset_reference = "Absolute"
+climb_steps = false
+max_step_height = 0.0
+min_step_width = 0.0
+step_reference = "Absolute"
+include_dynamic_bodies = false
+slide = false
+snap_to_ground = false
+snap_reference = "Absolute"
+normal_nudge_factor = 0.1
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 script = ExtResource("3_pj5vo")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="RapierCharacterBody3D2"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RapierCharacterBody3D3"]
 mesh = SubResource("CapsuleMesh_qehe6")
 
-[node name="RapierCollider3D" type="RapierCollider3D" parent="RapierCharacterBody3D2"]
-id = "qn4iqz0se5iuvc7ycv8ne0ha"
-shape = SubResource("RapierCapsuleShape3D_sjbxu")
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+[node name="RapierCollider3D" type="RapierCollider3D" parent="RapierCharacterBody3D3"]
+id = "i104mwdnmxq9vt3w23o6kz0c"
+shape = SubResource("RapierBoxShape3D_576cv")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0)
 
-[node name="Wall" type="RapierCollider3D" parent="."]
-id = "eq0ow58hbjpbpwhiz841h6a9"
-shape = SubResource("RapierBoxShape3D_ixcf0")
-transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 5, 2, 5)
+[node name="Ground2" type="RapierCollider3D" parent="."]
+id = "n35sf3yvyub95ufue27kqruj"
+shape = SubResource("RapierBoxShape3D_eg2fy")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0.5, 10)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Wall"]
-mesh = SubResource("BoxMesh_rcy1y")
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground2"]
+mesh = SubResource("BoxMesh_f1b3r")
+skeleton = NodePath("../../Ground2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_n2xrr")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_60hei")

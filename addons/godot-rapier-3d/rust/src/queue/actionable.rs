@@ -3,9 +3,10 @@ use std::fmt;
 
 use crate::objects::{Handle, HandleKind};
 use crate::ObjectKind;
+use rapier3d::control::KinematicCharacterController;
 use rapier3d::dynamics::{RigidBody, RigidBodyHandle};
 use rapier3d::geometry::{Collider, ColliderHandle, SharedShape};
-use rapier3d::math::{Isometry, Real};
+use rapier3d::math::{Isometry, Real, Vector};
 
 pub enum Actionable {
     RigidBody(RigidBody),
@@ -16,6 +17,13 @@ pub enum Actionable {
     ColliderShape(SharedShape),
     ColliderHandle(ColliderHandle),
     NodePos(ObjectKind, Isometry<Real>),
+    Character(RigidBody),
+    MoveCharacter {
+        controller: KinematicCharacterController,
+        cuid2: String,
+        amount: Vector<Real>,
+        delta_time: Real,
+    },
     Step,
     Invalid,
 }
@@ -42,13 +50,17 @@ impl PartialEq for Actionable {
     }
 }
 
-// Order RigidBodies before Colliders so they are registered first
-// (required for parenting colliders to rigid bodies when registering them)
+/*
+    1. Order RigidBodies and Characters before Colliders so they are registered first
+    (required for parenting colliders to rigid bodies when registering them)
+
+    2. Put step actions last in sim queue so that characters move before other bodies are simulated
+*/
 impl PartialOrd for Actionable {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
             (
-                Self::RigidBody(_),
+                Self::RigidBody(_) | Self::Character(_),
                 Self::Collider(_)
                 | Self::ColliderWithParent(_, _)
                 | Self::ColliderIDWithParentID(_, _),
@@ -57,14 +69,18 @@ impl PartialOrd for Actionable {
                 Self::Collider(_)
                 | Self::ColliderWithParent(_, _)
                 | Self::ColliderIDWithParentID(_, _),
-                Self::RigidBody(_),
+                Self::RigidBody(_) | Self::Character(_),
             ) => Some(Ordering::Greater),
-            (Self::NodePos(ObjectKind::RigidBody, _), Self::NodePos(ObjectKind::Collider, _)) => {
-                Some(Ordering::Less)
-            }
-            (Self::NodePos(ObjectKind::Collider, _), Self::NodePos(ObjectKind::RigidBody, _)) => {
-                Some(Ordering::Greater)
-            }
+            (
+                Self::NodePos(ObjectKind::RigidBody | ObjectKind::Character, _),
+                Self::NodePos(ObjectKind::Collider, _),
+            ) => Some(Ordering::Less),
+            (
+                Self::NodePos(ObjectKind::Collider, _),
+                Self::NodePos(ObjectKind::RigidBody | ObjectKind::Character, _),
+            ) => Some(Ordering::Greater),
+            (Self::Step, _) => Some(Ordering::Greater),
+            (_, Self::Step) => Some(Ordering::Less),
             _ => None,
         }
     }
@@ -73,7 +89,7 @@ impl Ord for Actionable {
     fn cmp(&self, other: &Self) -> Ordering {
         match (self, other) {
             (
-                Self::RigidBody(_),
+                Self::RigidBody(_) | Self::Character(_),
                 Self::Collider(_)
                 | Self::ColliderWithParent(_, _)
                 | Self::ColliderIDWithParentID(_, _),
@@ -82,14 +98,18 @@ impl Ord for Actionable {
                 Self::Collider(_)
                 | Self::ColliderWithParent(_, _)
                 | Self::ColliderIDWithParentID(_, _),
-                Self::RigidBody(_),
+                Self::RigidBody(_) | Self::Character(_),
             ) => Ordering::Greater,
-            (Self::NodePos(ObjectKind::RigidBody, _), Self::NodePos(ObjectKind::Collider, _)) => {
-                Ordering::Less
-            }
-            (Self::NodePos(ObjectKind::Collider, _), Self::NodePos(ObjectKind::RigidBody, _)) => {
-                Ordering::Greater
-            }
+            (
+                Self::NodePos(ObjectKind::RigidBody | ObjectKind::Character, _),
+                Self::NodePos(ObjectKind::Collider, _),
+            ) => Ordering::Less,
+            (
+                Self::NodePos(ObjectKind::Collider, _),
+                Self::NodePos(ObjectKind::RigidBody | ObjectKind::Character, _),
+            ) => Ordering::Greater,
+            (Self::Step, _) => Ordering::Greater,
+            (_, Self::Step) => Ordering::Less,
             _ => Ordering::Equal,
         }
     }
@@ -110,6 +130,19 @@ impl fmt::Debug for Actionable {
             Self::ColliderShape(shape) => write!(f, "ColliderShape: {:?}", shape),
             Self::ColliderHandle(handle) => write!(f, "ColliderHandle: {:?}", handle),
             Self::NodePos(kind, pos) => write!(f, "NodePos: {:?} {:?}", kind, pos),
+            Self::Character(rb) => write!(f, "Character: {:?}", rb),
+            Self::MoveCharacter {
+                cuid2,
+                amount,
+                delta_time,
+                ..
+            } => {
+                write!(
+                    f,
+                    "MoveCharacter: '{:?}' {:?} {:?}",
+                    cuid2, amount, delta_time
+                )
+            }
             Self::Step => write!(f, "Step"),
             Self::Invalid => write!(f, "Invalid"),
         }
@@ -129,6 +162,8 @@ impl fmt::Display for Actionable {
             Self::ColliderShape(_) => write!(f, "Actionable::ColliderShape"),
             Self::ColliderHandle(_) => write!(f, "Actionable::ColliderHandle"),
             Self::NodePos(_, _) => write!(f, "Actionable::NodePos"),
+            Self::Character(_) => write!(f, "Actionable::Character"),
+            Self::MoveCharacter { .. } => write!(f, "Actionable::MoveCharacter"),
             Self::Step => write!(f, "Actionable::Step"),
             Self::Invalid => write!(f, "Actionable::Invalid"),
         }

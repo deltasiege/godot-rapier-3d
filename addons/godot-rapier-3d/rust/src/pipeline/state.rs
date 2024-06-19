@@ -1,7 +1,7 @@
 use rapier3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct GR3DPhysicsState {
     pub rigid_body_set: RigidBodySet,
     pub collider_set: ColliderSet,

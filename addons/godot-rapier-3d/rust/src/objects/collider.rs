@@ -1,8 +1,10 @@
+use crate::objects::RapierCharacterBody3D;
 use crate::queue::{Actionable, CanDispatchActions, QueueName};
 use crate::utils::{HasCUID2Field, HasHandleField};
 use crate::{ObjectKind, PhysicsObject};
 use godot::classes::notify::Node3DNotification;
 use godot::engine::{INode3D, Node3D, Shape3D};
+use godot::obj::WithBaseField;
 use godot::prelude::*;
 use rapier3d::prelude::*;
 
@@ -101,13 +103,16 @@ impl RapierCollider3D {
     }
 
     fn push_parent_action(&mut self) -> Result<(), String> {
-        let parent_id = match self.get_parent_rigid_body_node() {
-            Some(rb) => Some(rb.bind().id.to_string()),
-            None => None,
+        let parent_kind = get_parent_kind(self);
+        let parent_id = match parent_kind {
+            ObjectKind::RigidBody => get_parent_id::<RapierRigidBody3D>(self)?,
+            ObjectKind::Character => get_parent_id::<RapierCharacterBody3D>(self)?,
+            _ => None,
         };
         log::trace!(
-            "Parenting collider '{}' to rigid body '{:?}'",
+            "Parenting collider '{}' to {} parent '{:?}'",
             self.id.to_string(),
+            parent_kind,
             parent_id,
         );
 
@@ -125,16 +130,6 @@ impl RapierCollider3D {
             .expect("QueueName::Parent not found");
         queue.push(action);
         Ok(())
-    }
-
-    fn get_parent_rigid_body_node(&self) -> Option<Gd<RapierRigidBody3D>> {
-        match self.base().get_parent_node_3d() {
-            Some(parent) => match parent.is_class(GString::from("RapierRigidBody3D")) {
-                true => Some(parent.cast::<RapierRigidBody3D>()),
-                false => None,
-            },
-            None => None,
-        }
     }
 
     #[func]
@@ -230,5 +225,31 @@ impl PhysicsObject for RapierCollider3D {
                 Actionable::Invalid
             }
         }
+    }
+}
+
+// Returns the CUID2 of the parent if it exists and is of expected type
+// Returns None if there is no parent
+// Returns an error if the parent is not of the expected type
+fn get_parent_id<T: WithBaseField + Inherits<Node3D> + HasCUID2Field>(
+    class: &impl WithBaseField<Base = Node3D>,
+) -> Result<Option<String>, String> {
+    match class.base().get_parent_node_3d() {
+        Some(parent) => Ok(Some(
+            parent
+                .try_cast::<T>()
+                .map_err(|e| format!("Parent is not of the expected class: {}", e))?
+                .bind()
+                .get_cuid2(),
+        )),
+        None => Ok(None),
+    }
+}
+
+// Returns the object kind of the parent if it exists
+fn get_parent_kind(class: &impl WithBaseField<Base = Node3D>) -> ObjectKind {
+    match class.base().get_parent_node_3d() {
+        Some(parent) => ObjectKind::from(parent.get_class().to_string().as_str()),
+        None => ObjectKind::Invalid,
     }
 }

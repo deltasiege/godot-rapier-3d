@@ -1,4 +1,4 @@
-use crate::objects::{Handle, ObjectBridge};
+use crate::objects::{Handle, HandleKind};
 use crate::ObjectKind;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -55,13 +55,21 @@ impl Lookups {
         identifier: LookupIdentifier,
         key: &str,
     ) -> Option<&IDBridge> {
-        self.inner.get(&object_kind)?.get(&identifier)?.get(key)
+        let _object_kind = match object_kind {
+            ObjectKind::Character => ObjectKind::RigidBody,
+            _ => object_kind,
+        };
+        self.inner.get(&_object_kind)?.get(&identifier)?.get(key)
     }
 
     pub fn insert(&mut self, object_kind: ObjectKind, id_bridge: IDBridge) -> Result<(), String> {
-        let object_map = self.inner.get_mut(&object_kind).ok_or(format!(
+        let _object_kind = match object_kind {
+            ObjectKind::Character => ObjectKind::RigidBody,
+            _ => object_kind,
+        };
+        let object_map = self.inner.get_mut(&_object_kind).ok_or(format!(
             "Could not find object kind '{}' in lookups",
-            object_kind
+            _object_kind
         ))?;
 
         for (ident, map) in object_map.into_iter() {
@@ -70,9 +78,8 @@ impl Lookups {
                     map.insert(id_bridge.clone().cuid2, id_bridge.clone());
                 }
                 LookupIdentifier::Handle => {
-                    let object_bridge = ObjectBridge::from(object_kind.clone());
                     let handle = Handle {
-                        kind: object_bridge.handle_kind,
+                        kind: HandleKind::from(&_object_kind),
                         raw: id_bridge.clone().handle_raw,
                     };
                     map.insert(handle.to_string(), id_bridge.clone());

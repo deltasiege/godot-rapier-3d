@@ -7,7 +7,7 @@ use godot::obj::WithBaseField;
 
 use crate::utils::HasCUID2Field;
 
-use super::Actionable;
+use super::{Actionable, QueueName};
 
 #[derive(Debug)]
 pub struct Action {
@@ -61,5 +61,13 @@ pub trait CanDispatchActions: WithBaseField + HasCUID2Field {
             inner_iid: self.base().instance_id().to_i64(),
             data,
         }
+    }
+
+    fn dispatch_action(&self, data: Actionable, queue_name: &QueueName) -> Result<(), String> {
+        let action = self.get_action(data);
+        let mut engine = crate::engine::get_engine()?;
+        let mut bind = engine.bind_mut();
+        bind.action_queue.add_action(action, queue_name);
+        Ok(())
     }
 }

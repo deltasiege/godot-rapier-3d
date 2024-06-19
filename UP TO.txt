@@ -1,0 +1,3 @@
+When collider is parented - set position with respect to parent
+
+should hopefully fix halfway invis collider issue too

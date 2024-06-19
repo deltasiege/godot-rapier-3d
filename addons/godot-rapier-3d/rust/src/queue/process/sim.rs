@@ -1,19 +1,33 @@
-use crate::GR3DPhysicsPipeline;
+use crate::GR3DPhysicsState;
+use godot::log::godot_print;
+use rapier3d::pipeline::PhysicsPipeline;
 
-pub fn step(pipeline: &mut GR3DPhysicsPipeline) {
-    pipeline.physics_pipeline.step(
-        &pipeline.state.gravity,
-        &pipeline.state.integration_parameters,
-        &mut pipeline.state.island_manager,
-        &mut pipeline.state.broad_phase,
-        &mut pipeline.state.narrow_phase,
-        &mut pipeline.state.rigid_body_set,
-        &mut pipeline.state.collider_set,
-        &mut pipeline.state.impulse_joint_set,
-        &mut pipeline.state.multibody_joint_set,
-        &mut pipeline.state.ccd_solver,
-        Some(&mut pipeline.state.query_pipeline),
-        &pipeline.physics_hooks,
-        &pipeline.event_handler,
+pub fn step(state: &mut GR3DPhysicsState, physics_pipeline: &mut PhysicsPipeline) {
+    for (h, col) in state.collider_set.iter() {
+        let wrt = match col.position_wrt_parent() {
+            Some(wrt) => Some(wrt.translation.vector),
+            None => None,
+        };
+        godot_print!(
+            "Collider: {:?} {:?} wrt: {:?}",
+            h.into_raw_parts(),
+            col.position().translation.vector,
+            wrt,
+        );
+    }
+    physics_pipeline.step(
+        &state.gravity,
+        &state.integration_parameters,
+        &mut state.island_manager,
+        &mut state.broad_phase,
+        &mut state.narrow_phase,
+        &mut state.rigid_body_set,
+        &mut state.collider_set,
+        &mut state.impulse_joint_set,
+        &mut state.multibody_joint_set,
+        &mut state.ccd_solver,
+        Some(&mut state.query_pipeline),
+        &(),
+        &(),
     );
 }

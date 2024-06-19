@@ -1,5 +1,5 @@
-use crate::objects::{Handle, ObjectBridge};
-use crate::{LookupIdentifier, Lookups};
+use crate::objects::Handle;
+use crate::{LookupIdentifier, Lookups, ObjectKind};
 #[derive(Debug, Clone)]
 pub struct IDBridge {
     pub cuid2: String,        // CUID2
@@ -38,9 +38,8 @@ impl IDBridge {
     }
 
     pub fn from_handle(handle: Handle, lookups: &Lookups) -> Self {
-        let object_bridge = ObjectBridge::from(handle.kind.clone());
         let found = match lookups.get(
-            object_bridge.object_kind,
+            ObjectKind::from(handle.kind.clone()),
             LookupIdentifier::Handle,
             &handle.to_string(),
         ) {

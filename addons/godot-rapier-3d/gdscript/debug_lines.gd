@@ -3,7 +3,7 @@ extends MeshInstance3D
 var _line_material_pool := []
 var _lines := []
 var st
-var color_override = Color(0, 0.5, 0.5)
+var color_override = null # Color(0.07, 0.93, 0.19)
 
 func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -32,7 +32,6 @@ func _get_line_material() -> StandardMaterial3D:
 	return mat
 
 func _process(_delta: float):
-	color_override = Color(0.5, 0.97, 0.55)
 	if !st: return
 	material_override = _get_line_material()
 	st.clear()

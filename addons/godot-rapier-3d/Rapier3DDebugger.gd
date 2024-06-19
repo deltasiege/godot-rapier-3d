@@ -8,7 +8,7 @@ const physics_controls = preload("res://addons/godot-rapier-3d/gdscript/physics_
 # Config
 @onready var run_in_game = ProjectSettings.get_setting("debug/rapier_3d/debug_in_game")
 @onready var run_in_editor = ProjectSettings.get_setting("debug/rapier_3d/debug_in_editor")
-@onready var show_colliders = ProjectSettings.get_setting("debug/rapier_3d/show_colliders")
+@onready var show_debug_outlines = ProjectSettings.get_setting("debug/rapier_3d/show_debug_outlines")
 @onready var show_ui = ProjectSettings.get_setting("debug/rapier_3d/show_ui")
 
 signal settings_changed
@@ -33,7 +33,7 @@ func _exit_tree():
 func _on_settings_changed():
 	run_in_game = ProjectSettings.get_setting("debug/rapier_3d/debug_in_game")
 	run_in_editor = ProjectSettings.get_setting("debug/rapier_3d/debug_in_editor")
-	show_colliders = ProjectSettings.get_setting("debug/rapier_3d/show_colliders")
+	show_debug_outlines = ProjectSettings.get_setting("debug/rapier_3d/show_debug_outlines")
 	show_ui = ProjectSettings.get_setting("debug/rapier_3d/show_ui")
 	if debug_lines_node != null: debug_lines_node.clear_lines()
 	update_log_level()
@@ -62,14 +62,11 @@ func _ready():
 
 func _process(_delta):
 	if !_should_run(): return
-	if show_colliders: _render_colliders()
-
-func _render_colliders():
-	debug_render_pipeline.render_colliders()
+	if show_debug_outlines:
+		debug_render_pipeline.render()
 
 func _draw_line(a, b, color):
 	if debug_lines_node: debug_lines_node.draw_line(a, b, color)
-	pass
 
 func _should_run():
 	if Engine.is_editor_hint(): return run_in_editor

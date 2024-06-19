@@ -17,8 +17,26 @@ impl IRefCounted for RapierDebugRenderPipeline {
     fn init(base: Base<RefCounted>) -> Self {
         Self {
             debug_render_pipeline: DebugRenderPipeline::new(
-                DebugRenderStyle::default(),
-                DebugRenderMode::COLLIDER_SHAPES,
+                DebugRenderStyle {
+                    subdivisions: 20,
+                    border_subdivisions: 5,
+                    collider_dynamic_color: [340.0, 1.0, 0.3, 1.0],
+                    collider_kinematic_color: [131.0, 1.0, 0.3, 1.0],
+                    collider_fixed_color: [30.0, 1.0, 0.4, 1.0],
+                    collider_parentless_color: [30.0, 1.0, 0.4, 1.0],
+                    impulse_joint_anchor_color: [240.0, 0.5, 0.4, 1.0],
+                    impulse_joint_separation_color: [0.0, 0.5, 0.4, 1.0],
+                    multibody_joint_anchor_color: [300.0, 1.0, 0.4, 1.0],
+                    multibody_joint_separation_color: [0.0, 1.0, 0.4, 1.0],
+                    sleep_color_multiplier: [1.0, 1.0, 0.2, 1.0],
+                    disabled_color_multiplier: [0.0, 0.0, 1.0, 1.0],
+                    rigid_body_axes_length: 0.5,
+                    contact_depth_color: [120.0, 1.0, 0.4, 1.0],
+                    contact_normal_color: [0.0, 1.0, 1.0, 1.0],
+                    contact_normal_length: 0.3,
+                    collider_aabb_color: [124.0, 1.0, 0.4, 1.0],
+                },
+                DebugRenderMode::all(),
             ),
             debug_render_backend: RapierDebugRenderBackend::new(),
             base,
@@ -34,19 +52,20 @@ impl RapierDebugRenderPipeline {
     }
 
     #[func]
-    pub fn render_colliders(&mut self) {
-        self.try_render_colliders()
-            .map_err(crate::handle_error)
-            .ok();
+    pub fn render(&mut self) {
+        self.try_render().map_err(crate::handle_error).ok();
     }
 
-    pub fn try_render_colliders(&mut self) -> Result<(), String> {
+    pub fn try_render(&mut self) -> Result<(), String> {
         let engine = crate::get_engine()?;
         let bind = engine.bind();
-        self.debug_render_pipeline.render_colliders(
+        self.debug_render_pipeline.render(
             &mut self.debug_render_backend,
             &bind.pipeline.state.rigid_body_set,
             &bind.pipeline.state.collider_set,
+            &bind.pipeline.state.impulse_joint_set,
+            &bind.pipeline.state.multibody_joint_set,
+            &bind.pipeline.state.narrow_phase,
         );
         Ok(())
     }
@@ -79,8 +98,12 @@ impl DebugRenderBackend for RapierDebugRenderBackend {
                     Variant::from(Vector3::new(a.x as f32, a.y as f32, a.z as f32)),
                     Variant::from(Vector3::new(b.x as f32, b.y as f32, b.z as f32)),
                     Variant::from(
-                        Color::from_hsv(color[0] as f64, color[1] as f64, color[2] as f64)
-                            .with_alpha(color[3]),
+                        Color::from_ok_hsl(
+                            (color[0] / 255.0) as f64,
+                            color[1] as f64,
+                            color[2] as f64,
+                        )
+                        .with_alpha(color[3]),
                     ),
                 ];
                 node.call(StringName::from("_draw_line"), args);
