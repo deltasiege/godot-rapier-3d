@@ -57,6 +57,10 @@ func _ready():
 	
 	_spawn_ui()
 	
+	_create_debugger()
+	GDExtensionManager.connect("extensions_reloaded", _create_debugger)
+
+func _create_debugger():
 	debug_render_pipeline = RapierDebugRenderPipeline.new()
 	debug_render_pipeline.register_debugger(self)
 
