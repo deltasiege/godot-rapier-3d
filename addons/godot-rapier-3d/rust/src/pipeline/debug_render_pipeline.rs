@@ -1,5 +1,5 @@
-use godot::engine::IRefCounted;
-use godot::engine::RefCounted;
+use godot::classes::IRefCounted;
+use godot::classes::RefCounted;
 use godot::prelude::*;
 use rapier3d::pipeline::*;
 use rapier3d::prelude::*;
@@ -106,7 +106,7 @@ impl DebugRenderBackend for RapierDebugRenderBackend {
                         .with_alpha(color[3]),
                     ),
                 ];
-                node.call(StringName::from("_draw_line"), args);
+                node.call("_draw_line", args);
             }
             None => {
                 log::error!(

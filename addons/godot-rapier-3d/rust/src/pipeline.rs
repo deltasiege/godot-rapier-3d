@@ -1,7 +1,7 @@
 use crate::objects::{Handle, HandleKind, RapierCharacterBody3D, RapierRigidBody3D};
 use crate::utils::{isometry_to_transform, node_from_instance_id};
 use crate::{LookupIdentifier, Lookups, ObjectKind};
-use godot::engine::Node3D;
+use godot::classes::Node3D;
 use godot::obj::WithBaseField;
 use godot::prelude::*;
 use rapier3d::math::Vector as RVector;

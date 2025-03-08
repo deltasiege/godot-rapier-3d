@@ -3,7 +3,7 @@ use crate::queue::{Actionable, CanDispatchActions, QueueName};
 use crate::utils::{isometry_to_transform, transform_to_isometry, HasCUID2Field, HasHandleField};
 use crate::LookupIdentifier;
 use godot::builtin::Transform3D;
-use godot::engine::{GDExtensionManager, Node3D};
+use godot::classes::{GDExtensionManager, Node3D};
 use godot::obj::WithBaseField;
 use godot::prelude::*;
 use rapier3d::math::{Isometry, Real};
@@ -27,7 +27,7 @@ pub trait PhysicsObject:
 {
     // Required
     fn get_kind(&self) -> ObjectKind;
-    fn get_hot_reload_cb(&self) -> Callable;
+    fn get_hot_reload_cb(&self) -> &Callable;
     fn set_hot_reload_cb(&mut self, cb: Callable);
     fn build(&self) -> Actionable;
 
@@ -42,26 +42,21 @@ pub trait PhysicsObject:
     }
 
     fn attach_extensions_reloaded(&mut self) {
-        let sig = Signal::from_object_signal(
-            &GDExtensionManager::singleton(),
-            StringName::from("extensions_reloaded"),
-        );
-        let cb = Callable::from_object_method(&self.base(), StringName::from("_on_hot_reload"));
-        let already_connected = sig.is_connected(cb.clone());
+        let sig =
+            Signal::from_object_signal(&GDExtensionManager::singleton(), "extensions_reloaded");
+        let cb = Callable::from_object_method(&self.base(), "_on_hot_reload");
+        let already_connected = sig.is_connected(&cb);
         if already_connected {
             return;
         }
-        GDExtensionManager::singleton()
-            .connect(StringName::from("extensions_reloaded"), cb.clone());
+        GDExtensionManager::singleton().connect("extensions_reloaded", &cb);
         self.set_hot_reload_cb(cb);
     }
 
     fn detach_extensions_reloaded(&mut self) {
         if !self.get_hot_reload_cb().is_null() {
-            GDExtensionManager::singleton().disconnect(
-                StringName::from("extensions_reloaded"),
-                self.get_hot_reload_cb(),
-            );
+            GDExtensionManager::singleton()
+                .disconnect("extensions_reloaded", self.get_hot_reload_cb());
         }
     }
 

@@ -1,7 +1,7 @@
 [gd_scene load_steps=9 format=3 uid="uid://cjckg85bwq3ia"]
 
 [ext_resource type="PackedScene" uid="uid://bll017w15kfkw" path="res://tests/assets/flycam.tscn" id="1_x7w8h"]
-[ext_resource type="Script" path="res://demos/assets/character.gd" id="3_pj5vo"]
+[ext_resource type="Script" uid="uid://btbbs3x8pq8yc" path="res://demos/assets/character.gd" id="3_pj5vo"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_qehe6"]
 
@@ -42,19 +42,31 @@ script = ExtResource("3_pj5vo")
 [node name="MeshInstance3D" type="MeshInstance3D" parent="RapierCharacterBody3D3"]
 mesh = SubResource("CapsuleMesh_qehe6")
 
-[node name="RapierCollider3D" type="RapierCollider3D" parent="RapierCharacterBody3D3"]
-id = "i104mwdnmxq9vt3w23o6kz0c"
+[node name="RapierCollider3D3" type="RapierCollider3D" parent="RapierCharacterBody3D3"]
+id = "bt4j6qsnldaugcqct9c53kvf"
 shape = SubResource("RapierBoxShape3D_576cv")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 0)
 
-[node name="Ground2" type="RapierCollider3D" parent="."]
-id = "n35sf3yvyub95ufue27kqruj"
+[node name="Cube2" type="RapierCollider3D" parent="."]
+id = "wpzvuqv1kjfy7nf03e6dku8b"
 shape = SubResource("RapierBoxShape3D_eg2fy")
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0.5, 10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 10)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground2"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Cube2"]
 mesh = SubResource("BoxMesh_f1b3r")
-skeleton = NodePath("../../Ground2")
+
+[node name="Cube3" type="RapierCollider3D" parent="."]
+id = "uuj079d1rumdw22027x9e84q"
+shape = SubResource("RapierBoxShape3D_eg2fy")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.28085, 0.5, 10)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Cube3"]
+mesh = SubResource("BoxMesh_f1b3r")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.5, 10)
+mesh = SubResource("BoxMesh_f1b3r")
+skeleton = NodePath("")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 mesh = SubResource("BoxMesh_n2xrr")

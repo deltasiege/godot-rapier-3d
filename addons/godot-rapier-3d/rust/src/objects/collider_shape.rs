@@ -1,5 +1,5 @@
 use crate::queue::{Actionable, CanDispatchActions, QueueName};
-use godot::engine::Shape3D;
+use godot::classes::Shape3D;
 use godot::obj::WithBaseField;
 use godot::prelude::*;
 use rapier3d::geometry::{ShapeType, SharedShape};
@@ -64,13 +64,12 @@ pub trait HasColliderShapeField: WithBaseField<Base = Node3D> + CanDispatchActio
     }
 
     fn attach_shape_mutated(&mut self, mut shape: Gd<Shape3D>) -> Result<(), String> {
-        let cb: Callable =
-            Callable::from_object_method(&self.base(), StringName::from("_on_shape_mutated"));
-        let sig = Signal::from_object_signal(&shape, StringName::from("changed"));
-        match sig.is_connected(cb.clone()) {
+        let cb: Callable = Callable::from_object_method(&self.base(), "_on_shape_mutated");
+        let sig = Signal::from_object_signal(&shape, "changed");
+        match sig.is_connected(&cb) {
             true => {}
             false => {
-                shape.connect(StringName::from("changed"), cb.clone());
+                shape.connect("changed", &cb);
                 self.set_shape_mutated_cb(cb)
             }
         }
@@ -78,10 +77,10 @@ pub trait HasColliderShapeField: WithBaseField<Base = Node3D> + CanDispatchActio
     }
 
     fn detach_shape_mutated(&mut self, mut shape: Gd<Shape3D>) -> Result<(), String> {
-        let sig = Signal::from_object_signal(&shape, StringName::from("changed"));
+        let sig = Signal::from_object_signal(&shape, "changed");
         let cb = self.get_shape_mutated_cb();
-        if !self.get_shape_mutated_cb().is_null() && sig.is_connected(cb.clone()) {
-            shape.disconnect(StringName::from("changed"), cb);
+        if !self.get_shape_mutated_cb().is_null() && sig.is_connected(&cb) {
+            shape.disconnect("changed", &cb);
         };
         Ok(())
     }

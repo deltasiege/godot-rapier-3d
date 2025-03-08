@@ -3,7 +3,7 @@ use crate::queue::{Actionable, CanDispatchActions, QueueName};
 use crate::utils::{HasCUID2Field, HasHandleField};
 use crate::{ObjectKind, PhysicsObject};
 use godot::classes::notify::Node3DNotification;
-use godot::engine::{INode3D, Node3D, Shape3D};
+use godot::classes::{INode3D, Node3D, Shape3D};
 use godot::obj::WithBaseField;
 use godot::prelude::*;
 use rapier3d::prelude::*;
@@ -97,7 +97,7 @@ impl RapierCollider3D {
     fn on_parented(&mut self) {
         self.push_parent_action().map_err(crate::handle_error).ok();
         self.base_mut()
-            .try_call_deferred(StringName::from("_sync_r2g"), &[])
+            .try_call_deferred("_sync_r2g", &[])
             .map_err(|e| format!("Error when syncing collider after parenting: {:?}", e))
             .ok();
     }
@@ -203,8 +203,8 @@ impl PhysicsObject for RapierCollider3D {
         ObjectKind::Collider
     }
 
-    fn get_hot_reload_cb(&self) -> Callable {
-        self.hot_reload_cb.clone()
+    fn get_hot_reload_cb(&self) -> &Callable {
+        &self.hot_reload_cb
     }
 
     fn set_hot_reload_cb(&mut self, cb: Callable) {

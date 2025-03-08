@@ -1,4 +1,4 @@
-use godot::engine::BoxShape3D;
+use godot::classes::BoxShape3D;
 use godot::prelude::*;
 use rapier3d::geometry::SharedShape;
 

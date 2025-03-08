@@ -1,8 +1,8 @@
 use crate::queue::{Actionable, CanDispatchActions, QueueName};
 use crate::utils::{vec_g2r, HasCUID2Field, HasHandleField};
 use crate::{ObjectKind, PhysicsObject};
-use godot::engine::notify::Node3DNotification;
-use godot::engine::{INode3D, Node3D};
+use godot::classes::notify::Node3DNotification;
+use godot::classes::{INode3D, Node3D};
 use godot::prelude::*;
 use nalgebra::RealField;
 use rapier3d::control::{CharacterAutostep, CharacterLength, KinematicCharacterController};
@@ -166,8 +166,8 @@ impl PhysicsObject for RapierCharacterBody3D {
         ObjectKind::Character
     }
 
-    fn get_hot_reload_cb(&self) -> Callable {
-        self.hot_reload_cb.clone()
+    fn get_hot_reload_cb(&self) -> &Callable {
+        &self.hot_reload_cb
     }
 
     fn set_hot_reload_cb(&mut self, cb: Callable) {

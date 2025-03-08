@@ -1,4 +1,4 @@
-use godot::engine::CylinderShape3D;
+use godot::classes::CylinderShape3D;
 use godot::prelude::*;
 use rapier3d::geometry::SharedShape;
 

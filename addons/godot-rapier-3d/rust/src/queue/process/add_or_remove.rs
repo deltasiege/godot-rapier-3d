@@ -84,10 +84,7 @@ pub fn attach_handle_to_node<T: HasHandleField + WithBaseField<Base = Node3D>>(
     node.bind_mut().set_handle(handle);
     node.bind_mut()
         .base_mut()
-        .try_call_deferred(
-            StringName::from("set_notify_transform"),
-            &[Variant::from(true)],
-        )
+        .try_call_deferred("set_notify_transform", &[Variant::from(true)])
         .map_err(|e| format!("[AQ]: Could not set notify transform on node: {:?}", e))?;
     Ok(())
 }

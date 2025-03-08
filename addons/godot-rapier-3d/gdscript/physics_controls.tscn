@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://qdndetibeu4v"]
 
-[ext_resource type="Script" path="res://addons/godot-rapier-3d/gdscript/physics_controls.gd" id="1_2nu66"]
+[ext_resource type="Script" uid="uid://dw4uwmghcskom" path="res://addons/godot-rapier-3d/gdscript/physics_controls.gd" id="1_2nu66"]
 
 [node name="Rapier3DPhysicsPipelineControls" type="SubViewportContainer"]
 anchors_preset = 15

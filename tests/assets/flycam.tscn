@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://bll017w15kfkw"]
 
-[ext_resource type="Script" path="res://tests/assets/flycam.gd" id="1_t5trd"]
+[ext_resource type="Script" uid="uid://buygpaddwa2qv" path="res://tests/assets/flycam.gd" id="1_t5trd"]
 
 [node name="FlyCam" type="Camera3D"]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 10)

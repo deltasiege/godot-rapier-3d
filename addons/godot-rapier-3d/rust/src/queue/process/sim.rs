@@ -1,5 +1,5 @@
 use crate::GR3DPhysicsState;
-use godot::log::godot_print;
+use godot::global::godot_print;
 use rapier3d::pipeline::PhysicsPipeline;
 
 pub fn step(state: &mut GR3DPhysicsState, physics_pipeline: &mut PhysicsPipeline) {
@@ -8,12 +8,12 @@ pub fn step(state: &mut GR3DPhysicsState, physics_pipeline: &mut PhysicsPipeline
             Some(wrt) => Some(wrt.translation.vector),
             None => None,
         };
-        godot_print!(
-            "Collider: {:?} {:?} wrt: {:?}",
-            h.into_raw_parts(),
-            col.position().translation.vector,
-            wrt,
-        );
+        // godot_print!(
+        //     "Collider: {:?} {:?} wrt: {:?}",
+        //     h.into_raw_parts(),
+        //     col.position().translation.vector,
+        //     wrt,
+        // );
     }
     physics_pipeline.step(
         &state.gravity,

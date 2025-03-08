@@ -1,4 +1,4 @@
-use godot::engine::SphereShape3D;
+use godot::classes::SphereShape3D;
 use godot::prelude::*;
 use rapier3d::geometry::SharedShape;
 

@@ -1,4 +1,4 @@
-use godot::engine::CapsuleShape3D;
+use godot::classes::CapsuleShape3D;
 use godot::prelude::*;
 use rapier3d::geometry::SharedShape;
 

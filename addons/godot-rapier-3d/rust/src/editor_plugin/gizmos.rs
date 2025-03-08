@@ -2,8 +2,8 @@
 
 // use crate::editor_plugin::GR3DEditorPlugin;
 // use crate::log::LogLevel;
-// use godot::engine::EditorNode3DGizmoPlugin;
-// use godot::engine::GDScript;
+// use godot::classes::EditorNode3DGizmoPlugin;
+// use godot::classes::GDScript;
 // use godot::prelude::*;
 
 // pub const GIZMO_PATHS: &'static [&'static str] = &[

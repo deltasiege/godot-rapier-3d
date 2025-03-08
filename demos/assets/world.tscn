@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3 uid="uid://cwkqaxdhe1ifp"]
 
-[ext_resource type="Texture2D" uid="uid://can4es4ninsif" path="res://assets/wasteland_clouds_puresky_1k.exr" id="2_2tfjf"]
-[ext_resource type="Material" uid="uid://dg4h7q2si3ptc" path="res://assets/dbug_mat_bg.tres" id="2_2y3lv"]
+[ext_resource type="Texture2D" uid="uid://can4es4ninsif" path="res://demos/assets/wasteland_clouds_puresky_1k.exr" id="2_2tfjf"]
+[ext_resource type="Material" uid="uid://dg4h7q2si3ptc" path="res://demos/assets/dbug_mat_bg.tres" id="2_2y3lv"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_1n6b6"]
 panorama = ExtResource("2_2tfjf")

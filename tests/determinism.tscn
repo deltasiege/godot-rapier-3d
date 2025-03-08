@@ -1,6 +1,6 @@
 [gd_scene load_steps=19 format=3 uid="uid://b1q8u4fca6jg1"]
 
-[ext_resource type="Script" path="res://tests/assets/sim_test.gd" id="1_dyqow"]
+[ext_resource type="Script" uid="uid://dn7xwttb3g2yl" path="res://tests/assets/sim_test.gd" id="1_dyqow"]
 [ext_resource type="PackedScene" uid="uid://bll017w15kfkw" path="res://tests/assets/flycam.tscn" id="2_yypeh"]
 
 [sub_resource type="RapierBoxShape3D" id="RapierBoxShape3D_d15pq"]

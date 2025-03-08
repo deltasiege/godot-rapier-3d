@@ -2,7 +2,7 @@ use crate::queue::{Actionable, CanDispatchActions};
 use crate::utils::{HasCUID2Field, HasHandleField};
 use crate::{ObjectKind, PhysicsObject};
 use godot::classes::notify::Node3DNotification;
-use godot::engine::{INode3D, Node3D};
+use godot::classes::{INode3D, Node3D};
 use godot::prelude::*;
 use rapier3d::dynamics::{RigidBodyBuilder, RigidBodyType};
 use rapier3d::math::Real;
@@ -60,8 +60,8 @@ impl PhysicsObject for RapierRigidBody3D {
         ObjectKind::RigidBody
     }
 
-    fn get_hot_reload_cb(&self) -> Callable {
-        self.hot_reload_cb.clone()
+    fn get_hot_reload_cb(&self) -> &Callable {
+        &self.hot_reload_cb
     }
 
     fn set_hot_reload_cb(&mut self, cb: Callable) {

@@ -1,17 +1,15 @@
 use crate::utils::{init_logger, LogLevel};
 use crate::{ActionQueue, GR3DPhysicsPipeline, Lookups};
 use godot::builtin::PackedByteArray;
-use godot::engine::{Engine, IObject, Object};
+use godot::classes::{Engine, IObject, Object};
 use godot::prelude::*;
 
 pub const ENGINE_SINGLETON_NAME: &str = "Rapier3DEngine";
 
 pub fn register_engine() {
     init_logger();
-    Engine::singleton().register_singleton(
-        StringName::from(ENGINE_SINGLETON_NAME),
-        GR3DEngineSingleton::new_alloc().upcast(),
-    );
+    Engine::singleton()
+        .register_singleton(ENGINE_SINGLETON_NAME, &GR3DEngineSingleton::new_alloc());
 }
 
 pub fn unregister_engine() {
@@ -19,10 +17,10 @@ pub fn unregister_engine() {
     let singleton_name = StringName::from(ENGINE_SINGLETON_NAME);
 
     let singleton = engine
-        .get_singleton(singleton_name.clone())
+        .get_singleton(&singleton_name)
         .expect("cannot retrieve the singleton");
 
-    engine.unregister_singleton(singleton_name);
+    engine.unregister_singleton(&singleton_name);
     singleton.free();
 }
 
@@ -114,7 +112,7 @@ impl GR3DEngineSingleton {
 }
 
 pub fn get_engine() -> Result<Gd<GR3DEngineSingleton>, &'static str> {
-    match Engine::singleton().get_singleton(StringName::from("Rapier3DEngine")) {
+    match Engine::singleton().get_singleton("Rapier3DEngine") {
         Some(gd_pointer) => match gd_pointer.try_cast::<GR3DEngineSingleton>() {
             Ok(singleton) => Ok(singleton),
             Err(_) => Err("Could not cast to Rapier3DEngine singleton"),

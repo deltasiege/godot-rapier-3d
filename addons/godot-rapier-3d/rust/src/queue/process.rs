@@ -3,7 +3,7 @@ use crate::objects::{
 };
 use crate::queue::Action;
 use crate::{GR3DPhysicsPipeline, GR3DPhysicsState, LookupIdentifier, Lookups, ObjectKind};
-use godot::log::godot_print;
+use godot::global::godot_print;
 use rapier3d::dynamics::{RigidBody, RigidBodyHandle, RigidBodyType};
 use rapier3d::geometry::{Collider, ColliderHandle, Compound, Shape, SharedShape};
 use rapier3d::math::{Isometry, Real, Translation, Vector};
@@ -277,18 +277,18 @@ pub fn process_sim_action(
 
             log::trace!("Moving Character {:?} by: {:?}", cuid2, result.translation);
 
-            // for collision in collisions.iter() {
-            //     controller.solve_character_collision_impulses(
-            //         delta_time,
-            //         &mut pipeline.state.rigid_body_set,
-            //         &state.collider_set,
-            //         &state.query_pipeline,
-            //         &compound_shape,
-            //         compound_shape.mass_properties(1.0).mass() + rigid_body.mass(), // TODO how to get density?
-            //         &collision,
-            //         QueryFilter::default().exclude_rigid_body(rigid_body_handle),
-            //     );
-            // }
+            for collision in collisions.iter() {
+                controller.solve_character_collision_impulses(
+                    delta_time,
+                    &mut pipeline.state.rigid_body_set,
+                    &state.collider_set,
+                    &state.query_pipeline,
+                    &compound_shape,
+                    compound_shape.mass_properties(1.0).mass() + rigid_body.mass(), // TODO how to get density?
+                    &collision,
+                    QueryFilter::default().exclude_rigid_body(rigid_body_handle),
+                );
+            }
         }
         _ => {
             return Err("Invalid Actionable type".to_string());
