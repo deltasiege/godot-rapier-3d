@@ -132,7 +132,7 @@ function getGR3DTestsData(target: Target) {
 
 export function getExportTemplatesDir(
   osName: OSName,
-  version: string = "4.2.2.stable"
+  version: string = "4.4.stable"
 ) {
   const trail =
     osName === "windows"
