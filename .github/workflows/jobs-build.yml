@@ -23,53 +23,53 @@ jobs:
             archive_ext: .tar.gz
             bin: libgodot_rapier_3d.so
 
-          - release_for: linux-gnu64
-            runner: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            compiler: cross
-            archive: linux-gnu-x86_64
-            archive_ext: .tar.gz
-            bin: libgodot_rapier_3d.so
+          # - release_for: linux-gnu64
+          #   runner: ubuntu-latest
+          #   target: x86_64-unknown-linux-gnu
+          #   compiler: cross
+          #   archive: linux-gnu-x86_64
+          #   archive_ext: .tar.gz
+          #   bin: libgodot_rapier_3d.so
 
-          - release_for: linux-arm64
-            runner: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            compiler: cross
-            archive: linux-arm64
-            archive_ext: .tar.gz
-            bin: libgodot_rapier_3d.so
+          # - release_for: linux-arm64
+          #   runner: ubuntu-latest
+          #   target: aarch64-unknown-linux-gnu
+          #   compiler: cross
+          #   archive: linux-arm64
+          #   archive_ext: .tar.gz
+          #   bin: libgodot_rapier_3d.so
 
-          - release_for: windows-msvc32
-            runner: windows-latest
-            target: i686-pc-windows-msvc
-            compiler: cross
-            archive: windows-msvc-x86_32
-            archive_ext: .zip
-            bin: godot_rapier_3d.dll
+          # - release_for: windows-msvc32
+          #   runner: windows-latest
+          #   target: i686-pc-windows-msvc
+          #   compiler: cross
+          #   archive: windows-msvc-x86_32
+          #   archive_ext: .zip
+          #   bin: godot_rapier_3d.dll
 
-          - release_for: windows-msvc64
-            runner: windows-latest
-            target: x86_64-pc-windows-msvc
-            compiler: cross
-            archive: windows-msvc-x86_64
-            archive_ext: .zip
-            bin: godot_rapier_3d.dll
+          # - release_for: windows-msvc64
+          #   runner: windows-latest
+          #   target: x86_64-pc-windows-msvc
+          #   compiler: cross
+          #   archive: windows-msvc-x86_64
+          #   archive_ext: .zip
+          #   bin: godot_rapier_3d.dll
 
-          - release_for: macos-amd64
-            runner: macos-latest
-            target: x86_64-apple-darwin
-            compiler: cross
-            archive: macos-amd-x86_64
-            archive_ext: .zip
-            bin: libgodot_rapier_3d.dylib
+          # - release_for: macos-amd64
+          #   runner: macos-latest
+          #   target: x86_64-apple-darwin
+          #   compiler: cross
+          #   archive: macos-amd-x86_64
+          #   archive_ext: .zip
+          #   bin: libgodot_rapier_3d.dylib
 
-          - release_for: macos-arm64
-            runner: macos-latest
-            target: aarch64-apple-darwin
-            compiler: cross
-            archive: macos-arm-x86_64
-            archive_ext: .zip
-            bin: libgodot_rapier_3d.dylib
+          # - release_for: macos-arm64
+          #   runner: macos-latest
+          #   target: aarch64-apple-darwin
+          #   compiler: cross
+          #   archive: macos-arm-x86_64
+          #   archive_ext: .zip
+          #   bin: libgodot_rapier_3d.dylib
 
     steps:
       - uses: actions/checkout@v4

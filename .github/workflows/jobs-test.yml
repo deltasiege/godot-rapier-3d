@@ -15,15 +15,15 @@ jobs:
             pack: all
             pack_ext: .tar.gz
 
-          - runner: windows-latest
-            targets: x86_64-pc-windows-msvc
-            pack: all
-            pack_ext: .zip
+          # - runner: windows-latest
+          #   targets: x86_64-pc-windows-msvc
+          #   pack: all
+          #   pack_ext: .zip
 
-          - runner: macos-latest
-            targets: aarch64-apple-darwin
-            pack: all
-            pack_ext: .zip
+          # - runner: macos-latest
+          #   targets: aarch64-apple-darwin
+          #   pack: all
+          #   pack_ext: .zip
 
     steps:
       - uses: actions/checkout@v4
