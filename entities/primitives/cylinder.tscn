@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3 uid="uid://bu2cqx0ps2rgh"]
+
+[ext_resource type="Material" uid="uid://c6qus6d8wc43p" path="res://env/mats/dbug_mat_high.tres" id="1_dtkqv"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_jn0xg"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_nrqrh"]
+
+[node name="Cylinder" type="RapierRigidBody3D"]
+metadata/cuid = "cp2htntabdy5o3darbef2o95"
+
+[node name="CylinderCollisionShape3D" type="RapierCollisionShape3D" parent="." node_paths=PackedStringArray("col_shape")]
+col_shape = NodePath("../CollisionShape3D")
+metadata/cuid = "ipzh2h6af2rehee8yj83ms03"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+material_override = ExtResource("1_dtkqv")
+mesh = SubResource("CylinderMesh_jn0xg")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CylinderShape3D_nrqrh")

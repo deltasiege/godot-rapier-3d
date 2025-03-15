@@ -1,4 +1,5 @@
 # Godot 4+ specific ignores
+/android/
 .godot/**
 !.godot/extension_list.cfg
 !.godot/global_script_class_cache.cfg

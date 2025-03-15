@@ -1,0 +1,93 @@
+[gd_scene load_steps=12 format=3 uid="uid://dj53yxmfw6ax0"]
+
+[ext_resource type="Script" uid="uid://b7hrj0yttrkvw" path="res://demos/characters/characters_demo.gd" id="1_c8a4y"]
+[ext_resource type="PackedScene" uid="uid://catsbly4tdfm0" path="res://entities/ui/toolbar/toolbar.tscn" id="2_c8a4y"]
+[ext_resource type="PackedScene" uid="uid://dohhufgjerc06" path="res://entities/characters/kinematic_character/kinematic_character.tscn" id="3_nrxd8"]
+[ext_resource type="PackedScene" uid="uid://cqn1q33aroykb" path="res://entities/characters/pid_character/pid_character.tscn" id="4_adr0n"]
+[ext_resource type="Material" uid="uid://c0t4kx1mtvmwy" path="res://env/mats/dbug_mat_mid.tres" id="5_c8a4y"]
+[ext_resource type="PackedScene" uid="uid://c8hvtprdesoyl" path="res://entities/primitives/all.tscn" id="5_s5g7l"]
+[ext_resource type="PackedScene" uid="uid://drbstenfl2i1o" path="res://env/outdoors/outdoors.tscn" id="7_fqefj"]
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_c8a4y"]
+data = PackedVector3Array(5, 0.5, 8, 5, 0.5, 5, 5, -7.5, 5, 5, 0.5, 8, 5, -7.5, 8, -5, -7.5, 8, 5, -7.5, 8, 5, -7.5, 5, -5, -7.5, 5, 5, 2.5, 8, 5, 0.5, 8, -5, -7.5, 8, -5, -3.5, 8, -5, -3.5, 5, 5, 2.5, 5, -5, -3.5, 8, 5, 2.5, 8, -5, -7.5, 8, -5, -7.5, 8, 5, -7.5, 8, -5, -7.5, 5, -5, -3.5, 5, -5, -3.5, 8, -5, -7.5, 8, -5, -7.5, 8, -5, -7.5, 5, -5, -3.5, 5, 5, 2.5, 5, 5, 2.5, 8, -5, -3.5, 8, 5, -7.5, 5, 5, -7.5, 8, 5, 0.5, 8, 5, 2.5, -8, 5, 2.5, -5, 4.75906e-07, 5, -5, 5, 0.5, -5, 4.75906e-07, 1.75, -5, 5, 2.5, -5, 5, 2.5, -5, 4.75906e-07, 1.75, -5, 4.75906e-07, 5, -5, -5, 7.5, -8, 5, 0.5, -8, 5, 2.5, -8, 5, -4, -8, 5, 0.5, -8, -5, 7.5, -8, -5, 7.5, -8, 4.75906e-07, 5, -5, -5, 7.5, -5, 5, 2.5, -5, 4.75906e-07, 5, -5, 5, 2.5, -5, 4.75906e-07, 5, -5, -5, 7.5, -8, 5, 2.5, -8, -5, 7.5, -8, -5, 7.5, -5, -5, -4, -8, 5, -4, -8, 5, -4, -5, 5, 0.5, -5, 5, 0.5, -5, 5, 0.5, -8, 5, -4, -8, 5, -4, -5, 5, 0.5, -5, 5, 0.5, -5, 4.76027e-07, -4, -5, -5, -4, -8, -5, -4, -5, 4.75906e-07, 1.75, -5, 5, 0.5, -5, 5, -4, -5, 5, -4, -5, 4.76027e-07, -7.14041e-07, -5, 4.75906e-07, 1.75, -5, 4.76027e-07, -7.14041e-07, -5, 5, -4, -5, 4.76027e-07, -4, -5, -5, 7.5, -8, -5, -4, -8, 5, -4, -8, -5, -4, -8, -5, 7.5, -5, -5, -4, -5, 5, -4, -5, 5, -4, -8, -5, -4, -8, 4.76027e-07, -4, -5, 5, -4, -5, -5, -4, -8, 5, -7.5, -5, 5, 0.5, 5, 5, 0.5, -5, 5, 7.5, 5, -5, 7.5, 5, -5, 7.5, -5, -5, 7.5, 5, 5, 7.5, 5, -5, -3.5, 5, -5, -7.5, 5, -5, -7.5, -5, -5, 7.5, -5, 5, 7.5, 5, 5, 2.5, 5, -5, -3.5, 5, -5, -4, -5, -5, 7.5, -5, -5, -7.5, -5, -5, 7.5, -5, -5, -3.5, 5, -5, -7.5, 5, 5, -7.5, -5, 5, -7.5, 5, 5, 0.5, 5, -5, -7.5, 5, 5, -7.5, -5, -5, -7.5, -5, -5, -4, -5, -5, -7.5, -5, 4.76027e-07, -4, -5, 5, 7.5, -5, 5, 2.5, -5, 5, 7.5, 5, 5, 2.5, -5, 5, 2.5, 5, 5, 7.5, 5, -5, 7.5, -5, -5, 7.5, 5, -5, -3.5, 5, -5, 7.5, -5, -5, 7.5, -5, -5, -7.5, -5, -5, -7.5, 5, 5, -7.5, 5, 5, -7.5, -5, -5, 7.5, -5, -5, 7.5, 5, -5, 7.5, -5, 5, 0.5, -5, 4.76027e-07, -7.14041e-07, -5, 5, -7.5, -5, 5, 7.5, -5, 4.75906e-07, 1.75, -5, 4.76027e-07, -7.14041e-07, -5, 5, -7.5, -5, 4.76027e-07, -7.14041e-07, -5, 4.76027e-07, -4, -5, 5, 0.5, -5, 5, 2.5, -5, 4.76027e-07, -7.14041e-07, -5, 4.76027e-07, -7.14041e-07, -5, 5, 2.5, -5, 5, 7.5, -5, 4.76027e-07, -4, -5, -5, -7.5, -5, 5, -7.5, -5, 5, 7.5, -5, 4.75906e-07, 5, -5, 4.75906e-07, 1.75, -5, 4.75906e-07, 5, -5, 5, 7.5, -5, -5, 7.5, -5, 5, 7.5, -5, 5, 7.5, 5, -5, 7.5, -5, 15, 2.5, 8, 15, 0.5, 8, 5, 0.5, 8, 15, 0.5, 8, 15, 2.5, 8, 15, 0.5, -8, 5, 0.5, 8, 15, 0.5, 8, 15, 0.5, -8, 5, 2.5, 5, 15, 2.5, 8, 5, 2.5, 8, 5, 0.5, 8, 5, 2.5, 8, 15, 2.5, 8, 5, 2.5, -5, 15, 2.5, 8, 5, 2.5, 5, 15, 0.5, -8, 5, 0.5, 5, 5, 0.5, 8, 15, 2.5, 8, 15, 2.5, -8, 15, 0.5, -8, 5, 2.5, -8, 15, 2.5, -8, 15, 2.5, 8, 15, 0.5, -8, 15, 2.5, -8, 5, 2.5, -8, 5, 2.5, -5, 15, 2.5, 8, 5, 2.5, -5, 5, 2.5, -5, 5, 2.5, -8, 15, 2.5, 8, 15, 0.5, -8, 5, 0.5, -5, 5, 0.5, 5, 15, 0.5, -8, 5, 2.5, -8, 5, 0.5, -8, 5, 0.5, -5, 5, 0.5, -5, 15, 0.5, -8, 5, 0.5, -5, 15, 0.5, -8, 5, 0.5, -8, 5, 2.5, -5, 5, 2.5, -5, 5, 2.5, -5, 5, 0.5, -5, 5, 2.5, -5, 5, 2.5, -5, 5, 0.5, -5, 5, 0.5, -5, 5, 2.5, -5, 5, 0.5, -5, 5, 0.5, -5, 5, 0.5, -5)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ig7tw"]
+sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+ground_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+
+[sub_resource type="Sky" id="Sky_l71ui"]
+sky_material = SubResource("ProceduralSkyMaterial_ig7tw")
+
+[sub_resource type="Environment" id="Environment_h2yge"]
+background_mode = 2
+sky = SubResource("Sky_l71ui")
+tonemap_mode = 2
+
+[node name="Characters Demo" type="Node3D" node_paths=PackedStringArray("kinematic_character", "pid_character", "toolbar")]
+script = ExtResource("1_c8a4y")
+kinematic_character = NodePath("RapierKinematicCharacter3D")
+pid_character = NodePath("RapierPIDCharacter3D")
+toolbar = NodePath("Toolbar")
+
+[node name="Toolbar" parent="." instance=ExtResource("2_c8a4y")]
+
+[node name="RapierKinematicCharacter3D" parent="." instance=ExtResource("3_nrxd8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)
+metadata/cuid = "u6q5w4e0am4eoku2nza1xwfa"
+
+[node name="RapierPIDCharacter3D" parent="." instance=ExtResource("4_adr0n")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+metadata/cuid = "u2wvqjck8jhtq5p2xmx4qgvb"
+
+[node name="Building" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.368, -5.91247, 5.90093)
+
+[node name="CSGCombiner3D" type="CSGCombiner3D" parent="Building"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.5127, 0)
+
+[node name="LowerRamp" type="CSGPolygon3D" parent="Building/CSGCombiner3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 8)
+polygon = PackedVector2Array(-5, -7, -5, -3, 5, 3, 5, -7)
+depth = 3.0
+material = ExtResource("5_c8a4y")
+
+[node name="UpperRamp" type="CSGPolygon3D" parent="Building/CSGCombiner3D"]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 5, -8)
+polygon = PackedVector2Array(-5, -9, -5, -2.5, 5, 2.5, 5, -9)
+depth = 3.0
+material = ExtResource("5_c8a4y")
+
+[node name="Main" type="CSGBox3D" parent="Building/CSGCombiner3D"]
+size = Vector3(10, 15, 10)
+material = ExtResource("5_c8a4y")
+
+[node name="Balcony" type="CSGBox3D" parent="Building/CSGCombiner3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1.5, 0)
+size = Vector3(10, 2, 16)
+material = ExtResource("5_c8a4y")
+
+[node name="RapierStaticBody3D" type="RapierStaticBody3D" parent="Building/CSGCombiner3D"]
+cuid = "m1088xbhn16lnf647qbmmbx3"
+metadata/cuid = "mcegt4bcwjhk5auepa1qw0sb"
+
+[node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="Building/CSGCombiner3D/RapierStaticBody3D" node_paths=PackedStringArray("col_shape")]
+col_shape = NodePath("../../../CSGBakedCollisionShape3D")
+metadata/cuid = "b4mep1e2d6xvuzvu2lhtxxug"
+
+[node name="CSGBakedCollisionShape3D" type="CollisionShape3D" parent="Building"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.5127, 0)
+shape = SubResource("ConcavePolygonShape3D_c8a4y")
+
+[node name="All Primitives" parent="." instance=ExtResource("5_s5g7l")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -3)
+
+[node name="Env" type="Node3D" parent="."]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Env"]
+environment = SubResource("Environment_h2yge")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Env"]
+transform = Transform3D(-0.866024, -0.433016, 0.250001, 0, 0.499998, 0.866027, -0.500003, 0.75, -0.43301, 0, 0, 0)
+shadow_enabled = true
+
+[node name="Outdoors" parent="Env" instance=ExtResource("7_fqefj")]

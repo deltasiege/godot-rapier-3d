@@ -7,12 +7,12 @@ edition = "2021"
 crate-type = ["cdylib"]  # Compile this crate to a dynamic C library.
 
 [dependencies]
-bincode = "1.3.3"
-cuid2 = "0.1.2"
-godot = { git = "https://github.com/godot-rust/gdext", branch = "master" } # godot-fmt needs lock to 40179a04709ca05d24ad63a3afce1ac23c893e71 rev because of GodotClass issue - if build works after updating, can remove https://discord.com/channels/723850269347283004/1242473322374234294/1242473322374234294
-log = { version = "0.4.21", features = ["std"] }
-rapier3d = { version = "0.18.0", features = [ "enhanced-determinism", "serde-serialize", "debug-render" ] }
-serde = { version = "1.0.201", features = ["derive"] }
+godot = { version = "0.2.4", features = ["register-docs"]}
+log = { version = "0.4.26", features = ["std"] }
+rapier3d = { version = "0.23.1", features = [ "enhanced-determinism", "serde-serialize", "debug-render" ] }
+serde = "1.0.218"
+bincode = "1"
+cuid2 = "0.1.4"
 
 # Rapier optimizations
 # https://rapier.rs/docs/user_guides/rust/common_mistakes

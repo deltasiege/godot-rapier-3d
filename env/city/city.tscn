@@ -1,0 +1,51 @@
+[gd_scene load_steps=4 format=3 uid="uid://bxhqpr161k8w5"]
+
+[ext_resource type="Material" uid="uid://gdvppbst5e7w" path="res://env/mats/grid_mat.tres" id="1_70kv1"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_0xm2m"]
+size = Vector3(200, 1, 200)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_h2yge"]
+size = Vector3(200, 1, 200)
+
+[node name="City" type="Node3D"]
+
+[node name="RapierStaticBody3D" type="RapierStaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RapierStaticBody3D"]
+mesh = SubResource("BoxMesh_0xm2m")
+surface_material_override/0 = ExtResource("1_70kv1")
+
+[node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="RapierStaticBody3D"]
+shape = SubResource("BoxShape3D_h2yge")
+
+[node name="RapierStaticBody3D4" type="RapierStaticBody3D" parent="."]
+transform = Transform3D(-4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0, 1, 23.3148, -0.5, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RapierStaticBody3D4"]
+mesh = SubResource("BoxMesh_0xm2m")
+surface_material_override/0 = ExtResource("1_70kv1")
+
+[node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="RapierStaticBody3D4"]
+shape = SubResource("BoxShape3D_h2yge")
+
+[node name="RapierStaticBody3D2" type="RapierStaticBody3D" parent="."]
+transform = Transform3D(0.995436, 0.0954288, 0, -0.0954288, 0.995436, 0, 0, 0, 1, -53.4121, 3.46301, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RapierStaticBody3D2"]
+material_override = ExtResource("1_70kv1")
+mesh = SubResource("BoxMesh_0xm2m")
+
+[node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="RapierStaticBody3D2"]
+shape = SubResource("BoxShape3D_h2yge")
+
+[node name="RapierStaticBody3D3" type="RapierStaticBody3D" parent="."]
+transform = Transform3D(0.451423, 0.89231, 0, -0.89231, 0.451423, 0, 0, 0, 1, -62.1013, 3.46301, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RapierStaticBody3D3"]
+material_override = ExtResource("1_70kv1")
+mesh = SubResource("BoxMesh_0xm2m")
+
+[node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="RapierStaticBody3D3"]
+shape = SubResource("BoxShape3D_h2yge")

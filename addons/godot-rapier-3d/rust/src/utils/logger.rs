@@ -1,10 +1,6 @@
 use godot::prelude::*;
 use log::{Level, LevelFilter, Metadata, Record};
 
-pub fn handle_error(error: impl std::fmt::Display) {
-    log::error!("{}", error);
-}
-
 pub fn init_logger() {
     let logger = GR3DLogger {};
     log::set_max_level(LevelFilter::from(LogLevel::default()));

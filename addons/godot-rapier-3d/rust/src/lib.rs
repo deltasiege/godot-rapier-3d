@@ -1,20 +1,13 @@
-use crate::engine::{register_engine, unregister_engine};
 use godot::prelude::*;
 
-mod editor_plugin;
-mod engine;
-mod lookups;
-mod objects;
-mod pipeline;
-mod queue;
+pub mod config;
+mod interface;
+mod nodes;
 mod utils;
+mod world;
 
-pub use engine::get_engine;
-pub use lookups::{IDBridge, LookupIdentifier, Lookups};
-pub use objects::{ObjectKind, PhysicsObject};
-pub use pipeline::{GR3DPhysicsPipeline, GR3DPhysicsState};
-pub use queue::ActionQueue;
-pub use utils::{cuid2, handle_error};
+pub use world::lookup::LookupTable;
+pub use world::world::World;
 
 struct GodotRapier3D;
 
@@ -22,13 +15,13 @@ struct GodotRapier3D;
 unsafe impl ExtensionLibrary for GodotRapier3D {
     fn on_level_init(level: InitLevel) {
         if level == InitLevel::Scene {
-            register_engine();
+            interface::register_singleton();
         }
     }
 
     fn on_level_deinit(level: InitLevel) {
         if level == InitLevel::Scene {
-            unregister_engine();
+            interface::unregister_singleton();
         }
     }
 }
