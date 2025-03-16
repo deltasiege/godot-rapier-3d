@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dq675fmt1rg8c"
 path.s3tc="res://.godot/imported/open_eye.png-517f89996bd929c096d85168ccc6e7a8.s3tc.ctex"
+path.etc2="res://.godot/imported/open_eye.png-517f89996bd929c096d85168ccc6e7a8.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://addons/gdquest_gobot/textures/open_eye.png"
-dest_files=["res://.godot/imported/open_eye.png-517f89996bd929c096d85168ccc6e7a8.s3tc.ctex"]
+dest_files=["res://.godot/imported/open_eye.png-517f89996bd929c096d85168ccc6e7a8.s3tc.ctex", "res://.godot/imported/open_eye.png-517f89996bd929c096d85168ccc6e7a8.etc2.ctex"]
 
 [params]
 
