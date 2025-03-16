@@ -110,6 +110,10 @@ jobs:
         run: |
           mkdir ${{ env.BIN_DIR }}
           mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin }} ${{ env.BIN_DIR }}/${{ matrix.target }}-${{ matrix.bin }}
+
+      - name: Move rust PDB (win only?)
+        continue-on-error: true
+        run: |
           mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.pdb }} ${{ env.BIN_DIR }}/${{ matrix.pdb }}
 
       - name: Replace .gdextension config
