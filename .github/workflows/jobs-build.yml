@@ -15,72 +15,78 @@ jobs:
     strategy:
       matrix:
         include:
-          - release_for: linux-gnu32
+          - release_for: web
             runner: ubuntu-latest
-            target: i686-unknown-linux-gnu
-            compiler: cross
-            archive: linux-gnu-x86_32
-            archive_ext: .tar.gz
-            bin: libgodot_rapier_3d.so
-            pdb: godot_rapier_3d.pdb
+            target: wasm32-unknown-emscripten
+            single_threaded_cmd: cargo +nightly build --features nothreads -Zbuild-std --target wasm32-unknown-emscripten --release
+            multi_threaded_cmd: RUSTFLAGS="-C link-args=-pthread" cargo +nightly build -Zbuild-std --target wasm32-unknown-emscripten --release
+            bin_single: godot_rapier_3d.wasm
+            bin_multi: godot_rapier_3d.threads.wasm
 
-          - release_for: linux-gnu64
-            runner: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            compiler: cross
-            archive: linux-gnu-x86_64
-            archive_ext: .tar.gz
-            bin: libgodot_rapier_3d.so
-            pdb: godot_rapier_3d.pdb
+          # - release_for: linux-gnu32
+          #   runner: ubuntu-latest
+          #   target: i686-unknown-linux-gnu
+          #   compiler: cross
+          #   archive: linux-gnu-x86_32
+          #   archive_ext: .tar.gz
+          #   bin: libgodot_rapier_3d.so
 
-          - release_for: linux-arm64
-            runner: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            compiler: cross
-            archive: linux-arm64
-            archive_ext: .tar.gz
-            bin: libgodot_rapier_3d.so
-            pdb: godot_rapier_3d.pdb
+          # - release_for: linux-gnu64
+          #   runner: ubuntu-latest
+          #   target: x86_64-unknown-linux-gnu
+          #   compiler: cross
+          #   archive: linux-gnu-x86_64
+          #   archive_ext: .tar.gz
+          #   bin: libgodot_rapier_3d.so
 
-          - release_for: windows-msvc32
-            runner: windows-latest
-            target: i686-pc-windows-msvc
-            compiler: cross
-            archive: windows-msvc-x86_32
-            archive_ext: .zip
-            bin: godot_rapier_3d.dll
-            pdb: godot_rapier_3d.pdb
+          # - release_for: linux-arm64
+          #   runner: ubuntu-latest
+          #   target: aarch64-unknown-linux-gnu
+          #   compiler: cross
+          #   archive: linux-arm64
+          #   archive_ext: .tar.gz
+          #   bin: libgodot_rapier_3d.so
 
-          - release_for: windows-msvc64
-            runner: windows-latest
-            target: x86_64-pc-windows-msvc
-            compiler: cross
-            archive: windows-msvc-x86_64
-            archive_ext: .zip
-            bin: godot_rapier_3d.dll
-            pdb: godot_rapier_3d.pdb
+          # - release_for: windows-msvc32
+          #   runner: windows-latest
+          #   target: i686-pc-windows-msvc
+          #   compiler: cross
+          #   archive: windows-msvc-x86_32
+          #   archive_ext: .zip
+          #   bin: godot_rapier_3d.dll
+          #   pdb: godot_rapier_3d.pdb
 
-          - release_for: macos-amd64
-            runner: macos-latest
-            target: x86_64-apple-darwin
-            compiler: cross
-            archive: macos-amd-x86_64
-            archive_ext: .zip
-            bin: libgodot_rapier_3d.dylib
-            pdb: godot_rapier_3d.pdb
+          # - release_for: windows-msvc64
+          #   runner: windows-latest
+          #   target: x86_64-pc-windows-msvc
+          #   compiler: cross
+          #   archive: windows-msvc-x86_64
+          #   archive_ext: .zip
+          #   bin: godot_rapier_3d.dll
+          #   pdb: godot_rapier_3d.pdb
 
-          - release_for: macos-arm64
-            runner: macos-latest
-            target: aarch64-apple-darwin
-            compiler: cross
-            archive: macos-arm-x86_64
-            archive_ext: .zip
-            bin: libgodot_rapier_3d.dylib
-            pdb: godot_rapier_3d.pdb
+          # - release_for: macos-amd64
+          #   runner: macos-latest
+          #   target: x86_64-apple-darwin
+          #   compiler: cross
+          #   archive: macos-amd-x86_64
+          #   archive_ext: .zip
+          #   bin: libgodot_rapier_3d.dylib
+
+          # - release_for: macos-arm64
+          #   runner: macos-latest
+          #   target: aarch64-apple-darwin
+          #   compiler: cross
+          #   archive: macos-arm-x86_64
+          #   archive_ext: .zip
+          #   bin: libgodot_rapier_3d.dylib
 
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1 # https://bun.sh/guides/runtime/cicd
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          actions-cache-folder: "emsdk-cache"
 
       - name: Cache rust target dir
         id: cache-rust-target
@@ -90,9 +96,27 @@ jobs:
           path: "${{ env.RUST_DIR }}/target"
 
       - name: Install Rust
+        if: matrix.release_for != 'web'
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+
+      - name: Install Nightly
+        if: matrix.release_for == 'web'
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Nightly
+        if: matrix.release_for == 'web'
+        run: |
+          rustup toolchain install nightly
+          rustup component add rust-src --toolchain nightly
+          rustup target add wasm32-unknown-emscripten --toolchain nightly
+
+      - name: Verify Emscripten
+        if: matrix.release_for == 'web'
+        run: emcc -v
 
       - name: Install Cross
         if: matrix.compiler == 'cross'
@@ -103,18 +127,42 @@ jobs:
         working-directory: ${{ env.RUST_DIR }}
 
       - name: Build rust binary
+        if: matrix.release_for != 'web'
         run: ${{ matrix.compiler }} build --verbose --locked --release --target ${{ matrix.target }}
         working-directory: ${{ env.RUST_DIR }}
 
       - name: Move rust binaries
+        if: matrix.release_for != 'web'
         run: |
           mkdir ${{ env.BIN_DIR }}
           mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin }} ${{ env.BIN_DIR }}/${{ matrix.target }}-${{ matrix.bin }}
 
-      - name: Move rust PDB (win only?)
-        continue-on-error: true
+      - name: Move PDB
+        if: runner == 'windows-latest'
         run: |
           mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.pdb }} ${{ env.BIN_DIR }}/${{ matrix.pdb }}
+
+      - name: Build multi-threaded WASM binary
+        if: matrix.release_for == 'web'
+        run: ${{ matrix.multi_threaded_cmd }}
+        working-directory: ${{ env.RUST_DIR }}
+
+      - name: Move multi-threaded WASM binary
+        if: matrix.release_for == 'web'
+        run: |
+          mkdir ${{ env.BIN_DIR }}
+          mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin_single }} ${{ env.BIN_DIR }}/${{ matrix.target }}-${{ matrix.bin_multi }}
+
+      - name: Build single-threaded WASM binary
+        if: matrix.release_for == 'web'
+        run: ${{ matrix.single_threaded_cmd }}
+        working-directory: ${{ env.RUST_DIR }}
+
+      - name: Move single-threaded WASM binary
+        if: matrix.release_for == 'web'
+        run: |
+          mkdir ${{ env.BIN_DIR }}
+          mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin_single }} ${{ env.BIN_DIR }}/${{ matrix.target }}-${{ matrix.bin_single }}
 
       - name: Replace .gdextension config
         shell: bash
