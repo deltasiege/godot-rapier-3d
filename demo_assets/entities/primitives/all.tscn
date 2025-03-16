@@ -1,0 +1,27 @@
+[gd_scene load_steps=6 format=3 uid="uid://c8hvtprdesoyl"]
+
+[ext_resource type="PackedScene" uid="uid://dkj1evswss3wa" path="res://demo_assets/entities/primitives/ball.tscn" id="1_vxxyx"]
+[ext_resource type="PackedScene" uid="uid://do45yi3snvvu3" path="res://demo_assets/entities/primitives/capsule.tscn" id="2_tk3ft"]
+[ext_resource type="PackedScene" uid="uid://j726oejh7ros" path="res://demo_assets/entities/primitives/cube.tscn" id="3_xwpy8"]
+[ext_resource type="PackedScene" uid="uid://bu2cqx0ps2rgh" path="res://demo_assets/entities/primitives/cylinder.tscn" id="4_si33b"]
+[ext_resource type="PackedScene" uid="uid://djcuhnvgh48ym" path="res://demo_assets/entities/primitives/rectangle.tscn" id="5_eocro"]
+
+[node name="All Primitives" type="Node3D"]
+
+[node name="Ball" parent="." instance=ExtResource("1_vxxyx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 0)
+
+[node name="Capsule" parent="." instance=ExtResource("2_tk3ft")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)
+metadata/cuid = "dwrdamuvakkkychla576qsjj"
+
+[node name="Cube" parent="." instance=ExtResource("3_xwpy8")]
+metadata/cuid = "g1430r81j363c0ukil1xofvb"
+
+[node name="Cylinder" parent="." instance=ExtResource("4_si33b")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+metadata/cuid = "kr3qxl158onf39fwfwe9t15z"
+
+[node name="Rectangle" parent="." instance=ExtResource("5_eocro")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
+metadata/cuid = "i3fdr087i36hpzo9tq5wd1ta"

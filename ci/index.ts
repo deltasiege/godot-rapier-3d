@@ -89,7 +89,7 @@ function getGodotData(osName: OSName) {
       ? "macos.universal.zip"
       : "linux.x86_64.zip";
   const baseUrl = "https://github.com/godotengine/godot/releases/download";
-  const version = "4.2.2-stable";
+  const version = "4.4-stable";
   return {
     version,
     binary:
@@ -132,7 +132,7 @@ function getGR3DTestsData(target: Target) {
 
 export function getExportTemplatesDir(
   osName: OSName,
-  version: string = "4.2.2.stable"
+  version: string = "4.4.stable"
 ) {
   const trail =
     osName === "windows"

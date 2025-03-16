@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://duhqgtw78x2jh"]
+
+[ext_resource type="Script" uid="uid://b4xb11kv7mrca" path="res://demo_assets/entities/cameras/fly_cam/flycam.gd" id="1_vw3v2"]
+
+[node name="Flycam" type="Camera3D"]
+script = ExtResource("1_vw3v2")
+speed = 5.0

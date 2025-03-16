@@ -15,7 +15,13 @@ async function main() {
 }
 
 async function deleteUnwantedFiles(projectDir: string) {
-  const paths = ["addons/godot-rapier-3d/icons", "demos"];
+  const paths = [
+    "addons/godot-rapier-3d/icons",
+    "addons/gdquest_gobot",
+    "addons/gdquest_sophia",
+    "demos",
+    "demo_assets",
+  ];
   for (const path of paths) {
     const fullPath = resolve(projectDir, path);
     await fsExtra.remove(fullPath);
@@ -43,6 +49,7 @@ async function buildProject(
   const args = [
     binPath,
     "--headless",
+    "--verbose",
     "--no-window",
     "--path",
     srcDir,

@@ -1,0 +1,69 @@
+[gd_scene load_steps=6 format=3 uid="uid://b83m310n7pfib"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_fgl7p"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_k2b82"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_cc52i"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_nrqrh"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2jwe6"]
+size = Vector3(2, 1, 1)
+
+[node name="Invisible Primitives" type="Node3D"]
+
+[node name="Ball" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 0)
+metadata/cuid = "hc05v2om0ouie4l802cb0sc2"
+
+[node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="Ball" node_paths=PackedStringArray("col_shape")]
+col_shape = NodePath("../CollisionShape3D")
+metadata/cuid = "d6cn27gv8l18dz68yixv444l"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ball"]
+shape = SubResource("SphereShape3D_fgl7p")
+
+[node name="Cube" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 0)
+metadata/cuid = "b8mrg0qc9hj57dog6ky0vn8j"
+
+[node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="Cube" node_paths=PackedStringArray("col_shape")]
+col_shape = NodePath("../CollisionShape3D")
+metadata/cuid = "lrh73s92voo8da3k9jgxnlvr"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Cube"]
+shape = SubResource("BoxShape3D_k2b82")
+
+[node name="Capsule" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)
+metadata/cuid = "yvnqn46qt7objmyfpdeljkhi"
+
+[node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="Capsule" node_paths=PackedStringArray("col_shape")]
+col_shape = NodePath("../CollisionShape3D")
+metadata/cuid = "q8iqy0uk6pjl02b6y25vpvef"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Capsule"]
+shape = SubResource("CapsuleShape3D_cc52i")
+
+[node name="Cylinder" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+metadata/cuid = "khyasuly41fr2oj8063jju6n"
+
+[node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="Cylinder" node_paths=PackedStringArray("col_shape")]
+col_shape = NodePath("../CollisionShape3D")
+metadata/cuid = "mwnbg7z6iv1ehv6n8qs0vf3l"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Cylinder"]
+shape = SubResource("CylinderShape3D_nrqrh")
+
+[node name="Rectangle" type="RapierRigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 0)
+metadata/cuid = "m2ll3o0qe0vis2woffpsc6pu"
+
+[node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="Rectangle" node_paths=PackedStringArray("col_shape")]
+col_shape = NodePath("../CollisionShape3D")
+metadata/cuid = "odh79jvzkd628umggp45qhsd"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Rectangle"]
+shape = SubResource("BoxShape3D_2jwe6")

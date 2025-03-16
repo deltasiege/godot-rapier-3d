@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3 uid="uid://dohhufgjerc06"]
+
+[ext_resource type="Script" uid="uid://benq1gswnvyf" path="res://demo_assets/entities/characters/kinematic_character/kinematic_character.gd" id="1_ls1pp"]
+[ext_resource type="PackedScene" uid="uid://f23w6gp3k6eh" path="res://demo_assets/entities/cameras/3rd_person_cam/3rd_person_cam.tscn" id="2_kttds"]
+[ext_resource type="PackedScene" uid="uid://prh35jb6tjtd" path="res://addons/gdquest_sophia/sophia_skin.tscn" id="2_yndiw"]
+[ext_resource type="Script" uid="uid://dbylrn21fiunf" path="res://demo_assets/entities/characters/animation_controller.gd" id="4_kttds"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_w2c4h"]
+
+[node name="RapierKinematicCharacter3D" type="RapierKinematicCharacter3D" node_paths=PackedStringArray("lookat_pivots")]
+script = ExtResource("1_ls1pp")
+lookat_pivots = [NodePath("SophiaSkin")]
+metadata/cuid = "r4g0rch7f6k4e59bumzafyli"
+
+[node name="3rdPersonCam" parent="." instance=ExtResource("2_kttds")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+
+[node name="SophiaSkin" parent="." instance=ExtResource("2_yndiw")]
+
+[node name="Animation Controller" type="Node" parent="." node_paths=PackedStringArray("character", "state_machine")]
+script = ExtResource("4_kttds")
+character = NodePath("..")
+state_machine = NodePath("../SophiaSkin")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_w2c4h")
+
+[node name="KinematicCharCollisionShape3D" type="RapierCollisionShape3D" parent="." node_paths=PackedStringArray("col_shape")]
+col_shape = NodePath("../CollisionShape3D")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+metadata/cuid = "q896o2ga5qv1e4j5sny40oh1"

@@ -1,0 +1,35 @@
+[gd_scene load_steps=2 format=3 uid="uid://fbmh8yk5uh5f"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_g5f3c"]
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.156863)
+shadow_size = 4
+shadow_offset = Vector2(-3, 0)
+
+[node name="Replay UI" type="CanvasLayer"]
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Timeline" type="PanelContainer" parent="MarginContainer"]
+custom_minimum_size = Vector2(800, 100)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 8
+
+[node name="Playhead" type="Button" parent="MarginContainer/Timeline"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/normal = SubResource("StyleBoxFlat_g5f3c")
