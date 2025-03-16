@@ -22,6 +22,7 @@ jobs:
             archive: linux-gnu-x86_32
             archive_ext: .tar.gz
             bin: libgodot_rapier_3d.so
+            pdb: godot_rapier_3d.pdb
 
           - release_for: linux-gnu64
             runner: ubuntu-latest
@@ -30,6 +31,7 @@ jobs:
             archive: linux-gnu-x86_64
             archive_ext: .tar.gz
             bin: libgodot_rapier_3d.so
+            pdb: godot_rapier_3d.pdb
 
           - release_for: linux-arm64
             runner: ubuntu-latest
@@ -38,6 +40,7 @@ jobs:
             archive: linux-arm64
             archive_ext: .tar.gz
             bin: libgodot_rapier_3d.so
+            pdb: godot_rapier_3d.pdb
 
           # - release_for: windows-msvc32
           #   runner: windows-latest
@@ -46,6 +49,7 @@ jobs:
           #   archive: windows-msvc-x86_32
           #   archive_ext: .zip
           #   bin: godot_rapier_3d.dll
+          #   pdb: godot_rapier_3d.pdb
 
           # - release_for: windows-msvc64
           #   runner: windows-latest
@@ -54,6 +58,7 @@ jobs:
           #   archive: windows-msvc-x86_64
           #   archive_ext: .zip
           #   bin: godot_rapier_3d.dll
+          #   pdb: godot_rapier_3d.pdb
 
           # - release_for: macos-amd64
           #   runner: macos-latest
@@ -62,6 +67,7 @@ jobs:
           #   archive: macos-amd-x86_64
           #   archive_ext: .zip
           #   bin: libgodot_rapier_3d.dylib
+          #   pdb: godot_rapier_3d.pdb
 
           # - release_for: macos-arm64
           #   runner: macos-latest
@@ -70,6 +76,7 @@ jobs:
           #   archive: macos-arm-x86_64
           #   archive_ext: .zip
           #   bin: libgodot_rapier_3d.dylib
+          #   pdb: godot_rapier_3d.pdb
 
     steps:
       - uses: actions/checkout@v4
@@ -99,10 +106,11 @@ jobs:
         run: ${{ matrix.compiler }} build --verbose --locked --release --target ${{ matrix.target }}
         working-directory: ${{ env.RUST_DIR }}
 
-      - name: Move rust binary
+      - name: Move rust binaries
         run: |
           mkdir ${{ env.BIN_DIR }}
           mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin }} ${{ env.BIN_DIR }}/${{ matrix.target }}-${{ matrix.bin }}
+          mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.pdb }} ${{ env.BIN_DIR }}/${{ matrix.pdb }}
 
       - name: Replace .gdextension config
         shell: bash

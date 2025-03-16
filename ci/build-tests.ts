@@ -49,6 +49,7 @@ async function buildProject(
   const args = [
     binPath,
     "--headless",
+    "--verbose",
     "--no-window",
     "--path",
     srcDir,

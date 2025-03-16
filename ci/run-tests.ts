@@ -25,9 +25,9 @@ async function main() {
   ];
   console.log("Running:", args.join(" ") + "\n");
   const proc = Bun.spawn(args, { stdout: "inherit" });
-  const text = await new Response(proc.stdout).text();
-  console.log(text);
-  await proc.exited;
+  // const text = await new Response(proc.stdout).text();
+  // console.log(text);
+  // await proc.exited;
 }
 
 async function extractMacOSBinary({ buildDir, tests }: any): Promise<string> {

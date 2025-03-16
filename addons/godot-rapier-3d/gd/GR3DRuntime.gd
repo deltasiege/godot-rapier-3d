@@ -17,6 +17,9 @@ func _ready():
 	add_child(DrawLine)
 	if autoplay: play()
 
+func _exit_tree():
+	DrawLine.queue_free()
+
 func _process(_delta):
 	if Engine.is_editor_hint(): return
 	if get_tree().debug_collisions_hint: DrawLine.draw_lines(GR3D._get_debug_lines())
