@@ -19,7 +19,6 @@ async function deleteUnwantedFiles(projectDir: string) {
     "addons/godot-rapier-3d/icons",
     "addons/gdquest_gobot",
     "addons/gdquest_sophia",
-    "entities/cameras",
     "entities/ui",
     "env",
     "demos",
