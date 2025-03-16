@@ -1,0 +1,19 @@
+[project]
+name = "godot-rapier-3d"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "lokimckay", email = "lokimckay@gmail.com"},
+]
+dependencies = ["mkdocs-material>=9.6.8"]
+requires-python = "==3.10.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
+
+[tool.pdm.scripts]
+start = "pdm run mkdocs serve"
+build = "pdm run mkdocs build"

@@ -1,0 +1,28 @@
+site_name: Godot Rapier 3D
+site_url: https://deltasiege.github.io/godot-rapier-3d
+repo_url: https://github.com/deltasiege/godot-rapier-3d
+repo_name: deltasiege/godot-rapier-3d
+docs_dir: content
+extra:
+  generator: false
+theme:
+  name: material
+  icon:
+    logo: material/sword
+    repo: fontawesome/brands/github
+  palette:
+    scheme: slate
+    primary: black
+  features:
+    - header.autohide
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Welcome: index.md
+  - Quickstart: quickstart.md
+  - Manual stepping: stepping.md
+  - Snapshotting: snapshotting.md
+  - Determinism: determinism.md
+  - Contributing: contributing.md
+  - Roadmap: roadmap.md
