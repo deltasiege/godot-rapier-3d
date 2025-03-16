@@ -23,21 +23,21 @@ jobs:
             archive_ext: .tar.gz
             bin: libgodot_rapier_3d.so
 
-          # - release_for: linux-gnu64
-          #   runner: ubuntu-latest
-          #   target: x86_64-unknown-linux-gnu
-          #   compiler: cross
-          #   archive: linux-gnu-x86_64
-          #   archive_ext: .tar.gz
-          #   bin: libgodot_rapier_3d.so
+          - release_for: linux-gnu64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            compiler: cross
+            archive: linux-gnu-x86_64
+            archive_ext: .tar.gz
+            bin: libgodot_rapier_3d.so
 
-          # - release_for: linux-arm64
-          #   runner: ubuntu-latest
-          #   target: aarch64-unknown-linux-gnu
-          #   compiler: cross
-          #   archive: linux-arm64
-          #   archive_ext: .tar.gz
-          #   bin: libgodot_rapier_3d.so
+          - release_for: linux-arm64
+            runner: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            compiler: cross
+            archive: linux-arm64
+            archive_ext: .tar.gz
+            bin: libgodot_rapier_3d.so
 
           # - release_for: windows-msvc32
           #   runner: windows-latest

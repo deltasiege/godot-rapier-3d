@@ -7,6 +7,8 @@ async function main() {
     "./",
     "./ci/bin",
     "./addons/godot-rapier-3d/bin",
+    "./addons/godot-rapier-3d/rust/target/debug",
+    "./addons/godot-rapier-3d/rust/target/release",
     "./build",
     "./build/reports",
     getExportTemplatesDir(runnerEnvToOSName(process.env)),
