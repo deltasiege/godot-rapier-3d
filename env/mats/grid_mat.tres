@@ -1,8 +1,0 @@
-[gd_resource type="StandardMaterial3D" load_steps=2 format=3 uid="uid://gdvppbst5e7w"]
-
-[ext_resource type="Texture2D" uid="uid://b37t6cgd8onax" path="res://env/mats/grid.jpg" id="1_4sw42"]
-
-[resource]
-albedo_color = Color(0.417969, 0.417969, 0.417969, 1)
-albedo_texture = ExtResource("1_4sw42")
-uv1_scale = Vector3(200, 200, 200)

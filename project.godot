@@ -24,11 +24,11 @@ GR3DRuntime="*res://addons/godot-rapier-3d/gd/GR3DRuntime.gd"
 
 folder_colors={
 "res://addons/": "blue",
+"res://demo_assets/": "green",
 "res://demos/": "green",
 "res://docs/": "teal",
-"res://entities/": "purple",
-"res://env/": "purple",
 "res://scripts/": "purple",
+"res://test_assets/": "orange",
 "res://tests/": "orange"
 }
 

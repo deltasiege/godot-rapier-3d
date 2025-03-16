@@ -1,6 +1,6 @@
 extends Node
 
-var cmd = preload("res://tests/test_tools/cmd.gd")
+var cmd = preload("res://test_assets/tools/cmd.gd")
 
 func _ready(): 
 	var test = cmd.get_cmdline_args().get("test")

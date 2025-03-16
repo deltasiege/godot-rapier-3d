@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3 uid="uid://j726oejh7ros"]
+
+[ext_resource type="Material" uid="uid://c6qus6d8wc43p" path="res://demo_assets/env/mats/dbug_mat_high.tres" id="1_a1oxl"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_a1oxl"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_k2b82"]
+
+[node name="Cube" type="RapierRigidBody3D"]
+metadata/cuid = "arc5tqyqc9k89nctnjw7q0m6"
+
+[node name="CubeCollisionShape3D" type="RapierCollisionShape3D" parent="." node_paths=PackedStringArray("col_shape")]
+col_shape = NodePath("../CollisionShape3D")
+metadata/cuid = "u2eprkjl27030unmnet9si0n"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+material_override = ExtResource("1_a1oxl")
+mesh = SubResource("BoxMesh_a1oxl")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_k2b82")

@@ -5,7 +5,7 @@ var _last_snapshot: PackedByteArray
 var _last_snapshot_data = {}
 var opened_popup = null
 
-var Hash = preload("res://tests/test_tools/hash.gd")
+var Hash = preload("res://test_assets/tools/hash.gd")
 
 func _ready():
 	get_parent().toolbar.connect("popup_opened", on_popup_opened)

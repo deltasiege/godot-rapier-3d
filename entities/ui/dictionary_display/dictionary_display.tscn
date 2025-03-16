@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://rtrcwftqgj3f"]
-
-[ext_resource type="Script" uid="uid://b0t8bgrke5vtj" path="res://entities/ui/dictionary_display/dictionary_display.gd" id="1_ygxsg"]
-
-[node name="Dictionary Display" type="VBoxContainer"]
-script = ExtResource("1_ygxsg")

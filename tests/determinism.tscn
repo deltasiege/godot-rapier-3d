@@ -1,8 +1,8 @@
 [gd_scene load_steps=6 format=3 uid="uid://dvomaeck022br"]
 
-[ext_resource type="Script" uid="uid://docmn3fnev77t" path="res://tests/test_tools/sim_test.gd" id="1_qkwvp"]
-[ext_resource type="Script" uid="uid://c7v12u6lfd3x2" path="res://tests/test_tools/test_kinematic_character.gd" id="2_474ec"]
-[ext_resource type="PackedScene" uid="uid://b83m310n7pfib" path="res://entities/primitives/invisible.tscn" id="4_kaoq6"]
+[ext_resource type="Script" uid="uid://docmn3fnev77t" path="res://test_assets/tools/sim_test.gd" id="1_qkwvp"]
+[ext_resource type="Script" uid="uid://c7v12u6lfd3x2" path="res://test_assets/tools/test_kinematic_character.gd" id="2_474ec"]
+[ext_resource type="PackedScene" uid="uid://b83m310n7pfib" path="res://test_assets/entities/primitives/invisible.tscn" id="4_kaoq6"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hblhe"]
 
