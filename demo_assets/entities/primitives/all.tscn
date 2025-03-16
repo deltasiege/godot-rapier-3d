@@ -1,10 +1,10 @@
 [gd_scene load_steps=6 format=3 uid="uid://c8hvtprdesoyl"]
 
-[ext_resource type="PackedScene" uid="uid://dkj1evswss3wa" path="res://test_assets/entities/primitives/ball.tscn" id="1_vxxyx"]
-[ext_resource type="PackedScene" uid="uid://do45yi3snvvu3" path="res://test_assets/entities/primitives/capsule.tscn" id="2_tk3ft"]
-[ext_resource type="PackedScene" uid="uid://j726oejh7ros" path="res://test_assets/entities/primitives/cube.tscn" id="3_xwpy8"]
-[ext_resource type="PackedScene" uid="uid://bu2cqx0ps2rgh" path="res://test_assets/entities/primitives/cylinder.tscn" id="4_si33b"]
-[ext_resource type="PackedScene" uid="uid://djcuhnvgh48ym" path="res://test_assets/entities/primitives/rectangle.tscn" id="5_eocro"]
+[ext_resource type="PackedScene" uid="uid://dkj1evswss3wa" path="res://demo_assets/entities/primitives/ball.tscn" id="1_vxxyx"]
+[ext_resource type="PackedScene" uid="uid://do45yi3snvvu3" path="res://demo_assets/entities/primitives/capsule.tscn" id="2_tk3ft"]
+[ext_resource type="PackedScene" uid="uid://j726oejh7ros" path="res://demo_assets/entities/primitives/cube.tscn" id="3_xwpy8"]
+[ext_resource type="PackedScene" uid="uid://bu2cqx0ps2rgh" path="res://demo_assets/entities/primitives/cylinder.tscn" id="4_si33b"]
+[ext_resource type="PackedScene" uid="uid://djcuhnvgh48ym" path="res://demo_assets/entities/primitives/rectangle.tscn" id="5_eocro"]
 
 [node name="All Primitives" type="Node3D"]
 

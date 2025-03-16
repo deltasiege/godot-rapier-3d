@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://dohhufgjerc06" path="res://demo_assets/entities/characters/kinematic_character/kinematic_character.tscn" id="3_nrxd8"]
 [ext_resource type="PackedScene" uid="uid://cqn1q33aroykb" path="res://demo_assets/entities/characters/pid_character/pid_character.tscn" id="4_adr0n"]
 [ext_resource type="Material" uid="uid://c0t4kx1mtvmwy" path="res://demo_assets/env/mats/dbug_mat_mid.tres" id="5_c8a4y"]
-[ext_resource type="PackedScene" uid="uid://c8hvtprdesoyl" path="res://test_assets/entities/primitives/all.tscn" id="5_s5g7l"]
+[ext_resource type="PackedScene" uid="uid://c8hvtprdesoyl" path="res://demo_assets/entities/primitives/all.tscn" id="5_s5g7l"]
 [ext_resource type="PackedScene" uid="uid://drbstenfl2i1o" path="res://demo_assets/env/outdoors/outdoors.tscn" id="7_fqefj"]
 
 [sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_c8a4y"]
