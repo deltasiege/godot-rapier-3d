@@ -137,7 +137,7 @@ jobs:
       - name: Move rust binaries
         if: matrix.release_for != 'web'
         run: |
-          mkdir ${{ env.BIN_DIR }}
+          mkdir -p ${{ env.BIN_DIR }}
           mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin }} ${{ env.BIN_DIR }}/${{ matrix.target }}-${{ matrix.bin }}
 
       - name: Move PDB
@@ -157,7 +157,7 @@ jobs:
         continue-on-error: true
         if: matrix.release_for == 'web'
         run: |
-          mkdir ${{ env.BIN_DIR }}
+          mkdir -p ${{ env.BIN_DIR }}
           mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin_single }} ${{ env.BIN_DIR }}/${{ matrix.target }}-${{ matrix.bin_multi }}
 
       - name: Build single-threaded WASM binary
@@ -170,7 +170,7 @@ jobs:
       - name: Move single-threaded WASM binary
         if: matrix.release_for == 'web'
         run: |
-          mkdir ${{ env.BIN_DIR }}
+          mkdir -p ${{ env.BIN_DIR }}
           mv ${{ env.RUST_DIR }}/target/${{ matrix.target }}/release/${{ matrix.bin_single }} ${{ env.BIN_DIR }}/${{ matrix.target }}-${{ matrix.bin_single }}
 
       - name: Replace .gdextension config
