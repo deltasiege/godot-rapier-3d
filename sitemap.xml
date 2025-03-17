@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://deltasiege.github.io/godot-rapier-3d/</loc>
+         <lastmod>2025-03-17</lastmod>
+    </url>
+    <url>
+         <loc>https://deltasiege.github.io/godot-rapier-3d/contributing/</loc>
+         <lastmod>2025-03-17</lastmod>
+    </url>
+    <url>
+         <loc>https://deltasiege.github.io/godot-rapier-3d/determinism/</loc>
+         <lastmod>2025-03-17</lastmod>
+    </url>
+    <url>
+         <loc>https://deltasiege.github.io/godot-rapier-3d/quickstart/</loc>
+         <lastmod>2025-03-17</lastmod>
+    </url>
+    <url>
+         <loc>https://deltasiege.github.io/godot-rapier-3d/roadmap/</loc>
+         <lastmod>2025-03-17</lastmod>
+    </url>
+    <url>
+         <loc>https://deltasiege.github.io/godot-rapier-3d/snapshotting/</loc>
+         <lastmod>2025-03-17</lastmod>
+    </url>
+    <url>
+         <loc>https://deltasiege.github.io/godot-rapier-3d/stepping/</loc>
+         <lastmod>2025-03-17</lastmod>
+    </url>
+</urlset>
