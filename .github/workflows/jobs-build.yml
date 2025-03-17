@@ -22,6 +22,8 @@ jobs:
             multi_threaded_cmd: cargo +nightly build -Zbuild-std --target wasm32-unknown-emscripten --release
             bin_single: godot_rapier_3d.wasm
             bin_multi: godot_rapier_3d.threads.wasm
+            archive: web-wasm32
+            archive_ext: .tar.gz
 
           - release_for: linux-gnu32
             runner: ubuntu-latest
@@ -248,6 +250,13 @@ jobs:
 
       - name: Copy LICENSE.txt
         run: cp LICENSE.txt ${{ env.ADDON_DIR }}
+
+      - name: Isolate GR3D addon
+        run: |
+          mkdir -p ./addons-temp
+          mv ./addons/godot-rapier-3d ./addons-temp
+          rm -rf ./addons
+          mv ./addons-temp ./addons
 
       - name: Create package
         run: |
