@@ -4,7 +4,11 @@
 
 A [GDExtension][gdext-link] that enables the [Rapier physics engine][rapier-link] within [Godot][godot-link].
 
-[Read the full documentation here]()
+## Why does this exist?
+
+TLDR - For creating rollback based multiplayer games in Godot
+
+[Read the full documentation here](https://deltasiege.github.io/godot-rapier-3d/)
 
 ## Attributions
 
