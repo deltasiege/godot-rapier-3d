@@ -149,7 +149,7 @@ jobs:
         run: ${{ matrix.multi_threaded_cmd }}
         working-directory: ${{ env.RUST_DIR }}
         env:
-          RUSTFLAGS: -C link-args=-pthread -C link-args=-sSIDE_MODULE=2 -C link-args=-sSUPPORT_LONGJMP=wasm -C llvm-args=-wasm-enable-sjlj -C link-args=-sDISABLE_EXCEPTION_CATCHING=1 -C target-feature=+atomics,+bulk-memory,+mutable-globals -Zlink-native-libraries=no -Cllvm-args=-enable-emscripten-cxx-exceptions=0
+          RUSTFLAGS: -C link-args=-pthread -C link-args=-sSIDE_MODULE=2  -C target-feature=+atomics,+bulk-memory,+mutable-globals -Zlink-native-libraries=no -Cllvm-args=-enable-emscripten-cxx-exceptions=0
 
       - name: Move multi-threaded WASM binary
         continue-on-error: true
@@ -163,7 +163,7 @@ jobs:
         run: ${{ matrix.single_threaded_cmd }}
         working-directory: ${{ env.RUST_DIR }}
         env:
-          RUSTFLAGS: -C link-args=-sSIDE_MODULE=2 -C link-args=-sSUPPORT_LONGJMP=wasm -C llvm-args=-wasm-enable-sjlj -C link-args=-sDISABLE_EXCEPTION_CATCHING=1 -C target-feature=+atomics,+bulk-memory,+mutable-globals -Zlink-native-libraries=no -Cllvm-args=-enable-emscripten-cxx-exceptions=0
+          RUSTFLAGS: -C link-args=-sSIDE_MODULE=2 -C target-feature=+atomics,+bulk-memory,+mutable-globals -Zlink-native-libraries=no -Cllvm-args=-enable-emscripten-cxx-exceptions=0
 
       - name: Move single-threaded WASM binary
         if: matrix.release_for == 'web'
