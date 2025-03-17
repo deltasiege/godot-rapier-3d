@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use rapier3d::dynamics::{
     CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet,
     RigidBodySet,
@@ -30,17 +28,6 @@ pub struct PhysicsState {
 impl Default for PhysicsState {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl Display for PhysicsState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Bodies: {}\nColliders: {}",
-            self.bodies.len(),
-            self.colliders.len()
-        )
     }
 }
 

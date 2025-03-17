@@ -13,7 +13,6 @@ config_version=5
 config/name="godot-rapier-3d"
 run/main_scene="uid://brnbp3x3w7646"
 config/features=PackedStringArray("4.4", "GL Compatibility")
-config/icon="uid://dv1y0cwyo5bh"
 
 [autoload]
 
