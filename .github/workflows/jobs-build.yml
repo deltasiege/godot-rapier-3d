@@ -87,6 +87,7 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v14
         if: matrix.release_for == 'web'
         with:
+          version: 3.1.62
           actions-cache-folder: "emsdk-cache"
 
       - name: Cache rust target dir
