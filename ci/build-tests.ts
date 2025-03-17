@@ -21,6 +21,8 @@ async function deleteUnwantedFiles(projectDir: string) {
     "addons/gdquest_sophia",
     "demos",
     "demo_assets",
+    "gr3d_logo.png",
+    "gr3d_logo.png.import",
   ];
   for (const path of paths) {
     const fullPath = resolve(projectDir, path);

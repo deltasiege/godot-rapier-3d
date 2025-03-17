@@ -4,8 +4,7 @@
 
 ## Beware of limitations
 
-- No web build support.. yet ([godot-rust](https://github.com/godot-rust/gdext/issues/24))
-- No mobile support.. yet ([godot-rust](https://github.com/godot-rust/gdext/issues/24))
+- Web & mobile builds are not yet stable ([godot-rust](https://github.com/godot-rust/gdext/issues/24))
 - `rv64`, `ppc64` and `ppc32` architectures are not yet confirmed for determinism via automated testing because they are [not yet officially supported by Godot](https://github.com/godotengine/godot-proposals/issues/3374#issuecomment-2142165372)
 
 ## Let's go
