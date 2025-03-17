@@ -19,7 +19,7 @@ jobs:
             runner: ubuntu-latest
             target: wasm32-unknown-emscripten
             single_threaded_cmd: cargo +nightly build --features nothreads -Zbuild-std --target wasm32-unknown-emscripten --release
-            multi_threaded_cmd: RUSTFLAGS="-C link-args=-pthread" cargo +nightly build -Zbuild-std --target wasm32-unknown-emscripten --release
+            multi_threaded_cmd: cargo +nightly build -Zbuild-std --target wasm32-unknown-emscripten --release
             bin_single: godot_rapier_3d.wasm
             bin_multi: godot_rapier_3d.threads.wasm
 
@@ -149,7 +149,7 @@ jobs:
         run: ${{ matrix.multi_threaded_cmd }}
         working-directory: ${{ env.RUST_DIR }}
         env:
-          RUSTFLAGS: -C link-args=-pthread
+          RUSTFLAGS: -C link-args=-pthread -C link-args=-sSIDE_MODULE=2 -C target-feature=+atomics,+bulk-memory,+mutable-globals -Zlink-native-libraries=no -Cllvm-args=-enable-emscripten-cxx-exceptions=0
 
       - name: Move multi-threaded WASM binary
         continue-on-error: true
@@ -162,6 +162,8 @@ jobs:
         if: matrix.release_for == 'web'
         run: ${{ matrix.single_threaded_cmd }}
         working-directory: ${{ env.RUST_DIR }}
+        env:
+          RUSTFLAGS: -C link-args=-sSIDE_MODULE=2 -C target-feature=+atomics,+bulk-memory,+mutable-globals -Zlink-native-libraries=no -Cllvm-args=-enable-emscripten-cxx-exceptions=0
 
       - name: Move single-threaded WASM binary
         if: matrix.release_for == 'web'
