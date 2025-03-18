@@ -10,3 +10,4 @@ pub use singleton::{
 };
 
 pub use editor_plugin::get_runtime;
+pub use world::collider_set_difference;

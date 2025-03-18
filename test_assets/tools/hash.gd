@@ -1,5 +1,5 @@
 static func get_rapier_hash() -> int:
-	var state: PackedByteArray = GR3D.get_snapshot()
+	var state: PackedByteArray = GR3D.save_snapshot()
 	return Array(state.compress()).hash()
 
 static func get_godot_hash(root: Node) -> int:

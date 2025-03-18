@@ -11,7 +11,7 @@ func _ready():
 	get_parent().toolbar.connect("popup_opened", on_popup_opened)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
-	_initial_snapshot = GR3D.get_snapshot()
+	_initial_snapshot = GR3D.save_snapshot()
 
 func _process(_delta):
 	if Input.is_action_just_pressed("toggle_sim"): toggle_sim()
@@ -56,6 +56,7 @@ func _get_data(title: String):
 				{ "type": "button", "text": "Advance 1 tick", "on_pressed": step },
 				{ "type": "button", "text": "Take snapshot", "on_pressed": take_snapshot },
 				{ "type": "button", "text": "Restore snapshot", "on_pressed": restore_snapshot },
+				{ "text": "snapshot_bytes", "value": _last_snapshot_data.get("snapshot_bytes") },
 				{ "text": "godot_hash", "value": _last_snapshot_data.get("godot_hash") },
 				{ "text": "rapier_hash", "value": _last_snapshot_data.get("rapier_hash") },
 			]
@@ -79,7 +80,7 @@ func reset_sim(): GR3D.restore_snapshot(_initial_snapshot)
 func step(): GR3D.step(1)
 func restore_snapshot(): GR3D.restore_snapshot(_last_snapshot)
 func take_snapshot():
-	_last_snapshot = GR3D.get_snapshot()
+	_last_snapshot = GR3D.save_snapshot()
 	_last_snapshot_data = {
 		"snapshot_bytes": _last_snapshot.size(),
 		"godot_hash": Hash.get_godot_hash(self),

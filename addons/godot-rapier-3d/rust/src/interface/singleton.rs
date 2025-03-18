@@ -2,7 +2,7 @@ use super::debugger::GR3DDebugger;
 use super::world::{add_nodes_to_world, configure_nodes, move_nodes, remove_nodes_from_world};
 use crate::nodes::{generate_cuid, IRapierObject};
 use crate::utils::{init_logger, set_log_level};
-use crate::world::state::{pack_snapshot, restore_snapshot};
+use crate::world::state::restore_snapshot;
 use crate::World;
 use godot::classes::{Engine, IObject, Object};
 use godot::prelude::*;
@@ -41,26 +41,35 @@ impl GR3D {
     }
 
     #[func]
-    /// Return a binary representation of the current state of the simulation
-    pub fn get_snapshot(&mut self) -> PackedByteArray {
-        let snapshot = pack_snapshot(&self.world);
-        match snapshot {
-            Ok(snapshot) => PackedByteArray::from(snapshot.as_slice()),
-            Err(e) => {
-                log::error!("Failed to get_state: {:?}", e);
-                PackedByteArray::from(&[])
-            }
+    /// Returns a past world state as a snapshot. The timestep_id must still be in the world buffer.
+    pub fn get_snapshot(&mut self, timestep_id: i64) -> PackedByteArray {
+        match self.world.get_snapshot(Some(timestep_id)) {
+            Some(snapshot) => PackedByteArray::from(snapshot.as_slice()),
+            None => PackedByteArray::from(&[]),
         }
     }
 
     #[func]
-    /// Set the state of the simulation to the given binary representation
-    pub fn restore_snapshot(&mut self, snapshot: PackedByteArray) {
-        match restore_snapshot(&mut self.world, snapshot.to_vec()) {
-            Ok(_) => {}
-            Err(e) => log::error!("Failed to set_state: {:?}", e),
+    /// Returns the current world state as a snapshot
+    pub fn save_snapshot(&mut self) -> PackedByteArray {
+        match self.world.get_snapshot(None) {
+            Some(snapshot) => PackedByteArray::from(snapshot.as_slice()),
+            None => PackedByteArray::from(&[]),
         }
     }
+
+    #[func]
+    /// Overwrite the current state of the simulation to match the given snapshot
+    pub fn restore_snapshot(&mut self, snapshot: PackedByteArray) {
+        restore_snapshot(&mut self.world, snapshot.to_vec());
+    }
+
+    // #[func]
+    // /// Overwrite a previous state of the simulation to match the given snapshot,
+    // /// and then roll-forward the simulation to get back to the current timestep
+    // pub fn apply_correction(&mut self, snapshot: PackedByteArray) {
+    //     apply_correction(&mut self.world, snapshot.to_vec());
+    // }
 
     #[func]
     /// Get the current count of all objects registered in the simulation

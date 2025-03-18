@@ -1,3 +1,4 @@
+mod buffer;
 pub mod lookup;
 pub mod state;
 pub mod world;

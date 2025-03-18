@@ -6,7 +6,10 @@ use rapier3d::{
 };
 
 use crate::{
-    nodes::{Identifiable, RapierKinematicCharacter3D, RapierPIDCharacter3D, RapierRigidBody3D},
+    nodes::{
+        IRapierObject, Identifiable, RapierKinematicCharacter3D, RapierPIDCharacter3D,
+        RapierRigidBody3D,
+    },
     utils::{uniform_rapier_vector, vector_to_rapier},
     World,
 };

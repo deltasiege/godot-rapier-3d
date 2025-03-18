@@ -1,13 +1,6 @@
 use super::lookup::LookupTable;
-use super::state::PhysicsState;
-use rapier3d::dynamics::{
-    CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet,
-    RigidBodySet,
-};
-use rapier3d::geometry::{ColliderSet, DefaultBroadPhase, NarrowPhase};
-use rapier3d::math::{Real, Vector};
-use rapier3d::pipeline::{PhysicsHooks, PhysicsPipeline, QueryPipeline};
-use rapier3d::prelude::{Collider, ColliderHandle, RigidBody, RigidBodyHandle};
+use super::state::{pack_snapshot, PhysicsState};
+use rapier3d::dynamics::IntegrationParameters;
 
 pub struct RunState {
     pub timestep_id: usize,
@@ -31,7 +24,7 @@ impl RunState {
 
 pub struct World {
     pub physics: PhysicsState,
-    max_steps: usize,
+
     actions: Actions,
     callbacks: Callbacks,
     pub state: RunState,
@@ -45,32 +38,15 @@ impl World {
     pub fn new_empty() -> Self {
         let physics = PhysicsState::new();
         let state = RunState::new();
-
         Self {
             physics,
-            max_steps: 1000,
             actions: Vec::new(),
             callbacks: Vec::new(),
+            // snapshot_buffer: HashMap::new(),
+            // snapshot_buffer_max_len: 1000,
             state,
             lookup_table: LookupTable::new(),
         }
-    }
-
-    pub fn new(
-        bodies: RigidBodySet,
-        colliders: ColliderSet,
-        impulse_joints: ImpulseJointSet,
-        multibody_joints: MultibodyJointSet,
-        lookup_table: LookupTable,
-    ) -> Self {
-        let mut res = Self::new_empty();
-        res.set_world(bodies, colliders, impulse_joints, multibody_joints);
-        res.lookup_table = lookup_table;
-        res
-    }
-
-    pub fn set_max_steps(&mut self, max_steps: usize) {
-        self.max_steps = max_steps
     }
 
     pub fn integration_parameters_mut(&mut self) -> &mut IntegrationParameters {
@@ -89,106 +65,11 @@ impl World {
         &mut self.physics
     }
 
-    pub fn set_world(
-        &mut self,
-        bodies: RigidBodySet,
-        colliders: ColliderSet,
-        impulse_joints: ImpulseJointSet,
-        multibody_joints: MultibodyJointSet,
-    ) {
-        self.set_world_with_params(
-            bodies,
-            colliders,
-            impulse_joints,
-            multibody_joints,
-            Vector::y() * -9.81,
-            (),
-        )
-    }
-
-    pub fn set_world_with_params(
-        &mut self,
-        bodies: RigidBodySet,
-        colliders: ColliderSet,
-        impulse_joints: ImpulseJointSet,
-        multibody_joints: MultibodyJointSet,
-        gravity: Vector<Real>,
-        hooks: impl PhysicsHooks + 'static,
-    ) {
-        // println!("Num bodies: {}", bodies.len());
-        // println!("Num impulse_joints: {}", impulse_joints.len());
-        self.physics.gravity = gravity;
-        self.physics.bodies = bodies;
-        self.physics.colliders = colliders;
-        self.physics.impulse_joints = impulse_joints;
-        self.physics.multibody_joints = multibody_joints;
-        self.physics.hooks = Box::new(hooks);
-
-        self.physics.islands = IslandManager::new();
-        self.physics.broad_phase = DefaultBroadPhase::new();
-        self.physics.narrow_phase = NarrowPhase::new();
-        self.state.timestep_id = 0;
-        self.state.time = 0.0;
-        self.physics.ccd_solver = CCDSolver::new();
-        self.physics.query_pipeline = QueryPipeline::new();
-        self.physics.pipeline = PhysicsPipeline::new();
-        self.physics.pipeline.counters.enable();
-    }
-
-    pub fn add_bodies(&mut self, bodies: Vec<impl Into<RigidBody>>) {
-        for body in bodies {
-            self.physics.bodies.insert(body.into());
-        }
-    }
-
-    pub fn add_colliders(&mut self, colliders: Vec<impl Into<Collider>>) {
-        for collider in colliders {
-            self.physics.colliders.insert(collider.into());
-        }
-    }
-
-    pub fn remove_bodies(&mut self, handles: Vec<RigidBodyHandle>) {
-        for handle in handles {
-            self.physics.bodies.remove(
-                handle,
-                &mut self.physics.islands,
-                &mut self.physics.colliders,
-                &mut self.physics.impulse_joints,
-                &mut self.physics.multibody_joints,
-                false,
-            );
-
-            self.lookup_table.remove_by_handle(&handle.into_raw_parts());
-        }
-    }
-
-    pub fn remove_colliders(&mut self, handles: Vec<ColliderHandle>, wake_up: bool) {
-        for handle in handles {
-            self.physics.colliders.remove(
-                handle,
-                &mut self.physics.islands,
-                &mut self.physics.bodies,
-                wake_up,
-            );
-
-            self.lookup_table.remove_by_handle(&handle.into_raw_parts());
-        }
-    }
-
-    pub fn add_action<F: FnMut(&mut PhysicsState, &RunState) + 'static>(&mut self, callback: F) {
-        self.actions.push(Box::new(callback));
-    }
-
     pub fn add_callback<F: FnMut(&mut PhysicsState, &RunState) + 'static>(&mut self, callback: F) {
         self.callbacks.push(Box::new(callback));
     }
 
     pub fn step(&mut self) {
-        for f in &mut self.actions {
-            f(&mut self.physics, &self.state);
-        }
-        self.clear_actions();
-
         self.physics.pipeline.step(
             &self.physics.gravity,
             &self.physics.integration_parameters,
@@ -209,13 +90,34 @@ impl World {
             f(&mut self.physics, &self.state);
         }
 
+        // Remove old snapshots if buffer is full
+        // while self.snapshot_buffer.len() > self.snapshot_buffer_max_len {
+        //     self.remove_oldest_snapshot_from_buffer();
+        // }
+
+        // self.save_current_snapshot_to_buffer(); // Save the current snapshot to the buffer UP TO
+
         self.state.time += self.physics.integration_parameters.dt as f32;
         self.state.timestep_id += 1;
     }
 
-    pub fn run(&mut self) {
-        for _ in 0..self.max_steps {
-            self.step();
+    /// Retrieve either the current or a buffered snapshot
+    pub fn get_snapshot(&mut self, timestep_id: Option<i64>) -> Option<Vec<u8>> {
+        match timestep_id {
+            None => self.get_current_snapshot(),
+            Some(_) => self.get_current_snapshot(), // TODO
+                                                    // Some(timestep_id) => self.get_buffered_snapshot(timestep_id),
+        }
+    }
+
+    fn get_current_snapshot(&self) -> Option<Vec<u8>> {
+        let snapshot = pack_snapshot(self);
+        match snapshot {
+            Ok(snapshot) => Some(snapshot),
+            Err(e) => {
+                log::error!("Failed to get current snapshot: {:?}", e);
+                None
+            }
         }
     }
 
@@ -226,20 +128,5 @@ impl World {
             self.physics.impulse_joints.len(),
             self.physics.multibody_joints.multibodies().count(),
         )
-    }
-
-    pub fn print_state(&self) {
-        let total = self.physics.bodies.len()
-            + self.physics.colliders.len()
-            + self.physics.impulse_joints.len()
-            + self.physics.multibody_joints.multibodies().count();
-        log::info!("Total: {}", total);
-        log::info!("|_ bodies: {}", self.physics.bodies.len());
-        log::info!("|_ colliders: {}", self.physics.colliders.len());
-        log::info!("|_ impulse_joints: {}", self.physics.impulse_joints.len());
-        log::info!(
-            "|_ multibody_joints: {}",
-            self.physics.multibody_joints.multibodies().count()
-        );
     }
 }

@@ -13,6 +13,7 @@ use std::collections::HashMap;
 pub struct LookupTable {
     pub godot_to_rapier: HashMap<GString, (u32, u32)>,
     pub rapier_to_godot: HashMap<(u32, u32), GString>,
+    pub snapshot_colliders: Vec<(u32, u32)>,
 }
 
 impl LookupTable {
@@ -20,6 +21,7 @@ impl LookupTable {
         Self {
             godot_to_rapier: HashMap::new(),
             rapier_to_godot: HashMap::new(),
+            snapshot_colliders: Vec::new(),
         }
     }
 
@@ -66,5 +68,23 @@ impl LookupTable {
         } else {
             None
         }
+    }
+
+    pub fn insert_snapshot_collider(&mut self, raw_handle: (u32, u32)) {
+        self.snapshot_colliders.push(raw_handle);
+    }
+
+    pub fn remove_snapshot_collider(&mut self, raw_handle: &(u32, u32)) {
+        self.snapshot_colliders.retain(|&x| x != *raw_handle);
+    }
+
+    pub fn print_snapshot_colliders(&self) {
+        let none = GString::from("None");
+        let godot_uids = self
+            .snapshot_colliders
+            .iter()
+            .map(|raw_handle| self.rapier_to_godot.get(raw_handle).unwrap_or(&none))
+            .collect::<Vec<&GString>>();
+        log::info!("Snapshot colliders: {:?}", godot_uids);
     }
 }
