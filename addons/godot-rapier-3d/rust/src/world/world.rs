@@ -60,7 +60,8 @@ impl World {
     }
 
     pub fn step(&mut self) {
-        self.buffer.execute_actions(self.state.timestep_id);
+        self.buffer
+            .execute_actions(self.state.timestep_id, &mut self.physics);
 
         self.physics.pipeline.step(
             &self.physics.gravity,

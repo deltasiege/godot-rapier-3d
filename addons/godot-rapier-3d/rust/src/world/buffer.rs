@@ -1,10 +1,14 @@
+use godot::{builtin::Vector3, meta::FromGodot};
+
 use crate::{
-    interface::{Action, Operation},
+    interface::{
+        add_node_to_world, configure_node, move_node, remove_node_from_world, Action, Operation,
+    },
     World,
 };
 use std::collections::HashMap;
 
-use super::state::restore_snapshot;
+use super::state::{restore_snapshot, PhysicsState};
 
 pub struct WorldBuffer {
     pub buffer: HashMap<usize, BufferStep>,
@@ -98,21 +102,38 @@ impl WorldBuffer {
     }
 
     /// Executes all actions in the buffer at the given timestep
-    pub fn execute_actions(&mut self, timestep_id: usize) {
-        if let Some(step) = self.buffer.get_mut(&timestep_id) {
-            for action in step.actions.drain(..) {
+    pub fn execute_actions(&mut self, timestep_id: usize, physics: &mut PhysicsState) {
+        // TODO SORT ACTIONS FIRST
+
+        if let Some(step) = self.buffer.get(&timestep_id) {
+            for action in step.actions.iter() {
+                let node = action.node.clone();
                 match action.operation {
-                    Operation::ADD_NODE => {
-                        log::info!("Adding node: {:?} {:?}", action.cuid, action.data);
+                    Operation::AddNode => {
+                        add_node_to_world(node, physics);
                     }
-                    Operation::REMOVE_NODE => {
-                        log::info!("Removing node: {:?} {:?}", action.cuid, action.data);
+                    Operation::RemoveNode => {
+                        remove_node_from_world(node, physics);
                     }
-                    Operation::CONFIGURE_NODE => {
-                        log::info!("Configuring node: {:?} {:?}", action.cuid, action.data);
+                    Operation::ConfigureNode => {
+                        configure_node(node);
                     }
-                    Operation::MOVE_NODE => {
-                        log::info!("Modifying node: {:?} {:?}", action.cuid, action.data);
+                    Operation::MoveNode => {
+                        if let Some(movement) = action.data.get("movement") {
+                            match Vector3::try_from_variant(&movement) {
+                                Ok(desired_movement) => {
+                                    move_node(node, desired_movement, physics);
+                                }
+                                Err(e) => {
+                                    log::error!("MoveNode action invalid 'movement' data: {}", e);
+                                }
+                            }
+                        } else {
+                            log::error!(
+                                "MoveNode action missing 'movement' data: {:?}",
+                                action.data
+                            );
+                        }
                     }
                 }
             }

@@ -9,11 +9,9 @@ use super::super::{
     RapierKinematicCharacter3D, RapierRigidBody3D, RapierStaticBody3D,
 };
 use super::identifiable::Identifiable;
+use crate::interface::Operation;
 use crate::nodes::generate_cuid;
-use crate::{
-    interface::{get_runtime, get_singleton},
-    utils::isometry_to_transform,
-};
+use crate::{interface::get_singleton, utils::isometry_to_transform};
 
 pub trait IRapierObject: Identifiable + WithBaseField + GodotClass<Base = Node3D> {
     fn on_enter_tree(&mut self) {
@@ -31,9 +29,24 @@ pub trait IRapierObject: Identifiable + WithBaseField + GodotClass<Base = Node3D
     }
 
     fn on_enter_runtime_tree(&mut self) {
-        if let Some(mut runtime) = get_runtime(self) {
-            runtime.call("_add_node", &[self.base().to_variant()]);
-            runtime.call("_configure_node", &[self.base().to_variant()]);
+        if let Some(mut singleton) = get_singleton() {
+            singleton.call_deferred(
+                "_ingest_action",
+                &[
+                    self.base().to_variant(),
+                    Operation::AddNode.to_variant(),
+                    Dictionary::new().to_variant(),
+                ],
+            );
+
+            singleton.call_deferred(
+                "_ingest_action",
+                &[
+                    self.base().to_variant(),
+                    Operation::ConfigureNode.to_variant(),
+                    Dictionary::new().to_variant(),
+                ],
+            );
         }
     }
 
@@ -45,8 +58,15 @@ pub trait IRapierObject: Identifiable + WithBaseField + GodotClass<Base = Node3D
     }
 
     fn on_exit_runtime_tree(&mut self) {
-        if let Some(mut runtime) = get_runtime(self) {
-            runtime.call("_remove_node", &[self.base().to_variant()]);
+        if let Some(mut singleton) = get_singleton() {
+            singleton.call_deferred(
+                "_ingest_action",
+                &[
+                    self.base().to_variant(),
+                    Operation::RemoveNode.to_variant(),
+                    Dictionary::new().to_variant(),
+                ],
+            );
         }
     }
 

@@ -144,7 +144,6 @@ impl RapierPIDCharacter3D {
             );
 
             // Debug ray
-            // let node = self.to_gd();
             if let Some(mut runtime) = get_runtime(self) {
                 if let Some(tree) = get_tree(self) {
                     if tree.is_debugging_collisions_hint() {

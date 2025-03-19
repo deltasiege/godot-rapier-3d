@@ -4,7 +4,7 @@ use crate::nodes::{
     RapierRigidBody3D, RapierStaticBody3D,
 };
 use crate::utils::{transform_to_isometry, vector_to_point, vector_to_rapier};
-use crate::World;
+use crate::world::state::PhysicsState;
 use godot::classes::{
     BoxShape3D, CapsuleShape3D, ConcavePolygonShape3D, CylinderShape3D, SphereShape3D,
 };
@@ -13,47 +13,45 @@ use rapier3d::prelude::*;
 
 const SUPPORTED_SHAPES: &str = "Only primitives and ConcavePolygonShape3D are supported";
 
-pub fn add_nodes_to_world(nodes: Array<Gd<Node3D>>, world: &mut World) {
-    for node in nodes.iter_shared() {
-        let transform = node.get_global_transform();
-        let class = node.get_class().to_string();
-        match class.as_str() {
-            "RapierArea3D" => {
-                let casted = node.cast::<RapierArea3D>();
-                insert_area_children(&casted, world);
-            }
-            "RapierKinematicCharacter3D" => {
-                let rb = RigidBodyBuilder::kinematic_position_based()
-                    .position(transform_to_isometry(transform))
-                    .ccd_enabled(true);
+pub fn add_node_to_world(node: Gd<Node3D>, physics: &mut PhysicsState) {
+    let transform = node.get_global_transform();
+    let class = node.get_class().to_string();
+    match class.as_str() {
+        "RapierArea3D" => {
+            let casted = node.cast::<RapierArea3D>();
+            insert_area_children(&casted, physics);
+        }
+        "RapierKinematicCharacter3D" => {
+            let rb = RigidBodyBuilder::kinematic_position_based()
+                .position(transform_to_isometry(transform))
+                .ccd_enabled(true);
 
-                let mut casted = node.cast::<RapierKinematicCharacter3D>();
-                insert_rb_with_children(rb, &mut casted, world);
-            }
-            "RapierPIDCharacter3D" => {
-                let rb = RigidBodyBuilder::dynamic().position(transform_to_isometry(transform));
-                let mut casted = node.cast::<RapierPIDCharacter3D>();
-                insert_rb_with_children(rb, &mut casted, world);
-            }
-            "RapierRigidBody3D" => {
-                let rb = RigidBodyBuilder::dynamic().position(transform_to_isometry(transform));
-                let mut casted = node.cast::<RapierRigidBody3D>();
-                insert_rb_with_children(rb, &mut casted, world);
-            }
-            "RapierStaticBody3D" => {
-                let rb = RigidBodyBuilder::fixed().position(transform_to_isometry(transform));
-                let mut casted = node.cast::<RapierStaticBody3D>();
-                insert_rb_with_children(rb, &mut casted, world);
-            }
-            "RapierCollisionShape3D" => (), // Ignore colliders - they are inserted at the same time as the parent rigid body
-            _ => {
-                log::error!("Unknown object type: {}", &class);
-            }
+            let mut casted = node.cast::<RapierKinematicCharacter3D>();
+            insert_rb_with_children(rb, &mut casted, physics);
+        }
+        "RapierPIDCharacter3D" => {
+            let rb = RigidBodyBuilder::dynamic().position(transform_to_isometry(transform));
+            let mut casted = node.cast::<RapierPIDCharacter3D>();
+            insert_rb_with_children(rb, &mut casted, physics);
+        }
+        "RapierRigidBody3D" => {
+            let rb = RigidBodyBuilder::dynamic().position(transform_to_isometry(transform));
+            let mut casted = node.cast::<RapierRigidBody3D>();
+            insert_rb_with_children(rb, &mut casted, physics);
+        }
+        "RapierStaticBody3D" => {
+            let rb = RigidBodyBuilder::fixed().position(transform_to_isometry(transform));
+            let mut casted = node.cast::<RapierStaticBody3D>();
+            insert_rb_with_children(rb, &mut casted, physics);
+        }
+        "RapierCollisionShape3D" => (), // Ignore colliders - they are inserted at the same time as the parent rigid body
+        _ => {
+            log::error!("Unknown object type: {}", &class);
         }
     }
 }
 
-fn insert_area_children(node: &Node3D, world: &mut World) {
+fn insert_area_children(node: &Node3D, physics: &mut PhysicsState) {
     let children = node
         .find_children_ex("*")
         .type_("RapierCollisionShape3D")
@@ -71,7 +69,7 @@ fn insert_area_children(node: &Node3D, world: &mut World) {
         _ => {
             for child in children.iter_shared() {
                 let mut casted = child.cast::<RapierCollisionShape3D>();
-                insert_collider(&mut casted, None, world, true);
+                insert_collider(&mut casted, None, physics, true);
             }
         }
     }
@@ -80,9 +78,9 @@ fn insert_area_children(node: &Node3D, world: &mut World) {
 fn insert_rb_with_children(
     rb: impl Into<RigidBody>,
     node: &mut Gd<impl IRapierObject>,
-    world: &mut World,
+    physics: &mut PhysicsState,
 ) {
-    let bodies = &mut world.physics.bodies;
+    let bodies = &mut physics.bodies;
 
     let children = node
         .find_children_ex("*")
@@ -103,12 +101,12 @@ fn insert_rb_with_children(
 
             for child in children.iter_shared() {
                 let mut casted = child.cast::<RapierCollisionShape3D>();
-                insert_collider(&mut casted, Some(parent_handle), world, false);
+                insert_collider(&mut casted, Some(parent_handle), physics, false);
             }
 
             let node_uid = node.bind().get_cuid();
             let raw_handle = parent_handle.into_raw_parts();
-            world.physics.lookup_table.insert(node_uid, raw_handle);
+            physics.lookup_table.insert(node_uid, raw_handle);
             node.bind_mut().set_handle_raw(raw_handle);
         }
     }
@@ -117,22 +115,22 @@ fn insert_rb_with_children(
 fn insert_collider(
     node: &mut Gd<RapierCollisionShape3D>,
     parent: Option<RigidBodyHandle>,
-    world: &mut World,
+    physics: &mut PhysicsState,
     sensor: bool, // TODO - could be exposed to godot by reading from node directly in here
 ) {
-    let lookup_table = &mut world.physics.lookup_table;
+    let lookup_table = &mut physics.lookup_table;
 
     if let Some(collider) = shape_to_collider(node) {
         let is_exp = is_expensive(&collider);
 
         let built = collider.sensor(sensor).build();
         let handle = match parent {
-            Some(parent) => &mut world.physics.colliders.insert_with_parent(
-                built,
-                parent,
-                &mut world.physics.bodies,
-            ),
-            None => &mut world.physics.colliders.insert(built),
+            Some(parent) => {
+                &mut physics
+                    .colliders
+                    .insert_with_parent(built, parent, &mut physics.bodies)
+            }
+            None => &mut physics.colliders.insert(built),
         };
 
         let raw_handle = handle.into_raw_parts();
@@ -232,33 +230,31 @@ fn shape_to_collider(node: &Gd<RapierCollisionShape3D>) -> Option<ColliderBuilde
     }
 }
 
-pub fn remove_nodes_from_world(nodes: Array<Gd<Node3D>>, world: &mut World) {
-    for node in nodes.iter_shared() {
-        let class = node.get_class().to_string();
-        match class.as_str() {
-            "RapierArea3D" => {
-                let casted = node.cast::<RapierCollisionShape3D>();
-                remove_collider_node_if_exists(&casted, world);
-            }
-            "RapierKinematicCharacter3D" => {
-                let casted = node.cast::<RapierKinematicCharacter3D>();
-                remove_body(&casted, world);
-            }
-            "RapierRigidBody3D" => {
-                let casted = node.cast::<RapierRigidBody3D>();
-                remove_body(&casted, world);
-            }
-            "RapierStaticBody3D" => {
-                let casted = node.cast::<RapierStaticBody3D>();
-                remove_body(&casted, world);
-            }
-            "RapierCollisionShape3D" => {
-                let casted = node.cast::<RapierCollisionShape3D>();
-                remove_collider_node_if_exists(&casted, world);
-            }
-            _ => {
-                log::error!("Unknown object type: {}", &class);
-            }
+pub fn remove_node_from_world(node: Gd<Node3D>, physics: &mut PhysicsState) {
+    let class = node.get_class().to_string();
+    match class.as_str() {
+        "RapierArea3D" => {
+            let casted = node.cast::<RapierCollisionShape3D>();
+            remove_collider_node_if_exists(&casted, physics);
+        }
+        "RapierKinematicCharacter3D" => {
+            let casted = node.cast::<RapierKinematicCharacter3D>();
+            remove_body(&casted, physics);
+        }
+        "RapierRigidBody3D" => {
+            let casted = node.cast::<RapierRigidBody3D>();
+            remove_body(&casted, physics);
+        }
+        "RapierStaticBody3D" => {
+            let casted = node.cast::<RapierStaticBody3D>();
+            remove_body(&casted, physics);
+        }
+        "RapierCollisionShape3D" => {
+            let casted = node.cast::<RapierCollisionShape3D>();
+            remove_collider_node_if_exists(&casted, physics);
+        }
+        _ => {
+            log::error!("Unknown object type: {}", &class);
         }
     }
 }
@@ -276,41 +272,35 @@ fn is_expensive(builder: &ColliderBuilder) -> bool {
 }
 
 /// Removes the given RapierCollisionShape3D from cheap or expensive colliders if it exists in either set
-fn remove_collider_node_if_exists(node: &Gd<RapierCollisionShape3D>, world: &mut World) {
+fn remove_collider_node_if_exists(node: &Gd<RapierCollisionShape3D>, physics: &mut PhysicsState) {
     let node_uid = node.bind().get_cuid();
-    if let Some(raw_handle) = world.physics.lookup_table.remove_by_uid(&node_uid.into()) {
-        remove_collider_if_exists(&raw_handle, world);
+    if let Some(raw_handle) = physics.lookup_table.remove_by_uid(&node_uid.into()) {
+        remove_collider_if_exists(&raw_handle, physics);
     }
 }
 
 /// Removes the given collider handle from all lookup tables and collider set
-pub fn remove_collider_if_exists(raw_handle: &(u32, u32), world: &mut World) {
-    world.physics.lookup_table.remove_by_handle(raw_handle);
-    world
-        .physics
-        .lookup_table
-        .remove_snapshot_collider(raw_handle);
+pub fn remove_collider_if_exists(raw_handle: &(u32, u32), physics: &mut PhysicsState) {
+    physics.lookup_table.remove_by_handle(raw_handle);
+    physics.lookup_table.remove_snapshot_collider(raw_handle);
     let handle = ColliderHandle::from_raw_parts(raw_handle.0, raw_handle.1);
-    if world.physics.colliders.contains(handle) {
-        world.physics.colliders.remove(
-            handle,
-            &mut world.physics.islands,
-            &mut world.physics.bodies,
-            false,
-        );
+    if physics.colliders.contains(handle) {
+        physics
+            .colliders
+            .remove(handle, &mut physics.islands, &mut physics.bodies, false);
     }
 }
 
 /// Removes the given rigid body from the world
-fn remove_body(node: &Gd<impl IRapierObject>, world: &mut World) {
+fn remove_body(node: &Gd<impl IRapierObject>, physics: &mut PhysicsState) {
     let node_uid = node.bind().get_cuid();
-    if let Some(handle) = world.physics.lookup_table.remove_by_uid(&node_uid) {
-        world.physics.bodies.remove(
+    if let Some(handle) = physics.lookup_table.remove_by_uid(&node_uid) {
+        physics.bodies.remove(
             RigidBodyHandle::from_raw_parts(handle.0, handle.1),
-            &mut world.physics.islands,
-            &mut world.physics.colliders,
-            &mut world.physics.impulse_joints,
-            &mut world.physics.multibody_joints,
+            &mut physics.islands,
+            &mut physics.colliders,
+            &mut physics.impulse_joints,
+            &mut physics.multibody_joints,
             false,
         );
     }

@@ -11,34 +11,35 @@ use crate::{
 #[derive(GodotConvert, Var, Export, Debug, Clone)]
 #[godot(via = GString)]
 pub enum Operation {
-    ADD_NODE,
-    REMOVE_NODE,
-    MOVE_NODE,
-    CONFIGURE_NODE,
+    AddNode,
+    RemoveNode,
+    MoveNode,
+    ConfigureNode,
 }
 
 #[derive(Clone)]
 pub struct Action {
     pub cuid: GString,
+    pub node: Gd<Node3D>,
     pub operation: Operation,
     pub data: Dictionary,
 }
 
 impl Action {
-    pub fn new(cuid: GString, operation: Operation, data: Dictionary) -> Self {
+    pub fn new(cuid: GString, node: Gd<Node3D>, operation: Operation, data: Dictionary) -> Self {
         Self {
             cuid,
+            node,
             operation,
             data,
         }
     }
 }
 
-/// 1. Constructs a new action
-/// 2. Adds it to the world buffer at the current timestep
+/// Constructs a new action and then adds it to the world buffer at the current timestep
 pub fn ingest_action(node: Gd<Node3D>, operation: Operation, data: Dictionary, world: &mut World) {
-    if let Some(cuid) = extract_cuid(node) {
-        let action = Action::new(cuid, operation, data);
+    if let Some(cuid) = extract_cuid(node.clone()) {
+        let action = Action::new(cuid, node, operation, data);
         let timestep_id = world.state.timestep_id;
         world.buffer.insert_action(action, timestep_id);
     }

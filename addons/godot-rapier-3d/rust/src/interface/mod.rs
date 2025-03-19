@@ -10,4 +10,6 @@ pub use singleton::{
 };
 
 pub use editor_plugin::get_runtime;
-pub use world::{Action, Operation};
+pub use world::{
+    add_node_to_world, configure_node, move_node, remove_node_from_world, Action, Operation,
+};

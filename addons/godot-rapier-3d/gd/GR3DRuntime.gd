@@ -26,14 +26,7 @@ func _process(_delta):
 
 func _physics_process(_delta):
 	if Engine.is_editor_hint(): return
-	if playing and !paused:
-		Queue.add_action(pending_actions, Queue.ACTION_TYPE.STEP)
-		Queue.process_queue(pending_actions)
-
-func _add_node(node): Queue.add_action(pending_actions, Queue.ACTION_TYPE.ADD_NODE, { "node": node })
-func _configure_node(node): Queue.add_action(pending_actions, Queue.ACTION_TYPE.CONFIGURE_NODE, { "node": node })
-func _remove_node(node): Queue.add_action(pending_actions, Queue.ACTION_TYPE.REMOVE_NODE, { "node": node })
-func _move_node(node, desired_movement: Vector3): Queue.add_action(pending_actions, Queue.ACTION_TYPE.MOVE_NODE, { "node": node, "desired_movement": desired_movement })
+	if playing and !paused: GR3D.step(1)
 
 func play():
 	playing = true
