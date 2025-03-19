@@ -1,5 +1,6 @@
 use super::debugger::GR3DDebugger;
-use super::world::{add_nodes_to_world, configure_nodes, move_nodes, remove_nodes_from_world};
+use super::world::ingest_action;
+use super::Operation;
 use crate::nodes::{generate_cuid, IRapierObject};
 use crate::utils::{init_logger, set_log_level};
 use crate::world::state::restore_snapshot;
@@ -96,27 +97,8 @@ impl GR3D {
     }
 
     #[func]
-    // Register a node in the Rapier world
-    pub fn _add_nodes(&mut self, nodes: Array<Gd<Node3D>>) {
-        add_nodes_to_world(nodes, &mut self.world);
-    }
-
-    #[func]
-    // Unregister a node from the Rapier world
-    pub fn _remove_nodes(&mut self, nodes: Array<Gd<Node3D>>) {
-        remove_nodes_from_world(nodes, &mut self.world);
-    }
-
-    #[func]
-    // Move a node that already exists in the Rapier world
-    pub fn _move_nodes(&mut self, nodes: Array<Gd<Node3D>>, desired_movement: Vector3) {
-        move_nodes(nodes, desired_movement, &mut self.world);
-    }
-
-    #[func]
-    // Ensure fields / settings of Rapier objects match the corresponding godot properties
-    pub fn _configure_nodes(&mut self, nodes: Array<Gd<Node3D>>) {
-        configure_nodes(nodes, &mut self.world);
+    pub fn _ingest_action(&mut self, node: Gd<Node3D>, operation: Operation, data: Dictionary) {
+        ingest_action(node, operation, data, &mut self.world);
     }
 
     #[func]

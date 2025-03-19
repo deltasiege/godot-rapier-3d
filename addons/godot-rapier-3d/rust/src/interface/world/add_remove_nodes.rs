@@ -108,7 +108,7 @@ fn insert_rb_with_children(
 
             let node_uid = node.bind().get_cuid();
             let raw_handle = parent_handle.into_raw_parts();
-            world.lookup_table.insert(node_uid, raw_handle);
+            world.physics.lookup_table.insert(node_uid, raw_handle);
             node.bind_mut().set_handle_raw(raw_handle);
         }
     }
@@ -120,7 +120,7 @@ fn insert_collider(
     world: &mut World,
     sensor: bool, // TODO - could be exposed to godot by reading from node directly in here
 ) {
-    let lookup_table = &mut world.lookup_table;
+    let lookup_table = &mut world.physics.lookup_table;
 
     if let Some(collider) = shape_to_collider(node) {
         let is_exp = is_expensive(&collider);
@@ -278,15 +278,18 @@ fn is_expensive(builder: &ColliderBuilder) -> bool {
 /// Removes the given RapierCollisionShape3D from cheap or expensive colliders if it exists in either set
 fn remove_collider_node_if_exists(node: &Gd<RapierCollisionShape3D>, world: &mut World) {
     let node_uid = node.bind().get_cuid();
-    if let Some(raw_handle) = world.lookup_table.remove_by_uid(&node_uid.into()) {
+    if let Some(raw_handle) = world.physics.lookup_table.remove_by_uid(&node_uid.into()) {
         remove_collider_if_exists(&raw_handle, world);
     }
 }
 
 /// Removes the given collider handle from all lookup tables and collider set
 pub fn remove_collider_if_exists(raw_handle: &(u32, u32), world: &mut World) {
-    world.lookup_table.remove_by_handle(raw_handle);
-    world.lookup_table.remove_snapshot_collider(raw_handle);
+    world.physics.lookup_table.remove_by_handle(raw_handle);
+    world
+        .physics
+        .lookup_table
+        .remove_snapshot_collider(raw_handle);
     let handle = ColliderHandle::from_raw_parts(raw_handle.0, raw_handle.1);
     if world.physics.colliders.contains(handle) {
         world.physics.colliders.remove(
@@ -298,21 +301,10 @@ pub fn remove_collider_if_exists(raw_handle: &(u32, u32), world: &mut World) {
     }
 }
 
-/// Removes all colliders from world that exist in both sets
-pub fn collider_set_difference(a: &ColliderSet, b: &ColliderSet) -> ColliderSet {
-    let mut diff = ColliderSet::new();
-    for (handle, _) in a.iter() {
-        if !b.contains(handle) {
-            diff.insert(a.get(handle).unwrap().clone());
-        }
-    }
-    diff
-}
-
 /// Removes the given rigid body from the world
 fn remove_body(node: &Gd<impl IRapierObject>, world: &mut World) {
     let node_uid = node.bind().get_cuid();
-    if let Some(handle) = world.lookup_table.remove_by_uid(&node_uid) {
+    if let Some(handle) = world.physics.lookup_table.remove_by_uid(&node_uid) {
         world.physics.bodies.remove(
             RigidBodyHandle::from_raw_parts(handle.0, handle.1),
             &mut world.physics.islands,

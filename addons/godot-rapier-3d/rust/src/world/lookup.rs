@@ -1,4 +1,5 @@
 use godot::builtin::GString;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 /*
 
@@ -10,9 +11,10 @@ use std::collections::HashMap;
 
 */
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct LookupTable {
-    pub godot_to_rapier: HashMap<GString, (u32, u32)>,
-    pub rapier_to_godot: HashMap<(u32, u32), GString>,
+    pub godot_to_rapier: HashMap<String, (u32, u32)>,
+    pub rapier_to_godot: HashMap<(u32, u32), String>,
     pub snapshot_colliders: Vec<(u32, u32)>,
 }
 
@@ -27,15 +29,15 @@ impl LookupTable {
 
     pub fn insert(&mut self, godot_uid: GString, rapier_handle: (u32, u32)) {
         self.godot_to_rapier
-            .insert(godot_uid.clone(), rapier_handle);
+            .insert(godot_uid.to_string(), rapier_handle);
         self.rapier_to_godot
-            .insert(rapier_handle, godot_uid.clone());
+            .insert(rapier_handle, godot_uid.to_string());
     }
 
     // Collision check
     pub fn cuid_exists(&self, cuid: &GString) -> bool {
-        let g2r = self.godot_to_rapier.contains_key(cuid);
-        let rapier_handle = self.godot_to_rapier.get(cuid);
+        let g2r = self.godot_to_rapier.contains_key(cuid.to_string().as_str());
+        let rapier_handle = self.godot_to_rapier.get(cuid.to_string().as_str());
         if let Some(rapier_handle) = rapier_handle {
             let r2g = self.rapier_to_godot.contains_key(rapier_handle);
             g2r || r2g
@@ -45,15 +47,18 @@ impl LookupTable {
     }
 
     pub fn get_rapier_handle(&self, godot_uid: &GString) -> Option<&(u32, u32)> {
-        self.godot_to_rapier.get(godot_uid)
+        self.godot_to_rapier.get(godot_uid.to_string().as_str())
     }
 
-    pub fn get_godot_uid(&self, rapier_handle: &(u32, u32)) -> Option<&GString> {
-        self.rapier_to_godot.get(rapier_handle)
+    pub fn get_godot_uid(&self, rapier_handle: &(u32, u32)) -> Option<GString> {
+        match self.rapier_to_godot.get(rapier_handle) {
+            Some(uid) => Some(GString::from(uid)),
+            None => None,
+        }
     }
 
     pub fn remove_by_uid(&mut self, godot_uid: &GString) -> Option<(u32, u32)> {
-        if let Some(rapier_handle) = self.godot_to_rapier.remove(godot_uid) {
+        if let Some(rapier_handle) = self.godot_to_rapier.remove(godot_uid.to_string().as_str()) {
             self.rapier_to_godot.remove(&rapier_handle);
             Some(rapier_handle)
         } else {
@@ -64,7 +69,7 @@ impl LookupTable {
     pub fn remove_by_handle(&mut self, rapier_handle: &(u32, u32)) -> Option<GString> {
         if let Some(godot_uid) = self.rapier_to_godot.remove(rapier_handle) {
             self.godot_to_rapier.remove(&godot_uid);
-            Some(godot_uid)
+            Some(GString::from(godot_uid))
         } else {
             None
         }
@@ -76,15 +81,5 @@ impl LookupTable {
 
     pub fn remove_snapshot_collider(&mut self, raw_handle: &(u32, u32)) {
         self.snapshot_colliders.retain(|&x| x != *raw_handle);
-    }
-
-    pub fn print_snapshot_colliders(&self) {
-        let none = GString::from("None");
-        let godot_uids = self
-            .snapshot_colliders
-            .iter()
-            .map(|raw_handle| self.rapier_to_godot.get(raw_handle).unwrap_or(&none))
-            .collect::<Vec<&GString>>();
-        log::info!("Snapshot colliders: {:?}", godot_uids);
     }
 }

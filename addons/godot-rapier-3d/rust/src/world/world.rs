@@ -1,4 +1,4 @@
-use super::lookup::LookupTable;
+use super::buffer::WorldBuffer;
 use super::state::{pack_snapshot, PhysicsState};
 use rapier3d::dynamics::IntegrationParameters;
 
@@ -24,14 +24,11 @@ impl RunState {
 
 pub struct World {
     pub physics: PhysicsState,
-
-    actions: Actions,
+    pub buffer: WorldBuffer,
     callbacks: Callbacks,
     pub state: RunState,
-    pub lookup_table: LookupTable,
 }
 
-type Actions = Vec<Box<dyn FnMut(&mut PhysicsState, &RunState)>>; // Actions are called before stepping and then deleted each step
 type Callbacks = Vec<Box<dyn FnMut(&mut PhysicsState, &RunState)>>; // Callbacks are called after stepping every step
 
 impl World {
@@ -40,21 +37,14 @@ impl World {
         let state = RunState::new();
         Self {
             physics,
-            actions: Vec::new(),
+            buffer: WorldBuffer::default(),
             callbacks: Vec::new(),
-            // snapshot_buffer: HashMap::new(),
-            // snapshot_buffer_max_len: 1000,
             state,
-            lookup_table: LookupTable::new(),
         }
     }
 
     pub fn integration_parameters_mut(&mut self) -> &mut IntegrationParameters {
         &mut self.physics.integration_parameters
-    }
-
-    pub fn clear_actions(&mut self) {
-        self.actions.clear();
     }
 
     pub fn clear_callbacks(&mut self) {
@@ -70,6 +60,8 @@ impl World {
     }
 
     pub fn step(&mut self) {
+        self.buffer.execute_actions(self.state.timestep_id);
+
         self.physics.pipeline.step(
             &self.physics.gravity,
             &self.physics.integration_parameters,
@@ -90,26 +82,22 @@ impl World {
             f(&mut self.physics, &self.state);
         }
 
-        // Remove old snapshots if buffer is full
-        // while self.snapshot_buffer.len() > self.snapshot_buffer_max_len {
-        //     self.remove_oldest_snapshot_from_buffer();
-        // }
-
-        // self.save_current_snapshot_to_buffer(); // Save the current snapshot to the buffer UP TO
-
         self.state.time += self.physics.integration_parameters.dt as f32;
         self.state.timestep_id += 1;
+
+        self.buffer
+            .on_world_stepped(self.state.timestep_id, self.get_current_snapshot());
     }
 
     /// Retrieve either the current or a buffered snapshot
     pub fn get_snapshot(&mut self, timestep_id: Option<i64>) -> Option<Vec<u8>> {
         match timestep_id {
             None => self.get_current_snapshot(),
-            Some(_) => self.get_current_snapshot(), // TODO
-                                                    // Some(timestep_id) => self.get_buffered_snapshot(timestep_id),
+            Some(timestep_id) => self.buffer.get_physics_state(timestep_id as usize),
         }
     }
 
+    /// Retrieve the current snapshot
     fn get_current_snapshot(&self) -> Option<Vec<u8>> {
         let snapshot = pack_snapshot(self);
         match snapshot {
@@ -121,6 +109,7 @@ impl World {
         }
     }
 
+    /// Return the amount of bodies, colliders, impulse joints, and multibody joints in the world
     pub fn get_counts(&self) -> (usize, usize, usize, usize) {
         (
             self.physics.bodies.len(),

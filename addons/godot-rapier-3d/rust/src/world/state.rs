@@ -1,8 +1,7 @@
-use godot::global::godot_print;
 use rapier3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{interface::collider_set_difference, World};
+use crate::{LookupTable, World};
 
 pub struct PhysicsState {
     pub islands: IslandManager,
@@ -18,6 +17,7 @@ pub struct PhysicsState {
     pub integration_parameters: IntegrationParameters,
     pub gravity: Vector<Real>,
     pub hooks: Box<dyn PhysicsHooks>,
+    pub lookup_table: LookupTable,
 }
 
 impl Default for PhysicsState {
@@ -42,6 +42,7 @@ impl PhysicsState {
             integration_parameters: IntegrationParameters::default(),
             gravity: Vector::y() * -9.81,
             hooks: Box::new(()),
+            lookup_table: LookupTable::new(),
         }
     }
 }
@@ -56,12 +57,13 @@ pub struct DeserializedPhysicsSnapshot {
     pub colliders: ColliderSet,
     pub impulse_joints: ImpulseJointSet,
     pub multibody_joints: MultibodyJointSet,
+    pub lookup_table: LookupTable,
 }
 
 pub fn pack_snapshot(world: &World) -> bincode::Result<Vec<u8>> {
     // NOTE: only cheap colliders are serialized
     let mut colliders = ColliderSet::new();
-    for raw_handle in &world.lookup_table.snapshot_colliders {
+    for raw_handle in &world.physics.lookup_table.snapshot_colliders {
         let handle = ColliderHandle::from_raw_parts(raw_handle.0, raw_handle.1);
         if let Some(collider) = world.physics.colliders.get(handle) {
             colliders.insert(collider.clone());
@@ -77,6 +79,7 @@ pub fn pack_snapshot(world: &World) -> bincode::Result<Vec<u8>> {
         colliders: colliders,
         impulse_joints: world.physics.impulse_joints.clone(),
         multibody_joints: world.physics.multibody_joints.clone(),
+        lookup_table: world.physics.lookup_table.clone(),
     };
 
     bincode::serialize(&output)
@@ -112,18 +115,7 @@ pub fn restore_snapshot(world: &mut World, bytes: Vec<u8>) {
                 world.physics.colliders.insert(collider.clone());
             }
         }
+
+        world.physics.lookup_table = deserialized.lookup_table;
     }
 }
-
-// /// Overwrite a previous state of the given world to the given snapshot state,
-// /// and then roll-forward the simulation to get back to the current timestep
-// pub fn apply_correction(world: &mut World, bytes: Vec<u8>) {
-//     let current_timestep = world.state.timestep_id;
-//     restore_snapshot(world, bytes);
-//     let past_timestep = world.state.timestep_id;
-//     world.remove_snapshots_after(past_timestep as i64);
-//     let steps = current_timestep - past_timestep;
-//     for _ in 0..steps {
-//         world.step();
-//     }
-// }

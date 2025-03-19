@@ -6,10 +6,7 @@ use rapier3d::{
 };
 
 use crate::{
-    nodes::{
-        IRapierObject, Identifiable, RapierKinematicCharacter3D, RapierPIDCharacter3D,
-        RapierRigidBody3D,
-    },
+    nodes::{Identifiable, RapierKinematicCharacter3D, RapierPIDCharacter3D, RapierRigidBody3D},
     utils::{uniform_rapier_vector, vector_to_rapier},
     World,
 };
@@ -73,7 +70,10 @@ pub fn move_nodes(nodes: Array<Gd<Node3D>>, desired_movement: Vector3, world: &m
             "RapierKinematicCharacter3D" => {
                 let mut casted = node.cast::<RapierKinematicCharacter3D>();
                 let mut char = casted.bind_mut();
-                let handle = world.lookup_table.get_rapier_handle(&char.get_cuid());
+                let handle = world
+                    .physics
+                    .lookup_table
+                    .get_rapier_handle(&char.get_cuid());
 
                 if let Some(raw) = handle {
                     let controller = &char.controller;
@@ -126,7 +126,7 @@ pub fn move_nodes(nodes: Array<Gd<Node3D>>, desired_movement: Vector3, world: &m
             "RapierPIDCharacter3D" => {
                 let mut casted = node.cast::<RapierPIDCharacter3D>();
                 let uid = casted.bind().get_cuid();
-                let handle = world.lookup_table.get_rapier_handle(&uid);
+                let handle = world.physics.lookup_table.get_rapier_handle(&uid);
 
                 if let Some(raw) = handle {
                     let controller = &mut casted.bind_mut().controller;
@@ -159,7 +159,7 @@ pub fn move_nodes(nodes: Array<Gd<Node3D>>, desired_movement: Vector3, world: &m
             "RapierRigidBody3D" => {
                 let mut casted = node.cast::<RapierRigidBody3D>();
                 let uid = casted.bind().get_cuid();
-                let handle = world.lookup_table.get_rapier_handle(&uid);
+                let handle = world.physics.lookup_table.get_rapier_handle(&uid);
 
                 if let Some(raw) = handle {
                     let controller = &mut casted.bind_mut().controller;
