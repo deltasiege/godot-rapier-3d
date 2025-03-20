@@ -4,6 +4,7 @@ use godot::prelude::*;
 use rapier3d::control::PidController;
 
 use super::common::Forceable;
+use super::Identifiable;
 use crate::nodes::IRapierObject;
 
 #[derive(GodotClass)]
@@ -47,6 +48,11 @@ impl INode3D for RapierRigidBody3D {
 
 #[godot_api]
 impl RapierRigidBody3D {
+    #[func]
+    fn set_uid(&mut self, cuid: GString) {
+        self.set_cuid(cuid);
+    }
+
     #[func]
     fn match_rapier(&mut self) {
         self.sync()

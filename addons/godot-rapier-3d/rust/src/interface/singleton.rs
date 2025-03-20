@@ -116,8 +116,10 @@ impl GR3D {
     }
 
     #[func]
-    // Create a new unique identifier
-    pub fn _create_cuid(&self) -> GString {
+    /// Create a new unique identifier
+    /// Should be used when spawning new Rapier physics nodes via code
+    /// to ensure that the CUID is unique on the spawned node (via set_uid)
+    pub fn create_cuid(&self) -> GString {
         generate_cuid()
     }
 

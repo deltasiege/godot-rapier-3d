@@ -10,7 +10,7 @@
 [node name="RapierKinematicCharacter3D" type="RapierKinematicCharacter3D" node_paths=PackedStringArray("lookat_pivots")]
 script = ExtResource("1_ls1pp")
 lookat_pivots = [NodePath("SophiaSkin")]
-metadata/cuid = "r4g0rch7f6k4e59bumzafyli"
+metadata/cuid = "gpg1j3uw154tzrvfqrtl77tw"
 
 [node name="3rdPersonCam" parent="." instance=ExtResource("2_kttds")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)

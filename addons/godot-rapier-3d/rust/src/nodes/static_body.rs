@@ -47,6 +47,11 @@ impl INode3D for RapierStaticBody3D {
 #[godot_api]
 impl RapierStaticBody3D {
     #[func]
+    fn set_uid(&mut self, cuid: GString) {
+        self.set_cuid(cuid);
+    }
+
+    #[func]
     fn match_rapier(&mut self) {
         self.sync()
     }

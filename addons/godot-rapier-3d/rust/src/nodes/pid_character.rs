@@ -5,6 +5,7 @@ use rapier3d::control::PidController;
 use rapier3d::prelude::*;
 
 use super::common::{Controllable, Forceable};
+use super::Identifiable;
 use crate::interface::{get_runtime, get_singleton, get_tree};
 use crate::nodes::IRapierObject;
 use crate::utils::vector_to_point;
@@ -91,6 +92,11 @@ impl INode3D for RapierPIDCharacter3D {
 
 #[godot_api]
 impl RapierPIDCharacter3D {
+    #[func]
+    fn set_uid(&mut self, cuid: GString) {
+        self.set_cuid(cuid);
+    }
+
     #[func]
     fn match_rapier(&mut self) {
         self.sync()

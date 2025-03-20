@@ -1,7 +1,19 @@
-[gd_scene load_steps=6 format=4 uid="uid://drbstenfl2i1o"]
+[gd_scene load_steps=9 format=4 uid="uid://drbstenfl2i1o"]
 
 [ext_resource type="Material" uid="uid://gdvppbst5e7w" path="res://demo_assets/env/mats/grid_mat.tres" id="1_ook41"]
 [ext_resource type="Shape3D" uid="uid://4uy7k8xqjly1" path="res://demo_assets/env/outdoors/terrain_collision_shape.tres" id="2_6g17n"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_m61xn"]
+sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+ground_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+
+[sub_resource type="Sky" id="Sky_l71ui"]
+sky_material = SubResource("ProceduralSkyMaterial_m61xn")
+
+[sub_resource type="Environment" id="Environment_h4mtc"]
+background_mode = 2
+sky = SubResource("Sky_l71ui")
+tonemap_mode = 2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hdb0f"]
 
@@ -38,6 +50,13 @@ blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_l7xt8")
 
 [node name="Outdoors" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_h4mtc")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866024, -0.433016, 0.25, 0, 0.499998, 0.866027, -0.500003, 0.75, -0.43301, 0, 0, 0)
+shadow_enabled = true
 
 [node name="TerrainStaticBody3D" type="RapierStaticBody3D" parent="."]
 cuid = "unz4d47xqqnh2si74v5b07s2"

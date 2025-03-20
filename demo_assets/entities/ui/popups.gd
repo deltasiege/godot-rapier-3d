@@ -5,11 +5,12 @@ var _last_snapshot: PackedByteArray
 var _last_snapshot_data = {}
 var _rollback_snapshot: PackedByteArray
 var opened_popup = null
+var character
 
 var Hash = preload("res://test_assets/tools/hash.gd")
 
 func _ready():
-	get_parent().toolbar.connect("popup_opened", on_popup_opened)
+	get_parent().connect("popup_opened", on_popup_opened)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	_initial_snapshot = GR3D.save_snapshot() # TODO - causes issue with duplicates
@@ -29,22 +30,22 @@ func on_popup_opened(popup: Control):
 	opened_popup.current_content.force_set_entries(_get_data(opened_popup.title))
 
 func _get_data(title: String):
-	var chr = get_parent()._active_character
+	if title == "Character" and !character: return
 	match title:
 		"Character":
 			var common_data = {
-				"type": chr.get_class(),
-				"velocity": chr.velocity.snappedf(0.1),
-				"real_velocity": chr.get_real_velocity().snappedf(0.1),
-				"real_angular_velocity": chr.get_real_angular_velocity().snappedf(0.1),
-				"is_on_floor": chr.is_on_floor(),
+				"type": character.get_class(),
+				"velocity": character.velocity.snappedf(0.1),
+				"real_velocity": character.get_real_velocity().snappedf(0.1),
+				"real_angular_velocity": character.get_real_angular_velocity().snappedf(0.1),
+				"is_on_floor": character.is_on_floor(),
 			}
-			match chr.get_class():
+			match character.get_class():
 				"RapierKinematicCharacter3D":
 					return common_data.merged({
-						"last_motion": chr.get_last_motion().snappedf(0.1),
-						"is_sliding_down_slope": chr.is_sliding_down_slope(),
-						"slide_collision_count": chr.get_slide_collision_count(),
+						"last_motion": character.get_last_motion().snappedf(0.1),
+						"is_sliding_down_slope": character.is_sliding_down_slope(),
+						"slide_collision_count": character.get_slide_collision_count(),
 					})
 				"RapierPIDCharacter3D":
 					return common_data.merged({})
@@ -66,8 +67,7 @@ func _get_data(title: String):
 			]
 		"Rollback":
 			return [
-				{ "type": "button", "text": "Store fake position", "on_pressed": rollback_test_prep  },
-				{ "type": "button", "text": "Restore fake pos 100 ticks ago", "on_pressed": rollback_test_prep  }
+				{ "text": "TBA", "value": "Show full buffer here" },
 			]
 		"Hotkeys":
 			return {
@@ -95,16 +95,3 @@ func take_snapshot():
 		"godot_hash": Hash.get_godot_hash(get_tree().root),
 		"rapier_hash": Array(_last_snapshot.compress()).hash()
 	}
-func rollback_test_prep():
-	var active_char: RapierKinematicCharacter3D = get_tree().root.find_child("Active Character", true, false)
-	var real_pos = active_char.global_position
-	var fake_pos = Vector3(100, 5, 100)
-	active_char.teleport_to_position(fake_pos)
-	await get_tree().physics_frame
-	await get_tree().physics_frame
-	await get_tree().physics_frame
-	_rollback_snapshot = GR3D.save_snapshot()
-	active_char.teleport_to_position(real_pos)
-
-func rollback_test_fire():
-	GR3D.corrective_rollback(_rollback_snapshot)

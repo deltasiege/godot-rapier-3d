@@ -1,9 +1,10 @@
-[gd_scene load_steps=10 format=3 uid="uid://catsbly4tdfm0"]
+[gd_scene load_steps=11 format=3 uid="uid://catsbly4tdfm0"]
 
 [ext_resource type="FontFile" uid="uid://bbojb47dw42nl" path="res://demo_assets/entities/ui/font/FixelDisplay-Regular.woff2" id="1_0fuqr"]
 [ext_resource type="Script" uid="uid://6up10ut5ujb0" path="res://demo_assets/entities/ui/toolbar/toolbar.gd" id="1_70jrx"]
 [ext_resource type="Texture2D" uid="uid://bmmnyrgr6vmde" path="res://demo_assets/entities/ui/icons/world.svg" id="1_fp30f"]
 [ext_resource type="Texture2D" uid="uid://lk8nr4d22vyy" path="res://demo_assets/entities/ui/icons/character.svg" id="1_nuo16"]
+[ext_resource type="Script" uid="uid://dvedonthhj4mh" path="res://demo_assets/entities/ui/popups.gd" id="2_6xmtj"]
 [ext_resource type="Texture2D" uid="uid://dm0c2jfrfxcom" path="res://demo_assets/entities/ui/icons/state.svg" id="2_ynmef"]
 [ext_resource type="Texture2D" uid="uid://cut2eiy7xp5di" path="res://demo_assets/entities/ui/icons/hotkeys.svg" id="4_ynmef"]
 [ext_resource type="Texture2D" uid="uid://cwtbqb2w8bax6" path="res://addons/godot-rapier-3d/icons/rapier_playback.svg" id="4_yybin"]
@@ -21,6 +22,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_70jrx")
+
+[node name="Popups" type="Node" parent="."]
+script = ExtResource("2_6xmtj")
 
 [node name="Left" type="Control" parent="."]
 layout_mode = 1

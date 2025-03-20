@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://djk6gksnqngk2"]
+
+[ext_resource type="PackedScene" uid="uid://dohhufgjerc06" path="res://demo_assets/entities/characters/kinematic_character/kinematic_character.tscn" id="1_ajuvr"]
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_ajuvr"]
+
+[node name="Player" type="Node"]
+
+[node name="RapierKinematicCharacter3D" parent="." instance=ExtResource("1_ajuvr")]
+metadata/cuid = "j5cvanl9p2z7vve1xct7ykla"
+
+[node name="InputSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_ajuvr")

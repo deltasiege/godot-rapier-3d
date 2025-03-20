@@ -1,0 +1,22 @@
+[gd_scene load_steps=6 format=3 uid="uid://casmsje37n7al"]
+
+[ext_resource type="Script" uid="uid://bei36elwx8igq" path="res://demos/p2p/p2p_demo.gd" id="1_4vuni"]
+[ext_resource type="PackedScene" uid="uid://djk6gksnqngk2" path="res://demos/p2p/player.tscn" id="2_8bgdo"]
+[ext_resource type="PackedScene" uid="uid://drbstenfl2i1o" path="res://demo_assets/env/outdoors/outdoors.tscn" id="2_ebrk7"]
+[ext_resource type="PackedScene" uid="uid://kwx04lun14rx" path="res://demo_assets/entities/ui/p2p_lobby/p2p_lobby.tscn" id="2_yphys"]
+[ext_resource type="PackedScene" uid="uid://catsbly4tdfm0" path="res://demo_assets/entities/ui/toolbar/toolbar.tscn" id="3_04xty"]
+
+[node name="P2P" type="Node" node_paths=PackedStringArray("players_container")]
+script = ExtResource("1_4vuni")
+player_scene = ExtResource("2_8bgdo")
+players_container = NodePath("Players")
+
+[node name="Toolbar" parent="." instance=ExtResource("3_04xty")]
+
+[node name="P2P Lobby" parent="." instance=ExtResource("2_yphys")]
+
+[node name="Players" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("uid://djk6gksnqngk2")
+spawn_path = NodePath(".")
+
+[node name="Outdoors" parent="." instance=ExtResource("2_ebrk7")]

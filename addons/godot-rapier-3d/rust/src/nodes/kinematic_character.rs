@@ -6,6 +6,7 @@ use rapier3d::control::{
 };
 
 use super::common::{Controllable, Forceable};
+use super::Identifiable;
 use crate::nodes::IRapierObject;
 use crate::utils::vector_to_godot;
 
@@ -92,6 +93,11 @@ impl INode3D for RapierKinematicCharacter3D {
 
 #[godot_api]
 impl RapierKinematicCharacter3D {
+    #[func]
+    fn set_uid(&mut self, cuid: GString) {
+        self.set_cuid(cuid);
+    }
+
     #[func]
     fn match_rapier(&mut self) {
         self.sync()

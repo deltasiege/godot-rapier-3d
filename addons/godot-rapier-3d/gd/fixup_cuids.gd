@@ -63,7 +63,7 @@ static func get_all_objects(root: Node) -> Array[Node3D]:
 	return all
 
 static func new_cuid(node: Node3D) -> String:
-	var cuid = GR3D._create_cuid()
+	var cuid = GR3D.create_cuid()
 	node.set_meta("cuid", cuid)
 	return cuid
 

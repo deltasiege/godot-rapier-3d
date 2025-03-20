@@ -2,17 +2,13 @@ extends Node
 
 @export var kinematic_character: RapierKinematicCharacter3D
 @export var pid_character: RapierPIDCharacter3D
-@export var toolbar: Control
 
 @onready var _chars = [kinematic_character, pid_character]
 var _active_char_idx = -1
 var _active_character = null
 
-var Popups = preload("./popups.gd").new()
-
 func _ready():
 	_switch_char()
-	add_child(Popups)
 
 func _process(_delta):
 	if Input.is_action_just_pressed("switch_character") and is_piloting(): _switch_char()

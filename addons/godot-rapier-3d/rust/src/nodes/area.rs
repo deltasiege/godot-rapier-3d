@@ -4,6 +4,8 @@ use godot::prelude::*;
 
 use crate::nodes::IRapierObject;
 
+use super::Identifiable;
+
 #[derive(GodotClass)]
 #[class(tool, base=Node3D)]
 pub struct RapierArea3D {
@@ -43,6 +45,11 @@ impl INode3D for RapierArea3D {
 
 #[godot_api]
 impl RapierArea3D {
+    #[func]
+    fn set_uid(&mut self, cuid: GString) {
+        self.set_cuid(cuid);
+    }
+
     #[func]
     fn match_rapier(&mut self) {
         self.sync()
