@@ -6,7 +6,10 @@ use rapier3d::{
 };
 
 use crate::{
-    nodes::{Identifiable, RapierKinematicCharacter3D, RapierPIDCharacter3D, RapierRigidBody3D},
+    nodes::{
+        IRapierObject, Identifiable, RapierKinematicCharacter3D, RapierPIDCharacter3D,
+        RapierRigidBody3D,
+    },
     utils::{uniform_rapier_vector, vector_to_rapier},
     world::state::PhysicsState,
 };
@@ -54,6 +57,38 @@ pub fn configure_node(node: Gd<Node3D>) {
             "Trying to configure a '{}' node which is not a configurable node type",
             class
         ),
+    }
+}
+
+pub fn teleport_node(node: Gd<Node3D>, position: Vector3, physics: &mut PhysicsState) {
+    let class = node.get_class().to_string();
+    match class.as_str() {
+        "RapierKinematicCharacter3D" => {
+            teleport_rb(
+                &node.cast::<RapierKinematicCharacter3D>(),
+                physics,
+                position,
+            );
+        }
+        "RapierPIDCharacter3D" => {
+            teleport_rb(&node.cast::<RapierPIDCharacter3D>(), physics, position);
+        }
+        "RapierRigidBody3D" => {
+            teleport_rb(&node.cast::<RapierRigidBody3D>(), physics, position);
+        }
+        _ => log::error!("Cannot teleport node '{}'", class),
+    }
+}
+
+fn teleport_rb(node: &Gd<impl IRapierObject>, physics: &mut PhysicsState, position: Vector3) {
+    if let Some(raw_handle) = physics
+        .lookup_table
+        .get_rapier_handle(&node.bind().get_cuid())
+    {
+        let handle = RigidBodyHandle::from_raw_parts(raw_handle.0, raw_handle.1);
+        let body = &mut physics.bodies[handle];
+        godot_print!("Teleporting {} to {:?}", node, position);
+        body.set_next_kinematic_translation(vector_to_rapier(position));
     }
 }
 

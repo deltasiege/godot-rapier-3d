@@ -9,7 +9,6 @@ var paused: bool = false
 
 var pending_actions = []
 
-var Queue = preload("./queue.gd")
 @onready var DrawLine = preload("./draw_line.gd").new()
 
 func _ready():

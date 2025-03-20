@@ -21,7 +21,7 @@ macro_rules! impl_identifiable {
                 match self.base().has_meta("cuid") {
                     true => GString::from_variant(&self.base().get_meta("cuid")),
                     false => {
-                        log::error!("No cuid found for object: {:?}", self);
+                        log::error!("Could not retrieve cuid of: '{:?}' Please run 'addons/godot-rapier-3d/gd/fixup_cuids.gd' to resolve", self);
                         GString::new()
                     }
                 }

@@ -61,7 +61,7 @@ pub struct DeserializedPhysicsSnapshot {
 }
 
 pub fn pack_snapshot(world: &World) -> bincode::Result<Vec<u8>> {
-    // NOTE: only cheap colliders are serialized
+    // Only cheap colliders are serialized
     let mut colliders = ColliderSet::new();
     for raw_handle in &world.physics.lookup_table.snapshot_colliders {
         let handle = ColliderHandle::from_raw_parts(raw_handle.0, raw_handle.1);
@@ -85,7 +85,7 @@ pub fn pack_snapshot(world: &World) -> bincode::Result<Vec<u8>> {
     bincode::serialize(&output)
 }
 
-fn unpack_snapshot(bytes: Vec<u8>) -> Option<DeserializedPhysicsSnapshot> {
+pub fn unpack_snapshot(bytes: Vec<u8>) -> Option<DeserializedPhysicsSnapshot> {
     let deserialized: bincode::Result<DeserializedPhysicsSnapshot> = bincode::deserialize(&bytes);
     match deserialized {
         Ok(snapshot) => Some(snapshot),
@@ -97,25 +97,30 @@ fn unpack_snapshot(bytes: Vec<u8>) -> Option<DeserializedPhysicsSnapshot> {
 }
 
 /// Overwrite the current state of the given world to the given snapshot state
-pub fn restore_snapshot(world: &mut World, bytes: Vec<u8>) {
-    if let Some(deserialized) = unpack_snapshot(bytes) {
-        world.state.timestep_id = deserialized.timestep_id;
-        world.physics.broad_phase = deserialized.broad_phase;
-        world.physics.narrow_phase = deserialized.narrow_phase;
-        world.physics.islands = deserialized.island_manager;
-        world.physics.bodies = deserialized.bodies;
-        world.physics.impulse_joints = deserialized.impulse_joints;
-        world.physics.multibody_joints = deserialized.multibody_joints;
-
-        // Carefully handle colliders to not overwrite expensive "eternal" ones
-        for (handle, collider) in deserialized.colliders.iter() {
-            if let Some(collider) = world.physics.colliders.get_mut(handle) {
-                *collider = collider.clone();
-            } else {
-                world.physics.colliders.insert(collider.clone());
-            }
-        }
-
-        world.physics.lookup_table = deserialized.lookup_table;
+pub fn restore_snapshot(
+    world: &mut World,
+    snapshot: DeserializedPhysicsSnapshot,
+    overwrite_timestep: bool,
+) {
+    if overwrite_timestep {
+        world.state.timestep_id = snapshot.timestep_id;
     }
+
+    world.physics.broad_phase = snapshot.broad_phase;
+    world.physics.narrow_phase = snapshot.narrow_phase;
+    world.physics.islands = snapshot.island_manager;
+    world.physics.bodies = snapshot.bodies;
+    world.physics.impulse_joints = snapshot.impulse_joints;
+    world.physics.multibody_joints = snapshot.multibody_joints;
+
+    // Carefully handle colliders to not overwrite those excluded from snapshots
+    for (handle, collider) in snapshot.colliders.iter() {
+        if let Some(collider) = world.physics.colliders.get_mut(handle) {
+            *collider = collider.clone();
+        } else {
+            world.physics.colliders.insert(collider.clone());
+        }
+    }
+
+    world.physics.lookup_table = snapshot.lookup_table;
 }

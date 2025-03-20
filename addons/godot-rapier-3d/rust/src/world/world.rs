@@ -1,5 +1,5 @@
 use super::buffer::WorldBuffer;
-use super::state::{pack_snapshot, PhysicsState};
+use super::state::{pack_snapshot, restore_snapshot, DeserializedPhysicsSnapshot, PhysicsState};
 use rapier3d::dynamics::IntegrationParameters;
 
 pub struct RunState {
@@ -106,6 +106,42 @@ impl World {
             Err(e) => {
                 log::error!("Failed to get current snapshot: {:?}", e);
                 None
+            }
+        }
+    }
+
+    /// Rolls this world back to the given snapshot's timestep and
+    /// applies the snapshots physics state. Rewrites the physics state
+    /// history from that point forward back to the current timestep
+    pub fn corrective_rollback(&mut self, snapshot: DeserializedPhysicsSnapshot) {
+        if let Some(_target_step) = self.buffer.get_step_mut(snapshot.timestep_id) {
+            let current_timestep = self.state.timestep_id.clone();
+            let steps_to_resim = current_timestep - snapshot.timestep_id;
+
+            match true {
+                _ if snapshot.timestep_id >= current_timestep => {
+                    log::error!(
+                        "Cannot rollback to a future timestep: {}",
+                        snapshot.timestep_id
+                    );
+                }
+                _ if steps_to_resim == 0 => {
+                    log::warn!("Corrective rollback to same timestep. No action taken.");
+                }
+                _ if steps_to_resim > self.buffer.max_len => {
+                    log::error!(
+                        "Cannot rollback more than the buffer length: {}",
+                        self.buffer.max_len
+                    );
+                }
+                _ => {
+                    self.state.timestep_id = snapshot.timestep_id;
+                    self.buffer.mark_physics_stale_after(snapshot.timestep_id);
+                    restore_snapshot(self, snapshot, true);
+                    for _ in 0..steps_to_resim {
+                        self.step();
+                    }
+                }
             }
         }
     }

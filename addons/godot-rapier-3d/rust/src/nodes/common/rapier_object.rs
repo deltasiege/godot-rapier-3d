@@ -9,8 +9,8 @@ use super::super::{
     RapierKinematicCharacter3D, RapierRigidBody3D, RapierStaticBody3D,
 };
 use super::identifiable::Identifiable;
-use crate::interface::Operation;
 use crate::nodes::generate_cuid;
+use crate::world::Operation;
 use crate::{interface::get_singleton, utils::isometry_to_transform};
 
 pub trait IRapierObject: Identifiable + WithBaseField + GodotClass<Base = Node3D> {

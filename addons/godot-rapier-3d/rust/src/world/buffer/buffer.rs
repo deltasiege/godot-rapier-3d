@@ -1,14 +1,12 @@
-use godot::{builtin::Vector3, meta::FromGodot};
-
-use crate::{
-    interface::{
-        add_node_to_world, configure_node, move_node, remove_node_from_world, Action, Operation,
-    },
-    World,
-};
 use std::collections::HashMap;
 
-use super::state::{restore_snapshot, PhysicsState};
+use super::{
+    super::state::PhysicsState,
+    actions::{extract_vec3, sort_actions},
+    add_node_to_world, configure_node,
+    modify_nodes::teleport_node,
+    move_node, remove_node_from_world, Action, Operation,
+};
 
 pub struct WorldBuffer {
     pub buffer: HashMap<usize, BufferStep>,
@@ -17,9 +15,9 @@ pub struct WorldBuffer {
 
 /// Represents a single timestep in the buffer
 pub struct BufferStep {
-    timestep_id: usize,             // The timestep id of this step
-    physics_state: Option<Vec<u8>>, // The state of the physics world at the beginning of this timestep
-    actions: Vec<Action>,           // List of actions to apply during this timestep
+    pub timestep_id: usize,             // The timestep id of this step
+    pub physics_state: Option<Vec<u8>>, // The state of the physics world at the beginning of this timestep
+    pub actions: Vec<Action>,           // List of actions to apply during this timestep
 }
 
 impl WorldBuffer {
@@ -34,56 +32,21 @@ impl WorldBuffer {
         Self::new(1000)
     }
 
-    /// Returns the buffer step at the given timestep.
+    /// Returns the buffer step at the given timestep
     pub fn get_step(&self, timestep_id: usize) -> Option<&BufferStep> {
         self.buffer.get(&timestep_id)
     }
 
-    /// Returns the physics state at the given timestep.
+    /// Returns mutable ref to buffer step at the given timestep
+    pub fn get_step_mut(&mut self, timestep_id: usize) -> Option<&mut BufferStep> {
+        self.buffer.get_mut(&timestep_id)
+    }
+
+    /// Returns the physics state at the given timestep
     pub fn get_physics_state(&self, timestep_id: usize) -> Option<Vec<u8>> {
         self.buffer
             .get(&timestep_id)
             .and_then(|step| step.physics_state.clone())
-    }
-
-    /// Rolls the given world back to the given timestep and
-    /// rewrites the physics state history from that point forward
-    /// back to the current timestep
-    pub fn corrective_rollback(&mut self, world: &mut World, target: BufferStep) {
-        let current_timestep = world.state.timestep_id.clone();
-        let steps_to_resim = current_timestep - target.timestep_id;
-
-        match true {
-            _ if target.timestep_id >= current_timestep => {
-                log::error!(
-                    "Cannot rollback to a future timestep: {}",
-                    target.timestep_id
-                );
-            }
-            _ if steps_to_resim == 0 => {
-                log::warn!("Corrective rollback to same timestep. No action taken.");
-            }
-            _ if steps_to_resim > self.max_len => {
-                log::error!(
-                    "Cannot rollback more than the buffer length: {}",
-                    self.max_len
-                );
-            }
-            _ => match target.physics_state {
-                Some(physics_state) => {
-                    world.state.timestep_id = target.timestep_id;
-                    self.mark_stale_after(target.timestep_id);
-                    restore_snapshot(world, physics_state);
-
-                    for _ in 0..steps_to_resim {
-                        world.step();
-                    }
-                }
-                None => {
-                    log::error!("Provided BufferStep did not have attached physics state");
-                }
-            },
-        }
     }
 
     /// Adds an action to the buffer at the given timestep
@@ -103,10 +66,9 @@ impl WorldBuffer {
 
     /// Executes all actions in the buffer at the given timestep
     pub fn execute_actions(&mut self, timestep_id: usize, physics: &mut PhysicsState) {
-        // TODO SORT ACTIONS FIRST
-
         if let Some(step) = self.buffer.get(&timestep_id) {
-            for action in step.actions.iter() {
+            let sorted_actions = sort_actions(step.actions.clone());
+            for action in sorted_actions.iter() {
                 let node = action.node.clone();
                 match action.operation {
                     Operation::AddNode => {
@@ -119,20 +81,11 @@ impl WorldBuffer {
                         configure_node(node);
                     }
                     Operation::MoveNode => {
-                        if let Some(movement) = action.data.get("movement") {
-                            match Vector3::try_from_variant(&movement) {
-                                Ok(desired_movement) => {
-                                    move_node(node, desired_movement, physics);
-                                }
-                                Err(e) => {
-                                    log::error!("MoveNode action invalid 'movement' data: {}", e);
-                                }
-                            }
-                        } else {
-                            log::error!(
-                                "MoveNode action missing 'movement' data: {:?}",
-                                action.data
-                            );
+                        if let Some(movement) = extract_vec3(&action.data, "movement", true) {
+                            move_node(node, movement, physics);
+                        } else if let Some(position) = extract_vec3(&action.data, "position", true)
+                        {
+                            teleport_node(node, position, physics);
                         }
                     }
                 }
@@ -162,13 +115,25 @@ impl WorldBuffer {
         }
     }
 
-    /// Removes all inner physics states from BufferSteps after the given timestep
-    pub fn mark_stale_after(&mut self, timestep_id: usize) {
+    /// Removes all physics states from BufferSteps after the given timestep
+    pub fn mark_physics_stale_after(&mut self, timestep_id: usize) {
         let keys: Vec<usize> = self.buffer.keys().cloned().collect();
         for key in keys {
             if key > timestep_id {
                 if let Some(step) = self.buffer.get_mut(&key) {
                     step.physics_state = None;
+                }
+            }
+        }
+    }
+
+    /// Removes all actions from BufferSteps after the given timestep
+    pub fn mark_actions_stale_after(&mut self, timestep_id: usize) {
+        let keys: Vec<usize> = self.buffer.keys().cloned().collect();
+        for key in keys {
+            if key > timestep_id {
+                if let Some(step) = self.buffer.get_mut(&key) {
+                    step.actions.clear();
                 }
             }
         }

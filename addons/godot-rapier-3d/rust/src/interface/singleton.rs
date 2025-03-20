@@ -1,9 +1,9 @@
 use super::debugger::GR3DDebugger;
-use super::world::ingest_action;
-use super::Operation;
 use crate::nodes::{generate_cuid, IRapierObject};
 use crate::utils::{init_logger, set_log_level};
-use crate::world::state::restore_snapshot;
+use crate::world::buffer::ingest_action;
+use crate::world::state::{restore_snapshot, unpack_snapshot};
+use crate::world::Operation;
 use crate::World;
 use godot::classes::{Engine, IObject, Object};
 use godot::prelude::*;
@@ -12,6 +12,7 @@ use godot::prelude::*;
     GR3D singleton exposes functions that Godot can call to get or modify Rapier data
 */
 
+/// Use the GR3D singleton to interact with the Rapier physics engine
 #[derive(GodotClass)]
 #[class(base = Object)]
 pub struct GR3D {
@@ -62,15 +63,22 @@ impl GR3D {
     #[func]
     /// Overwrite the current state of the simulation to match the given snapshot
     pub fn restore_snapshot(&mut self, snapshot: PackedByteArray) {
-        restore_snapshot(&mut self.world, snapshot.to_vec());
+        let bytes = unpack_snapshot(snapshot.to_vec());
+        if let Some(snapshot) = bytes {
+            restore_snapshot(&mut self.world, snapshot, false);
+        }
     }
 
-    // #[func]
-    // /// Overwrite a previous state of the simulation to match the given snapshot,
-    // /// and then roll-forward the simulation to get back to the current timestep
-    // pub fn apply_correction(&mut self, snapshot: PackedByteArray) {
-    //     apply_correction(&mut self.world, snapshot.to_vec());
-    // }
+    #[func]
+    /// Overwrite a previous state of the simulation to match the given snapshot,
+    /// and then roll-forward the simulation to get back to the current timestep,
+    /// preserving all actions made after the given snapshot
+    pub fn corrective_rollback(&mut self, snapshot: PackedByteArray) {
+        let snapshot = unpack_snapshot(snapshot.to_vec());
+        if let Some(snapshot) = snapshot {
+            self.world.corrective_rollback(snapshot);
+        }
+    }
 
     #[func]
     /// Get the current count of all objects registered in the simulation
@@ -136,13 +144,6 @@ pub fn unregister() {
     }
 }
 
-/*
-    WARNING:
-    All modifications of world through singleton must go via Godot queue first to ensure determinism!
-
-    i.e. Do not call via Godot node -> singleton -> World and then modify the World directly
-    Reads are fine, but writes must go via Godot queue for Godot nodes.
-*/
 pub fn get_singleton() -> Option<Gd<GR3D>> {
     match Engine::singleton().get_singleton(NAME) {
         Some(singleton) => Some(singleton.cast::<GR3D>()),

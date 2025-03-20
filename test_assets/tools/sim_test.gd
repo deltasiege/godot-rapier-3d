@@ -38,7 +38,7 @@ func _physics_process(_delta):
 		if step_counter % (total_steps / floor(5)) == 0: print("Step: " + str(step_counter))
 		GR3D.step(1)
 		var rapier_hash = Hash.get_rapier_hash()
-		var godot_hash = Hash.get_godot_hash(self)
+		var godot_hash = Hash.get_godot_hash(get_tree().root)
 		report.append({ "rapier_hash": rapier_hash, "godot_hash": godot_hash })
 	else:
 		if report_generated: return

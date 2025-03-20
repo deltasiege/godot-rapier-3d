@@ -25,11 +25,13 @@ func _switch_char():
 	var idx = _active_char_idx % _chars.size()
 	var current_char = _chars[idx]
 	current_char.process_mode = Node.PROCESS_MODE_DISABLED
+	current_char.name = "Inactive Character"
 	
 	_active_char_idx += 1
 	idx = _active_char_idx % _chars.size()
 	_active_character = _chars[idx]
 	_active_character.process_mode = Node.PROCESS_MODE_INHERIT
+	_active_character.name = "Active Character"
 	var cam: Camera3D = _active_character.find_child("Camera3D", true, false)
 	cam.make_current()
 

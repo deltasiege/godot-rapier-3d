@@ -3,6 +3,7 @@ extends Node
 var _initial_snapshot
 var _last_snapshot: PackedByteArray
 var _last_snapshot_data = {}
+var _rollback_snapshot: PackedByteArray
 var opened_popup = null
 
 var Hash = preload("res://test_assets/tools/hash.gd")
@@ -11,7 +12,7 @@ func _ready():
 	get_parent().toolbar.connect("popup_opened", on_popup_opened)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
-	_initial_snapshot = GR3D.save_snapshot()
+	_initial_snapshot = GR3D.save_snapshot() # TODO - causes issue with duplicates
 
 func _process(_delta):
 	if Input.is_action_just_pressed("toggle_sim"): toggle_sim()
@@ -47,18 +48,26 @@ func _get_data(title: String):
 					})
 				"RapierPIDCharacter3D":
 					return common_data.merged({})
-		"State":
+		"Playback":
 			return [
 				{ "text": "time", "value": snapped(GR3D.get_time(), 0.1) },
 				{ "text": "tick", "value": GR3D.get_tick() },
 				{ "type": "button", "id": "pause_sim", "text": "Pause simulation" if !GR3DRuntime.paused else "Play simulation", "on_pressed": toggle_sim },
-				{ "type": "button", "text": "Reset simulation", "on_pressed": reset_sim  },
 				{ "type": "button", "text": "Advance 1 tick", "on_pressed": step },
+			]
+		"Snapshots":
+			return [
+				{ "type": "button", "text": "Reset simulation", "on_pressed": reset_sim  },
 				{ "type": "button", "text": "Take snapshot", "on_pressed": take_snapshot },
 				{ "type": "button", "text": "Restore snapshot", "on_pressed": restore_snapshot },
 				{ "text": "snapshot_bytes", "value": _last_snapshot_data.get("snapshot_bytes") },
 				{ "text": "godot_hash", "value": _last_snapshot_data.get("godot_hash") },
 				{ "text": "rapier_hash", "value": _last_snapshot_data.get("rapier_hash") },
+			]
+		"Rollback":
+			return [
+				{ "type": "button", "text": "Store fake position", "on_pressed": rollback_test_prep  },
+				{ "type": "button", "text": "Restore fake pos 100 ticks ago", "on_pressed": rollback_test_prep  }
 			]
 		"Hotkeys":
 			return {
@@ -83,6 +92,19 @@ func take_snapshot():
 	_last_snapshot = GR3D.save_snapshot()
 	_last_snapshot_data = {
 		"snapshot_bytes": _last_snapshot.size(),
-		"godot_hash": Hash.get_godot_hash(self),
+		"godot_hash": Hash.get_godot_hash(get_tree().root),
 		"rapier_hash": Array(_last_snapshot.compress()).hash()
 	}
+func rollback_test_prep():
+	var active_char: RapierKinematicCharacter3D = get_tree().root.find_child("Active Character", true, false)
+	var real_pos = active_char.global_position
+	var fake_pos = Vector3(100, 5, 100)
+	active_char.teleport_to_position(fake_pos)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_rollback_snapshot = GR3D.save_snapshot()
+	active_char.teleport_to_position(real_pos)
+
+func rollback_test_fire():
+	GR3D.corrective_rollback(_rollback_snapshot)

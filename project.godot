@@ -19,6 +19,10 @@ config/features=PackedStringArray("4.4", "GL Compatibility")
 WindowMgr="*res://scripts/managers/window_manager.gd"
 GR3DRuntime="*res://addons/godot-rapier-3d/gd/GR3DRuntime.gd"
 
+[editor_plugins]
+
+enabled=PackedStringArray()
+
 [file_customization]
 
 folder_colors={

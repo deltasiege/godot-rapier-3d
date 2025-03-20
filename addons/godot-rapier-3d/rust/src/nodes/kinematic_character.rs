@@ -103,6 +103,11 @@ impl RapierKinematicCharacter3D {
     }
 
     #[func]
+    fn teleport_to_position(&self, position: Vector3) {
+        self.on_teleport_to_position(position);
+    }
+
+    #[func]
     fn get_real_velocity(&self) -> Vector3 {
         self.get_body_state().linvel
     }

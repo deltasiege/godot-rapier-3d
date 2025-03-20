@@ -1,6 +1,7 @@
 use super::super::{pid_character::RapierPIDCharacter3D, RapierKinematicCharacter3D};
-use super::rapier_object::IRapierObject;
-use crate::interface::{get_singleton, Operation};
+use crate::interface::get_singleton;
+use crate::nodes::IRapierObject;
+use crate::world::Operation;
 use godot::prelude::*;
 
 pub trait Controllable: IRapierObject {
@@ -8,6 +9,22 @@ pub trait Controllable: IRapierObject {
         if let Some(mut singleton) = get_singleton() {
             let mut dict = Dictionary::new();
             dict.set("movement", amount);
+
+            singleton.call_deferred(
+                "_ingest_action",
+                &[
+                    self.to_gd().to_variant(),
+                    Operation::MoveNode.to_variant(),
+                    dict.to_variant(),
+                ],
+            );
+        }
+    }
+
+    fn on_teleport_to_position(&self, position: Vector3) {
+        if let Some(mut singleton) = get_singleton() {
+            let mut dict = Dictionary::new();
+            dict.set("position", position);
 
             singleton.call_deferred(
                 "_ingest_action",

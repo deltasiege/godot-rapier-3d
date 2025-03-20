@@ -24,6 +24,8 @@ func create_popup(title: String):
 	emit_signal("popup_opened", new_popup)
 
 func _on_character_pressed(): create_popup("Character")
-func _on_state_pressed(): create_popup("State")
+func _on_playback_pressed(): create_popup("Playback")
+func _on_snapshots_pressed(): create_popup("Snapshots")
+func _on_rollback_pressed(): create_popup("Rollback")
 func _on_hotkeys_pressed(): create_popup("Hotkeys")
 func _on_world_pressed(): create_popup("World")
