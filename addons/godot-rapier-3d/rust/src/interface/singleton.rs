@@ -1,10 +1,11 @@
 use super::debugger::GR3DDebugger;
 use crate::nodes::{generate_cuid, IRapierObject};
 use crate::utils::{init_logger, set_log_level};
-use crate::world::buffer::ingest_action;
+use crate::world::buffer::{ingest_action, Action};
 use crate::world::state::{restore_snapshot, unpack_snapshot};
 use crate::world::Operation;
 use crate::World;
+use godot::classes::file_access::CompressionMode;
 use godot::classes::{Engine, IObject, Object};
 use godot::prelude::*;
 
@@ -46,7 +47,15 @@ impl GR3D {
     /// Returns a past world state as a snapshot. The timestep_id must still be in the world buffer.
     pub fn get_snapshot(&mut self, timestep_id: i64) -> PackedByteArray {
         match self.world.get_snapshot(Some(timestep_id)) {
-            Some(snapshot) => PackedByteArray::from(snapshot.as_slice()),
+            Some(snapshot) => {
+                match PackedByteArray::from(snapshot.as_slice()).compress(CompressionMode::BROTLI) {
+                    Ok(compressed) => compressed,
+                    Err(e) => {
+                        log::error!("Failed to compress snapshot: {:?}", e);
+                        PackedByteArray::from(&[])
+                    }
+                }
+            }
             None => PackedByteArray::from(&[]),
         }
     }
@@ -70,14 +79,21 @@ impl GR3D {
     }
 
     #[func]
-    /// Overwrite a previous state of the simulation to match the given snapshot,
-    /// and then roll-forward the simulation to get back to the current timestep,
-    /// preserving all actions made after the given snapshot
-    pub fn corrective_rollback(&mut self, snapshot: PackedByteArray) {
-        let snapshot = unpack_snapshot(snapshot.to_vec());
-        if let Some(snapshot) = snapshot {
-            self.world.corrective_rollback(snapshot);
-        }
+    /// Rollback the simulation to the given timestep
+    /// Optionally replicate the actions in the buffer up until the current timestep
+    /// Then roll-forward the simulation to get back to the current timestep, re-executing all actions in the buffer along the way
+    /// Actions should be of the form: { "cuid": "unique_id", "node": Node3D, "operation": Operation, "data": Dictionary, "replicate": bool }
+    pub fn rollback(
+        &mut self,
+        timestep_id: i64,
+        actions_to_add: Array<Dictionary>,
+        snapshot: PackedByteArray,
+    ) {
+        self.world.corrective_rollback(
+            timestep_id as usize,
+            actions_from_array(actions_to_add),
+            unpack_snapshot(snapshot.to_vec()),
+        );
     }
 
     #[func]
@@ -158,4 +174,48 @@ pub fn get_singleton() -> Option<Gd<GR3D>> {
 
 pub fn get_tree(node: &impl IRapierObject) -> Option<Gd<SceneTree>> {
     node.base().get_tree()
+}
+
+// Convert Array of Dictionaries to Vec of Actions
+fn actions_from_array(actions: Array<Dictionary>) -> Option<Vec<Action>> {
+    let result: Vec<Action> = actions
+        .iter_shared()
+        .filter_map(|data| action_from_dict(data))
+        .collect();
+
+    if result.len() == 0 {
+        None
+    } else {
+        Some(result)
+    }
+}
+
+// Convert Dictionary to Action
+fn action_from_dict(dict: Dictionary) -> Option<Action> {
+    let cuid = GString::from(dict.get("cuid")?.to_string());
+    let node = extract_from_action_dict(&dict, "node")?;
+    let operation = extract_from_action_dict(&dict, "operation")?;
+    let data = extract_from_action_dict(&dict, "data")?;
+    let replicate = extract_from_action_dict(&dict, "replicate")?;
+    Some(Action::new_full(cuid, node, operation, data, replicate))
+}
+
+// Pulls a value from a dictionary and logs an error if it fails
+fn extract_from_action_dict<T>(dict: &Dictionary, key: &str) -> Option<T>
+where
+    T: FromGodot,
+{
+    match dict.get(key) {
+        Some(value) => match value.try_to() {
+            Ok(value) => Some(value),
+            Err(e) => {
+                log::error!("Failed to extract {} from dictionary: {:?}", key, e);
+                None
+            }
+        },
+        None => {
+            log::error!("Missing {} in dictionary", key);
+            None
+        }
+    }
 }

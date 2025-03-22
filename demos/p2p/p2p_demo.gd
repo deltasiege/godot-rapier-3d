@@ -1,7 +1,6 @@
 extends Node
 
-@export var player_scene: PackedScene
-@export var players_container: Node
+@export var player_spawner: MultiplayerSpawner
 @onready var ui = $"P2P Lobby"
 
 var players = {}
@@ -30,20 +29,4 @@ func reset(): P2PNet.reset(self)
 
 func start():
 	if !multiplayer.is_server(): return
-	spawn_all_players()
-
-func spawn_all_players():
-	spawn_player(multiplayer.get_unique_id(), Vector3(0, 2, 0))
-	var peers = multiplayer.get_peers()
-	for idx in peers.size(): spawn_player(peers[idx], Vector3((2 * idx) + 2, 2, 0))
-
-func spawn_player(pid: int, pos: Vector3):
-	var new_player = player_scene.instantiate()
-	new_player.name = str(pid)
-	new_player.set_multiplayer_authority(pid, false)
-	var char: RapierKinematicCharacter3D = new_player.get_child(0)
-	char.set_multiplayer_authority(pid, true)
-	char.set_uid(GR3D.create_cuid())
-	players_container.add_child(new_player)
-	char.global_position = pos
-	new_player.owner = players_container
+	player_spawner.spawn_all_players()

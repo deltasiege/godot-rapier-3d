@@ -1,4 +1,4 @@
-use super::buffer::WorldBuffer;
+use super::buffer::{Action, WorldBuffer};
 use super::state::{pack_snapshot, restore_snapshot, DeserializedPhysicsSnapshot, PhysicsState};
 use rapier3d::dynamics::IntegrationParameters;
 
@@ -110,20 +110,23 @@ impl World {
         }
     }
 
-    /// Rolls this world back to the given snapshot's timestep and
-    /// applies the snapshots physics state. Rewrites the physics state
-    /// history from that point forward back to the current timestep
-    pub fn corrective_rollback(&mut self, snapshot: DeserializedPhysicsSnapshot) {
-        if let Some(_target_step) = self.buffer.get_step_mut(snapshot.timestep_id) {
+    /// Rolls this world back to the given timestep and:
+    /// - optionally adds the given actions to the buffer
+    /// - optionally applies the given snapshots physics state
+    /// - re-simulates the world back to the current timestep with changes applied
+    pub fn corrective_rollback(
+        &mut self,
+        timestep_id: usize,
+        actions_to_add: Option<Vec<Action>>, // TODO do I need to support adding actions at different timesteps during a single rollback?
+        snapshot: Option<DeserializedPhysicsSnapshot>,
+    ) {
+        if let Some(_target_step) = self.buffer.get_step_mut(timestep_id) {
             let current_timestep = self.state.timestep_id.clone();
-            let steps_to_resim = current_timestep - snapshot.timestep_id;
+            let steps_to_resim = current_timestep - timestep_id;
 
             match true {
-                _ if snapshot.timestep_id >= current_timestep => {
-                    log::error!(
-                        "Cannot rollback to a future timestep: {}",
-                        snapshot.timestep_id
-                    );
+                _ if timestep_id >= current_timestep => {
+                    log::error!("Cannot rollback to a future timestep: {}", timestep_id);
                 }
                 _ if steps_to_resim == 0 => {
                     log::warn!("Corrective rollback to same timestep. No action taken.");
@@ -135,9 +138,19 @@ impl World {
                     );
                 }
                 _ => {
-                    self.state.timestep_id = snapshot.timestep_id;
-                    self.buffer.mark_physics_stale_after(snapshot.timestep_id);
-                    restore_snapshot(self, snapshot, true);
+                    if let Some(actions_to_add) = actions_to_add {
+                        for action in actions_to_add {
+                            self.buffer.insert_action(action, timestep_id);
+                        }
+                    }
+
+                    if let Some(snapshot) = snapshot {
+                        restore_snapshot(self, snapshot, true);
+                    }
+
+                    self.state.timestep_id = timestep_id;
+                    self.buffer.mark_physics_stale_after(timestep_id);
+
                     for _ in 0..steps_to_resim {
                         self.step();
                     }

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use rapier3d::parry::utils::hashmap::HashMap;
 
 use super::{
     super::state::PhysicsState,
@@ -15,15 +15,31 @@ pub struct WorldBuffer {
 
 /// Represents a single timestep in the buffer
 pub struct BufferStep {
-    pub timestep_id: usize,             // The timestep id of this step
+    pub timestep_id: usize,                    // The timestep id of this step
     pub physics_state: Option<Vec<u8>>, // The state of the physics world at the beginning of this timestep
-    pub actions: Vec<Action>,           // List of actions to apply during this timestep
+    pub actions: HashMap<String, Vec<Action>>, // Map of Node CUIDS against their list of actions to apply during this timestep
+}
+
+impl BufferStep {
+    pub fn new(timestep_id: usize, physics_state: Option<Vec<u8>>, actions: Vec<Action>) -> Self {
+        let mut map = HashMap::default();
+        for action in actions {
+            let existing = map.entry(action.cuid.to_string()).or_insert(Vec::new());
+            existing.push(action);
+        }
+
+        Self {
+            timestep_id,
+            physics_state,
+            actions: map,
+        }
+    }
 }
 
 impl WorldBuffer {
     pub fn new(max_len: usize) -> Self {
         Self {
-            buffer: HashMap::new(),
+            buffer: HashMap::default(),
             max_len,
         }
     }
@@ -53,13 +69,26 @@ impl WorldBuffer {
     /// Creates a new BufferStep if one does not exist
     pub fn insert_action(&mut self, action: Action, timestep_id: usize) {
         if let Some(step) = self.buffer.get_mut(&timestep_id) {
-            step.actions.push(action);
+            let existing_actions = step
+                .actions
+                .entry(action.cuid.to_string())
+                .or_insert(Vec::new());
+            let already_has_op = existing_actions
+                .iter()
+                .any(|a| a.operation == action.operation);
+            if !already_has_op {
+                existing_actions.push(action);
+            } else {
+                // TODO merge certain operations like move character or apply forces to RB,
+                // should be allowed to apply multiple of them per step/frame
+                log::warn!(
+                    "Not inserting action {:?} at timestep {} because it already exists",
+                    action,
+                    timestep_id
+                );
+            }
         } else {
-            let step = BufferStep {
-                timestep_id,
-                physics_state: None,
-                actions: vec![action],
-            };
+            let step = BufferStep::new(timestep_id, None, vec![action]);
             self.buffer.insert(step.timestep_id, step);
         }
     }
@@ -67,7 +96,10 @@ impl WorldBuffer {
     /// Executes all actions in the buffer at the given timestep
     pub fn execute_actions(&mut self, timestep_id: usize, physics: &mut PhysicsState) {
         if let Some(step) = self.buffer.get(&timestep_id) {
-            let sorted_actions = sort_actions(step.actions.clone());
+            let flattened = step.actions.values().flatten();
+            let sorted_actions = sort_actions(flattened.collect());
+
+            // let sorted_actions = sort_actions(flattened.collect());
             for action in sorted_actions.iter() {
                 let node = action.node.clone();
                 match action.operation {
@@ -100,11 +132,7 @@ impl WorldBuffer {
             if let Some(existing) = self.buffer.get_mut(&next_timestep_id) {
                 existing.physics_state = Some(phx_state);
             } else {
-                let step = BufferStep {
-                    timestep_id: next_timestep_id,
-                    physics_state: Some(phx_state),
-                    actions: Vec::new(),
-                };
+                let step = BufferStep::new(next_timestep_id, Some(phx_state), Vec::new());
                 self.buffer.insert(step.timestep_id, step);
             }
         }
@@ -128,6 +156,7 @@ impl WorldBuffer {
     }
 
     /// Removes all actions from BufferSteps after the given timestep
+    /// Unused
     pub fn mark_actions_stale_after(&mut self, timestep_id: usize) {
         let keys: Vec<usize> = self.buffer.keys().cloned().collect();
         for key in keys {
@@ -149,6 +178,6 @@ impl WorldBuffer {
                 return;
             }
         };
-        self.buffer.remove(&oldest);
+        self.buffer.swap_remove(&oldest);
     }
 }

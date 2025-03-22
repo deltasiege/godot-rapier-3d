@@ -3,7 +3,6 @@ extends Node
 var _initial_snapshot
 var _last_snapshot: PackedByteArray
 var _last_snapshot_data = {}
-var _rollback_snapshot: PackedByteArray
 var opened_popup = null
 var character
 

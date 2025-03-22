@@ -1,13 +1,29 @@
-[gd_scene load_steps=3 format=3 uid="uid://djk6gksnqngk2"]
+[gd_scene load_steps=5 format=3 uid="uid://djk6gksnqngk2"]
 
 [ext_resource type="PackedScene" uid="uid://dohhufgjerc06" path="res://demo_assets/entities/characters/kinematic_character/kinematic_character.tscn" id="1_ajuvr"]
+[ext_resource type="Script" uid="uid://dhtl8yu4wjq6" path="res://demos/p2p/p2p_player.gd" id="1_dwqke"]
+[ext_resource type="Script" uid="uid://bb3f1ddunlbbt" path="res://demos/p2p/input_synchronizer.gd" id="2_rywvg"]
 
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_ajuvr"]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_rywvg"]
+properties/0/path = NodePath(".:peer_id")
+properties/0/spawn = true
+properties/0/replication_mode = 0
+properties/1/path = NodePath(".:spawn_pos")
+properties/1/spawn = true
+properties/1/replication_mode = 0
+properties/2/path = NodePath("MultiplayerSynchronizer:velocity")
+properties/2/spawn = true
+properties/2/replication_mode = 1
 
-[node name="Player" type="Node"]
+[node name="Player" type="Node" node_paths=PackedStringArray("controller")]
+script = ExtResource("1_dwqke")
+controller = NodePath("RapierKinematicCharacter3D")
 
-[node name="RapierKinematicCharacter3D" parent="." instance=ExtResource("1_ajuvr")]
+[node name="RapierKinematicCharacter3D" parent="." node_paths=PackedStringArray("input_provider") instance=ExtResource("1_ajuvr")]
+input_provider = NodePath("../MultiplayerSynchronizer")
 metadata/cuid = "j5cvanl9p2z7vve1xct7ykla"
 
-[node name="InputSynchronizer" type="MultiplayerSynchronizer" parent="."]
-replication_config = SubResource("SceneReplicationConfig_ajuvr")
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." node_paths=PackedStringArray("controller")]
+replication_config = SubResource("SceneReplicationConfig_rywvg")
+script = ExtResource("2_rywvg")
+controller = NodePath("../RapierKinematicCharacter3D")

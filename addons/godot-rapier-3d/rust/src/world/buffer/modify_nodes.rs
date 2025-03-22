@@ -140,7 +140,7 @@ pub fn move_node(node: Gd<Node3D>, desired_movement: Vector3, physics: &mut Phys
 
                 let body = &mut physics.bodies[handle];
 
-                let pose = body.position();
+                let pose = body.next_position();
                 body.set_next_kinematic_translation(pose.translation.vector + movement.translation);
 
                 char.last_movement = Some(movement);

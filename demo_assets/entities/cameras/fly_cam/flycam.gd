@@ -47,7 +47,6 @@ var actions = [
 
 func _ready():
 	ControlsMgr.add_input_map_actions(actions)
-	#if capture_mouse: Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 
 func _process(delta):
 	if !input_enabled: return

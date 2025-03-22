@@ -1,6 +1,7 @@
 use godot::builtin::GString;
+use rapier3d::parry::utils::hashmap::HashMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+// use std::collections::HashMap;
 /*
 
   This module facilitates retrieving Rapier objects via UIDs
@@ -21,8 +22,8 @@ pub struct LookupTable {
 impl LookupTable {
     pub fn new() -> Self {
         Self {
-            godot_to_rapier: HashMap::new(),
-            rapier_to_godot: HashMap::new(),
+            godot_to_rapier: HashMap::<String, (u32, u32)>::default(),
+            rapier_to_godot: HashMap::<(u32, u32), String>::default(),
             snapshot_colliders: Vec::new(),
         }
     }
@@ -58,8 +59,11 @@ impl LookupTable {
     }
 
     pub fn remove_by_uid(&mut self, godot_uid: &GString) -> Option<(u32, u32)> {
-        if let Some(rapier_handle) = self.godot_to_rapier.remove(godot_uid.to_string().as_str()) {
-            self.rapier_to_godot.remove(&rapier_handle);
+        if let Some(rapier_handle) = self
+            .godot_to_rapier
+            .swap_remove(godot_uid.to_string().as_str())
+        {
+            self.rapier_to_godot.swap_remove(&rapier_handle);
             Some(rapier_handle)
         } else {
             None
@@ -67,8 +71,8 @@ impl LookupTable {
     }
 
     pub fn remove_by_handle(&mut self, rapier_handle: &(u32, u32)) -> Option<GString> {
-        if let Some(godot_uid) = self.rapier_to_godot.remove(rapier_handle) {
-            self.godot_to_rapier.remove(&godot_uid);
+        if let Some(godot_uid) = self.rapier_to_godot.swap_remove(rapier_handle) {
+            self.godot_to_rapier.swap_remove(&godot_uid);
             Some(GString::from(godot_uid))
         } else {
             None
@@ -77,9 +81,11 @@ impl LookupTable {
 
     pub fn insert_snapshot_collider(&mut self, raw_handle: (u32, u32)) {
         self.snapshot_colliders.push(raw_handle);
+        self.snapshot_colliders.sort();
     }
 
     pub fn remove_snapshot_collider(&mut self, raw_handle: &(u32, u32)) {
         self.snapshot_colliders.retain(|&x| x != *raw_handle);
+        self.snapshot_colliders.sort();
     }
 }

@@ -3,34 +3,32 @@ extends RapierKinematicCharacter3D
 @export var speed = 10
 @export var accel = 2
 @export var decel = 1
-@export var gravity = 120
+@export var gravity = 520
 @export var jump_gravity = 60
-@export var jump_velocity = 25
+@export var jump_velocity = 45
 @export var coyote_time_ms = 250 ## How many milliseconds late after falling off something the player can press jump and still get a jump
 @export var lookat_pivots: Array[Node3D]
+
+@export var input_provider: CharacterInputProvider
 
 @onready var cam_pivot = $"3rdPersonCam"
 @onready var cam = $"3rdPersonCam/Camera3D"
 
-var velocity = Vector3.ZERO
+var velocity: Vector3 = Vector3.ZERO
 
 var _airborne
 var _gravity = gravity
-var _last_grounded_ts = -INF
-var _input_enabled = false
-
-func _ready():
-	var is_authority = get_multiplayer_authority() == multiplayer.get_unique_id()
-	_input_enabled = is_authority
-	if is_authority: cam.make_current()
-	else: cam.clear_current()
+var _last_grounded_ts: int = 0
 
 func _physics_process(delta):
+	var dir = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
+	var direction = (cam_pivot.transform.basis * Vector3(dir.x, 0, dir.y)).normalized()
+	var jump_pressed = Input.is_action_just_pressed("jump")
+	
 	var floored = is_on_floor()
 	if not floored: velocity.y -= _gravity * delta # Gravity
 	else: velocity.y = 0
 	
-	var jump_pressed = _input_enabled and Input.is_action_just_pressed("jump")
 	var time_since_grounded = Time.get_ticks_msec() - _last_grounded_ts
 	var was_on_floor = time_since_grounded <= coyote_time_ms
 	var can_jump = floored or was_on_floor
@@ -47,16 +45,16 @@ func _physics_process(delta):
 	if floored: _last_grounded_ts = Time.get_ticks_msec()
 	
 	# Moving
-	var _input_dir = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
-	var input_dir = _input_dir if _input_enabled else Vector2.ZERO
-	var direction = (cam_pivot.transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 	if direction:
 		velocity.x = move_toward(velocity.x, direction.x * speed, accel)
 		velocity.z = move_toward(velocity.z, direction.z * speed, accel)
 	else:
 		velocity.x = move_toward(velocity.x, 0, decel)
 		velocity.z = move_toward(velocity.z, 0, decel)
-	move_by_amount(velocity * delta)
+	
+	velocity *= delta
+	var vel = input_provider.velocity if input_provider else velocity
+	move_by_amount(vel)
 	
 	look_at_travel_dir(self) # Looking
 

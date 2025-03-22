@@ -19,12 +19,13 @@ pub enum Operation {
     MoveNode,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Action {
     pub cuid: GString,
     pub node: Gd<Node3D>,
     pub operation: Operation,
     pub data: Dictionary,
+    pub replicate: bool, // Copy forward during rollbacks to predict future actions
 }
 
 impl Action {
@@ -34,6 +35,23 @@ impl Action {
             node,
             operation,
             data,
+            replicate: false,
+        }
+    }
+
+    pub fn new_full(
+        cuid: GString,
+        node: Gd<Node3D>,
+        operation: Operation,
+        data: Dictionary,
+        replicate: bool,
+    ) -> Self {
+        Self {
+            cuid,
+            node,
+            operation,
+            data,
+            replicate,
         }
     }
 }
@@ -48,8 +66,8 @@ pub fn ingest_action(node: Gd<Node3D>, operation: Operation, data: Dictionary, w
 }
 
 // NOTE sorting should happen right before stepping the world (so that it only happens once per timestep)
-// sorting = by cuid -> by operation -> (within move operations, magnitude of )
-pub fn sort_actions(actions: Vec<Action>) -> Vec<Action> {
+// sorting = by cuid -> by operation -> (within move operations, magnitude of movement)
+pub fn sort_actions(actions: Vec<&Action>) -> Vec<&Action> {
     let mut sorted_actions = actions;
     sorted_actions.sort();
     sorted_actions

@@ -11,6 +11,10 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_IN || what == NOTIFICATION_APPLICATION_FOCUS_OUT:
 		focus_changed.emit(focused)
 
+func _input(event):
+	if event is InputEventKey and event.keycode == KEY_ESCAPE:
+		set_mouse_captured(false)
+
 func set_mouse_mode(mouse_mode: Input.MouseMode):
 	Input.set_mouse_mode(mouse_mode)
 
