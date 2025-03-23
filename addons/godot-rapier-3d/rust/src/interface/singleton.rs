@@ -146,18 +146,33 @@ impl GR3D {
     }
 
     #[func]
-    /// Returns the serialized actions for the previous timestep and their hash
-    pub fn get_serialized_actions(&self) -> PackedByteArray {
-        let timestep_id = self.world.state.timestep_id - 1;
-        match self.world.buffer.get_serialized_actions(timestep_id) {
-            Some(actions) => PackedByteArray::from(actions),
-            None => PackedByteArray::new(),
-        }
+    pub fn _ingest_action(&mut self, node: Gd<Node>, operation: Operation, data: Dictionary) {
+        ingest_action(node, operation, data, &mut self.world);
     }
 
     #[func]
-    pub fn _ingest_action(&mut self, node: Gd<Node>, operation: Operation, data: Dictionary) {
-        ingest_action(node, operation, data, &mut self.world);
+    pub fn _ingest_serialized_actions(&mut self, timestep_id: i64, actions: PackedByteArray) {
+        let bytes = actions.to_vec();
+        self.world
+            .buffer
+            .ingest_serialized_actions(timestep_id as usize, bytes);
+    }
+
+    #[func]
+    /// Returns the serialized actions for the previous timestep, along with
+    /// the timestep id and the number of actions that were serialized, and the hash
+    pub fn _get_serialized_actions(&self) -> Array<Variant> {
+        let timestep_id = self.world.state.timestep_id - 1;
+        let (bytes, num_actions) = match self.world.buffer.get_serialized_actions(timestep_id) {
+            Some((actions, count)) => (PackedByteArray::from(actions), count),
+            None => (PackedByteArray::new(), 0),
+        };
+        let mut result = Array::new();
+        result.push(&(timestep_id as i64).to_variant());
+        result.push(&(num_actions as i64).to_variant());
+        result.push(&bytes.to_variant().hash().to_variant());
+        result.push(&bytes.to_variant());
+        result
     }
 
     #[func]

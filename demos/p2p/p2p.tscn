@@ -59,12 +59,12 @@ shape = SubResource("BoxShape3D_jf3ey")
 [node name="Wall2" type="RapierStaticBody3D" parent="."]
 cuid = "flt07sbpv87rfeg3zupnfgl2"
 transform = Transform3D(-1, 8.74228e-08, 0, 3.82137e-15, 4.37114e-08, -1, -8.74228e-08, -1, -4.37114e-08, 0, 25, 25)
-metadata/cuid = "i111bq88wbfflvdc2d1sv1ce"
+metadata/cuid = "twutiufqzz1tpbnlaam2o6kp"
 
 [node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="Wall2" node_paths=PackedStringArray("col_shape")]
 col_shape = NodePath("../CollisionShape3D")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
-metadata/cuid = "ps8igb6ffy9v88rmeamm9134"
+metadata/cuid = "kvq8f5zx58lwftve653wd6cg"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Wall2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
@@ -73,12 +73,12 @@ shape = SubResource("BoxShape3D_jf3ey")
 [node name="Wall3" type="RapierStaticBody3D" parent="."]
 cuid = "flt07sbpv87rfeg3zupnfgl2"
 transform = Transform3D(-4.37114e-08, -1, 0, -4.37114e-08, 1.91069e-15, -1, 1, -4.37114e-08, -4.37114e-08, 25, 25, 0)
-metadata/cuid = "i111bq88wbfflvdc2d1sv1ce"
+metadata/cuid = "z9kdmsmueeecwrver0aqmn3e"
 
 [node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="Wall3" node_paths=PackedStringArray("col_shape")]
 col_shape = NodePath("../CollisionShape3D")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
-metadata/cuid = "ps8igb6ffy9v88rmeamm9134"
+metadata/cuid = "ocqpr6p8t2nl77drkxa7ih67"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Wall3"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
@@ -87,12 +87,12 @@ shape = SubResource("BoxShape3D_jf3ey")
 [node name="Wall4" type="RapierStaticBody3D" parent="."]
 cuid = "flt07sbpv87rfeg3zupnfgl2"
 transform = Transform3D(-4.37114e-08, 1, 0, 4.37114e-08, 1.91069e-15, -1, -1, -4.37114e-08, -4.37114e-08, -25, 25, 0)
-metadata/cuid = "i111bq88wbfflvdc2d1sv1ce"
+metadata/cuid = "anuwepfm6cvrisakcjemsvf5"
 
 [node name="RapierCollisionShape3D" type="RapierCollisionShape3D" parent="Wall4" node_paths=PackedStringArray("col_shape")]
 col_shape = NodePath("../CollisionShape3D")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
-metadata/cuid = "ps8igb6ffy9v88rmeamm9134"
+metadata/cuid = "by4u250nm97oi5twne9c6ae9"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Wall4"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)

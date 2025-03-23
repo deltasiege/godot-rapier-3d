@@ -21,23 +21,3 @@ func _ready():
 	if controller: 
 		if controller.has_method("set_uid"): controller.set_uid(GR3D.create_cuid())
 		controller.global_position = spawn_pos
-
-func _get_local_input() -> Dictionary:
-	var dir = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
-	var direction = (cam_pivot.transform.basis * Vector3(dir.x, 0, dir.y)).normalized()
-	var jump_pressed = Input.is_action_just_pressed("jump")
-	
-	var input := {}
-	if direction != Vector3.ZERO:
-		input['direction'] = direction
-	input['jump_pressed'] = jump_pressed
-	return input
-
-func _network_process(_input: Dictionary):
-	pass
-
-func _save_state() -> Dictionary:
-	return {}
-
-func _load_state(_state: Dictionary):
-	pass

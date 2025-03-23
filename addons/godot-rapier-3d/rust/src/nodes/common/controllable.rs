@@ -6,7 +6,6 @@ use godot::prelude::*;
 
 pub trait Controllable: IRapierObject {
     fn on_move_by_amount(&self, amount: Vector3) {
-        godot_print!("is zero? {:?}", amount == Vector3::ZERO);
         if amount == Vector3::ZERO {
             return;
         }

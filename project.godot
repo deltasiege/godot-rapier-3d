@@ -17,13 +17,9 @@ config/features=PackedStringArray("4.4", "GL Compatibility")
 [autoload]
 
 WindowMgr="*res://scripts/managers/window_manager.gd"
-SyncManager="*res://addons/godot-rollback-netcode/SyncManager.gd"
 DevManager="*res://scripts/managers/dev_manager.gd"
+GR3DSync="*res://addons/godot-rapier-3d/gd/sync/GR3DSync.gd"
 GR3DRuntime="*res://addons/godot-rapier-3d/gd/GR3DRuntime.gd"
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/godot-rollback-netcode/plugin.cfg")
 
 [file_customization]
 

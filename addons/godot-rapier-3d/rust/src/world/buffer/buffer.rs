@@ -7,7 +7,10 @@ use crate::utils::extract_from_dict;
 
 use super::{
     super::state::PhysicsState,
-    actions::{serde::serialize_actions, sort_actions},
+    actions::{
+        serde::{deserialize_actions, serialize_actions},
+        sort_actions,
+    },
     add_node_to_world, configure_node,
     modify_nodes::teleport_node,
     move_node, remove_node_from_world, Action, Operation,
@@ -22,21 +25,20 @@ pub struct WorldBuffer {
 pub struct BufferStep {
     pub timestep_id: usize,                    // The timestep id of this step
     pub physics_state: Option<Vec<u8>>, // The state of the physics world at the beginning of this timestep
-    pub actions: HashMap<String, Vec<Action>>, // Map of Node CUIDS against their list of actions to apply during this timestep
+    pub actions: HashMap<String, Vec<Action>>, // Map of node CUIDS against their list of actions to apply during this timestep // TODO maybe change the key to node path?
+    pub nodes: HashMap<String, Gd<Node>>, // Map of node paths against their Godot pointers for this timestemp
 }
 
 impl BufferStep {
     pub fn new(timestep_id: usize, physics_state: Option<Vec<u8>>, actions: Vec<Action>) -> Self {
-        let mut map = HashMap::default();
-        for action in actions {
-            let existing = map.entry(action.cuid.to_string()).or_insert(Vec::new());
-            existing.push(action);
-        }
+        let nodes = extract_node_entries_from_actions(&actions);
+        let actions_map = extract_action_entries_from_actions(actions);
 
         Self {
             timestep_id,
             physics_state,
-            actions: map,
+            actions: actions_map,
+            nodes,
         }
     }
 }
@@ -220,20 +222,13 @@ impl WorldBuffer {
     }
 
     /// Returns the serialized form of actions in the buffer at the given timestep
-    pub fn get_serialized_actions(&self, timestep_id: usize) -> Option<Vec<u8>> {
+    pub fn get_serialized_actions(&self, timestep_id: usize) -> Option<(Vec<u8>, usize)> {
         serialize_actions(self, timestep_id)
     }
 
-    /// Returns the hash of all actions in the buffer at the given timestep (flattened)
-    /// TODO unused?
-    pub fn get_actions_hash(&self, timestep_id: usize) -> Option<u64> {
-        if let Some(ser) = self.get_serialized_actions(timestep_id) {
-            let mut hasher = DefaultHasher::new();
-            ser.hash(&mut hasher);
-            Some(hasher.finish())
-        } else {
-            None
-        }
+    pub fn ingest_serialized_actions(&mut self, timestep_id: usize, bytes: Vec<u8>) {
+        // deserialize_actions(bytes, scene_root)
+        // TODO
     }
 
     /// Returns the hash of the physics state in the buffer at the given timestep
@@ -244,4 +239,22 @@ impl WorldBuffer {
             hasher.finish()
         })
     }
+}
+
+fn extract_node_entries_from_actions(actions: &Vec<Action>) -> HashMap<String, Gd<Node>> {
+    let mut map = HashMap::default();
+    for action in actions {
+        map.entry(action.node.get_path().to_string())
+            .or_insert(action.node.clone());
+    }
+    map
+}
+
+fn extract_action_entries_from_actions(actions: Vec<Action>) -> HashMap<String, Vec<Action>> {
+    let mut map = HashMap::default();
+    for action in actions {
+        let existing = map.entry(action.cuid.to_string()).or_insert(Vec::new());
+        existing.push(action);
+    }
+    map
 }

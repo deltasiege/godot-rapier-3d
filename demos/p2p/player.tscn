@@ -1,5 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://djk6gksnqngk2"]
+[gd_scene load_steps=7 format=3 uid="uid://djk6gksnqngk2"]
 
+[ext_resource type="Script" uid="uid://dhtl8yu4wjq6" path="res://demos/p2p/p2p_player.gd" id="1_oscxi"]
 [ext_resource type="PackedScene" uid="uid://f23w6gp3k6eh" path="res://demo_assets/entities/cameras/3rd_person_cam/3rd_person_cam.tscn" id="2_oscxi"]
 [ext_resource type="PackedScene" uid="uid://prh35jb6tjtd" path="res://addons/gdquest_sophia/sophia_skin.tscn" id="3_ujydn"]
 [ext_resource type="Script" uid="uid://dbylrn21fiunf" path="res://demo_assets/entities/characters/animation_controller.gd" id="4_bj7ad"]
@@ -14,7 +15,9 @@ properties/1/path = NodePath(".:spawn_pos")
 properties/1/spawn = true
 properties/1/replication_mode = 0
 
-[node name="Player" type="Node" groups=["network_sync"]]
+[node name="Player" type="Node" node_paths=PackedStringArray("controller") groups=["network_sync"]]
+script = ExtResource("1_oscxi")
+controller = NodePath("RapierKinematicCharacter3D")
 
 [node name="RapierKinematicCharacter3D" type="RapierKinematicCharacter3D" parent="."]
 metadata/cuid = "j5cvanl9p2z7vve1xct7ykla"

@@ -207,4 +207,3 @@ func _load_state(state: Dictionary) -> void:
 			#print ("[LOAD %s] re-spawned: %s" % [SyncManager.current_tick, node_path])
 
 		is_respawning = false
-

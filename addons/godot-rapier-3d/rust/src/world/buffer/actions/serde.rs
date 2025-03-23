@@ -16,7 +16,7 @@ pub struct DeserializedAction {
     pub strings: Vec<String>,
 }
 
-pub fn serialize_actions(buffer: &WorldBuffer, timestep_id: usize) -> Option<Vec<u8>> {
+pub fn serialize_actions(buffer: &WorldBuffer, timestep_id: usize) -> Option<(Vec<u8>, usize)> {
     let actions: Vec<DeserializedAction> = match buffer.get_actions(timestep_id) {
         Some(actions) => actions
             .iter()
@@ -28,8 +28,10 @@ pub fn serialize_actions(buffer: &WorldBuffer, timestep_id: usize) -> Option<Vec
         }
     };
 
+    let count = actions.len();
+
     match bincode::serde::encode_to_vec(actions, standard()) {
-        Ok(serialized) => Some(serialized),
+        Ok(serialized) => Some((serialized, count)),
         Err(e) => {
             log::error!(
                 "Failed serializing actions on timestep: {} Error: {:?}",
