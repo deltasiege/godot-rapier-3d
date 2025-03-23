@@ -60,7 +60,7 @@ pub struct DeserializedPhysicsSnapshot {
     pub lookup_table: LookupTable,
 }
 
-pub fn pack_snapshot(world: &World) -> bincode::Result<Vec<u8>> {
+pub fn pack_snapshot(world: &World) -> Result<Vec<u8>, bincode::error::EncodeError> {
     // Only cheap colliders are serialized
     let mut colliders = ColliderSet::new();
     for raw_handle in &world.physics.lookup_table.snapshot_colliders {
@@ -82,13 +82,13 @@ pub fn pack_snapshot(world: &World) -> bincode::Result<Vec<u8>> {
         lookup_table: world.physics.lookup_table.clone(),
     };
 
-    bincode::serialize(&output)
+    bincode::serde::encode_to_vec(&output, bincode::config::standard())
 }
 
 pub fn unpack_snapshot(bytes: Vec<u8>) -> Option<DeserializedPhysicsSnapshot> {
-    let deserialized: bincode::Result<DeserializedPhysicsSnapshot> = bincode::deserialize(&bytes);
+    let deserialized = bincode::serde::decode_from_slice(&bytes, bincode::config::standard());
     match deserialized {
-        Ok(snapshot) => Some(snapshot),
+        Ok((snapshot, _size)) => Some(snapshot),
         Err(e) => {
             log::error!("Failed to unpack snapshot: {:?}", e);
             None

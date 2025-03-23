@@ -1,8 +1,13 @@
+use std::hash::{DefaultHasher, Hash, Hasher};
+
+use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
+
+use crate::utils::extract_from_dict;
 
 use super::{
     super::state::PhysicsState,
-    actions::{extract_vec3, sort_actions},
+    actions::{serde::serialize_actions, sort_actions},
     add_node_to_world, configure_node,
     modify_nodes::teleport_node,
     move_node, remove_node_from_world, Action, Operation,
@@ -45,7 +50,7 @@ impl WorldBuffer {
     }
 
     pub fn default() -> Self {
-        Self::new(1000)
+        Self::new(20)
     }
 
     /// Returns the buffer step at the given timestep
@@ -98,28 +103,43 @@ impl WorldBuffer {
         if let Some(step) = self.buffer.get(&timestep_id) {
             let flattened = step.actions.values().flatten();
             let sorted_actions = sort_actions(flattened.collect());
-
-            // let sorted_actions = sort_actions(flattened.collect());
             for action in sorted_actions.iter() {
-                let node = action.node.clone();
-                match action.operation {
-                    Operation::AddNode => {
-                        add_node_to_world(node, physics);
+                match action.node.clone().try_cast::<Node3D>() {
+                    Ok(node) => {
+                        self.execute_action(action, node, physics);
                     }
-                    Operation::RemoveNode => {
-                        remove_node_from_world(node, physics);
+                    Err(e) => {
+                        log::error!(
+                            "Failed to cast node {:?} to Node3D. Skipping action {:?}. Error: {:?}",
+                            action.node,
+                            action,
+                            e
+                        );
                     }
-                    Operation::ConfigureNode => {
-                        configure_node(node);
-                    }
-                    Operation::MoveNode => {
-                        if let Some(movement) = extract_vec3(&action.data, "movement", true) {
-                            move_node(node, movement, physics);
-                        } else if let Some(position) = extract_vec3(&action.data, "position", true)
-                        {
-                            teleport_node(node, position, physics);
-                        }
-                    }
+                }
+            }
+        }
+    }
+
+    fn execute_action(&self, action: &Action, node: Gd<Node3D>, physics: &mut PhysicsState) {
+        match action.operation {
+            Operation::AddNode => {
+                add_node_to_world(node, physics);
+            }
+            Operation::RemoveNode => {
+                remove_node_from_world(node, physics);
+            }
+            Operation::ConfigureNode => {
+                configure_node(node);
+            }
+            Operation::MoveNode => {
+                if let Some(movement) = extract_from_dict(&action.data, "movement", true) {
+                    move_node(node, movement, physics);
+                }
+            }
+            Operation::TeleportNode => {
+                if let Some(position) = extract_from_dict(&action.data, "position", true) {
+                    teleport_node(node, position, physics);
                 }
             }
         }
@@ -179,5 +199,49 @@ impl WorldBuffer {
             }
         };
         self.buffer.swap_remove(&oldest);
+    }
+
+    /// Returns the actions in the buffer at the given timestep
+    pub fn get_actions(&self, timestep_id: usize) -> Option<Vec<Action>> {
+        let result: Option<Vec<Action>> = self
+            .buffer
+            .get(&timestep_id)
+            .map(|step| step.actions.values().flatten().cloned().collect());
+
+        match result {
+            Some(actions) => {
+                if actions.is_empty() {
+                    return None;
+                }
+                Some(actions)
+            }
+            None => None,
+        }
+    }
+
+    /// Returns the serialized form of actions in the buffer at the given timestep
+    pub fn get_serialized_actions(&self, timestep_id: usize) -> Option<Vec<u8>> {
+        serialize_actions(self, timestep_id)
+    }
+
+    /// Returns the hash of all actions in the buffer at the given timestep (flattened)
+    /// TODO unused?
+    pub fn get_actions_hash(&self, timestep_id: usize) -> Option<u64> {
+        if let Some(ser) = self.get_serialized_actions(timestep_id) {
+            let mut hasher = DefaultHasher::new();
+            ser.hash(&mut hasher);
+            Some(hasher.finish())
+        } else {
+            None
+        }
+    }
+
+    /// Returns the hash of the physics state in the buffer at the given timestep
+    pub fn get_state_hash(&self, timestep_id: usize) -> Option<u64> {
+        self.buffer.get(&timestep_id).map(|step| {
+            let mut hasher = DefaultHasher::new();
+            step.physics_state.hash(&mut hasher);
+            hasher.finish()
+        })
     }
 }

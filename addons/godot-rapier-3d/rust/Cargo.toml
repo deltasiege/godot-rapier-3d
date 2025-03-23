@@ -9,8 +9,11 @@ crate-type = ["cdylib"]  # Compile this crate to a dynamic C library.
 [dependencies]
 log = { version = "0.4.26", features = ["std"] }
 serde = "1.0.218"
-bincode = "1"
 cuid2 = "0.1.4"
+
+[dependencies.bincode]
+version = "2.0.1"
+features = ["serde"]
 
 [dependencies.rapier3d]
 version = "0.23.1"
@@ -18,7 +21,7 @@ features = [ "enhanced-determinism", "serde-serialize", "debug-render" ]
 
 [dependencies.godot]
 version = "0.2.4"
-features = ["register-docs", "experimental-wasm", "lazy-function-tables"]
+features = ["serde", "register-docs", "experimental-wasm", "lazy-function-tables"]
 
 [features]
 nothreads = ["godot/experimental-wasm-nothreads"]

@@ -106,7 +106,9 @@ fn insert_rb_with_children(
 
             let node_uid = node.bind().get_cuid();
             let raw_handle = parent_handle.into_raw_parts();
-            physics.lookup_table.insert(node_uid, raw_handle);
+            physics
+                .lookup_table
+                .insert(node_uid, raw_handle, node.get_path());
             node.bind_mut().set_handle_raw(raw_handle);
         }
     }
@@ -135,7 +137,7 @@ fn insert_collider(
 
         let raw_handle = handle.into_raw_parts();
         let node_uid = node.bind().get_cuid();
-        lookup_table.insert(node_uid, raw_handle);
+        lookup_table.insert(node_uid, raw_handle, node.get_path());
         if !is_exp {
             lookup_table.insert_snapshot_collider(raw_handle);
         }

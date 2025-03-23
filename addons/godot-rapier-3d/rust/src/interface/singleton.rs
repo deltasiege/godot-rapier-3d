@@ -1,5 +1,6 @@
 use super::debugger::GR3DDebugger;
 use crate::nodes::{generate_cuid, IRapierObject};
+use crate::utils::extract_from_dict;
 use crate::utils::{init_logger, set_log_level};
 use crate::world::buffer::{ingest_action, Action};
 use crate::world::state::{restore_snapshot, unpack_snapshot};
@@ -121,7 +122,41 @@ impl GR3D {
     }
 
     #[func]
-    pub fn _ingest_action(&mut self, node: Gd<Node3D>, operation: Operation, data: Dictionary) {
+    /// TODO replace wiht "ingest serialized actions"
+    pub fn get_actions(&self) -> Array<Dictionary> {
+        let timestep_id = self.world.state.timestep_id;
+        let mut result = Array::new();
+
+        if let Some(actions) = self.world.buffer.get_actions(timestep_id - 1) {
+            for action in actions {
+                let mut dict = Dictionary::new();
+                dict.set("cuid", action.cuid.to_variant());
+
+                if let Some(handle) = action.handle {
+                    dict.set("handle", [handle.0, handle.1].to_variant());
+                }
+
+                dict.set("node", action.node.to_variant());
+                dict.set("operation", action.operation.to_variant());
+                dict.set("data", action.data.to_variant());
+                result.push(&dict);
+            }
+        }
+        result
+    }
+
+    #[func]
+    /// Returns the serialized actions for the previous timestep and their hash
+    pub fn get_serialized_actions(&self) -> PackedByteArray {
+        let timestep_id = self.world.state.timestep_id - 1;
+        match self.world.buffer.get_serialized_actions(timestep_id) {
+            Some(actions) => PackedByteArray::from(actions),
+            None => PackedByteArray::new(),
+        }
+    }
+
+    #[func]
+    pub fn _ingest_action(&mut self, node: Gd<Node>, operation: Operation, data: Dictionary) {
         ingest_action(node, operation, data, &mut self.world);
     }
 
@@ -193,29 +228,14 @@ fn actions_from_array(actions: Array<Dictionary>) -> Option<Vec<Action>> {
 // Convert Dictionary to Action
 fn action_from_dict(dict: Dictionary) -> Option<Action> {
     let cuid = GString::from(dict.get("cuid")?.to_string());
-    let node = extract_from_action_dict(&dict, "node")?;
-    let operation = extract_from_action_dict(&dict, "operation")?;
-    let data = extract_from_action_dict(&dict, "data")?;
-    let replicate = extract_from_action_dict(&dict, "replicate")?;
-    Some(Action::new_full(cuid, node, operation, data, replicate))
+    let handle = extract_handle_from_action_dict(&dict)?;
+    let node = extract_from_dict(&dict, "node", true)?;
+    let operation = extract_from_dict(&dict, "operation", true)?;
+    let data = extract_from_dict(&dict, "data", true)?;
+    Some(Action::new(cuid, Some(handle), node, operation, data))
 }
 
-// Pulls a value from a dictionary and logs an error if it fails
-fn extract_from_action_dict<T>(dict: &Dictionary, key: &str) -> Option<T>
-where
-    T: FromGodot,
-{
-    match dict.get(key) {
-        Some(value) => match value.try_to() {
-            Ok(value) => Some(value),
-            Err(e) => {
-                log::error!("Failed to extract {} from dictionary: {:?}", key, e);
-                None
-            }
-        },
-        None => {
-            log::error!("Missing {} in dictionary", key);
-            None
-        }
-    }
+fn extract_handle_from_action_dict(dict: &Dictionary) -> Option<(u32, u32)> {
+    let raw_handle = extract_from_dict::<Array<i64>>(dict, "handle", true)?;
+    Some((raw_handle.at(0) as u32, raw_handle.at(1) as u32))
 }

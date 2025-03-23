@@ -9,8 +9,6 @@ extends RapierKinematicCharacter3D
 @export var coyote_time_ms = 250 ## How many milliseconds late after falling off something the player can press jump and still get a jump
 @export var lookat_pivots: Array[Node3D]
 
-@export var input_provider: CharacterInputProvider
-
 @onready var cam_pivot = $"3rdPersonCam"
 @onready var cam = $"3rdPersonCam/Camera3D"
 
@@ -53,7 +51,7 @@ func _physics_process(delta):
 		velocity.z = move_toward(velocity.z, 0, decel)
 	
 	velocity *= delta
-	var vel = input_provider.velocity if input_provider else velocity
+	var vel = velocity
 	move_by_amount(vel)
 	
 	look_at_travel_dir(self) # Looking

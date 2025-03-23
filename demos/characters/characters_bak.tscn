@@ -1,15 +1,33 @@
-[gd_scene load_steps=5 format=3 uid="uid://dj53yxmfw6ax0"]
+[gd_scene load_steps=9 format=3 uid="uid://07ltx5ojv5fx"]
 
-[ext_resource type="PackedScene" uid="uid://dohhufgjerc06" path="res://demo_assets/entities/characters/kinematic_character/kinematic_character.tscn" id="3_nrxd8"]
-[ext_resource type="Material" uid="uid://c0t4kx1mtvmwy" path="res://demo_assets/env/mats/dbug_mat_mid.tres" id="5_c8a4y"]
-[ext_resource type="PackedScene" uid="uid://drbstenfl2i1o" path="res://demo_assets/env/outdoors/outdoors.tscn" id="7_fqefj"]
+[ext_resource type="Script" uid="uid://b7hrj0yttrkvw" path="res://demos/characters/characters_demo.gd" id="1_31g7t"]
+[ext_resource type="PackedScene" uid="uid://catsbly4tdfm0" path="res://demo_assets/entities/ui/toolbar/toolbar.tscn" id="2_dvojq"]
+[ext_resource type="PackedScene" uid="uid://dohhufgjerc06" path="res://demo_assets/entities/characters/kinematic_character/kinematic_character.tscn" id="3_wxtel"]
+[ext_resource type="PackedScene" uid="uid://cqn1q33aroykb" path="res://demo_assets/entities/characters/pid_character/pid_character.tscn" id="4_ltbp8"]
+[ext_resource type="PackedScene" uid="uid://c8hvtprdesoyl" path="res://demo_assets/entities/primitives/all.tscn" id="5_ipnp5"]
+[ext_resource type="Material" uid="uid://c0t4kx1mtvmwy" path="res://demo_assets/env/mats/dbug_mat_mid.tres" id="6_a3man"]
+[ext_resource type="PackedScene" uid="uid://drbstenfl2i1o" path="res://demo_assets/env/outdoors/outdoors.tscn" id="7_px7op"]
 
 [sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_c8a4y"]
 data = PackedVector3Array(5, 0.5, 8, 5, 0.5, 5, 5, -7.5, 5, 5, 0.5, 8, 5, -7.5, 8, -5, -7.5, 8, 5, -7.5, 8, 5, -7.5, 5, -5, -7.5, 5, 5, 2.5, 8, 5, 0.5, 8, -5, -7.5, 8, -5, -3.5, 8, -5, -3.5, 5, 5, 2.5, 5, -5, -3.5, 8, 5, 2.5, 8, -5, -7.5, 8, -5, -7.5, 8, 5, -7.5, 8, -5, -7.5, 5, -5, -3.5, 5, -5, -3.5, 8, -5, -7.5, 8, -5, -7.5, 8, -5, -7.5, 5, -5, -3.5, 5, 5, 2.5, 5, 5, 2.5, 8, -5, -3.5, 8, 5, -7.5, 5, 5, -7.5, 8, 5, 0.5, 8, 5, 2.5, -8, 5, 2.5, -5, 4.75906e-07, 5, -5, 5, 0.5, -5, 4.75906e-07, 1.75, -5, 5, 2.5, -5, 5, 2.5, -5, 4.75906e-07, 1.75, -5, 4.75906e-07, 5, -5, -5, 7.5, -8, 5, 0.5, -8, 5, 2.5, -8, 5, -4, -8, 5, 0.5, -8, -5, 7.5, -8, -5, 7.5, -8, 4.75906e-07, 5, -5, -5, 7.5, -5, 5, 2.5, -5, 4.75906e-07, 5, -5, 5, 2.5, -5, 4.75906e-07, 5, -5, -5, 7.5, -8, 5, 2.5, -8, -5, 7.5, -8, -5, 7.5, -5, -5, -4, -8, 5, -4, -8, 5, -4, -5, 5, 0.5, -5, 5, 0.5, -5, 5, 0.5, -8, 5, -4, -8, 5, -4, -5, 5, 0.5, -5, 5, 0.5, -5, 4.76027e-07, -4, -5, -5, -4, -8, -5, -4, -5, 4.75906e-07, 1.75, -5, 5, 0.5, -5, 5, -4, -5, 5, -4, -5, 4.76027e-07, -7.14041e-07, -5, 4.75906e-07, 1.75, -5, 4.76027e-07, -7.14041e-07, -5, 5, -4, -5, 4.76027e-07, -4, -5, -5, 7.5, -8, -5, -4, -8, 5, -4, -8, -5, -4, -8, -5, 7.5, -5, -5, -4, -5, 5, -4, -5, 5, -4, -8, -5, -4, -8, 4.76027e-07, -4, -5, 5, -4, -5, -5, -4, -8, 5, -7.5, -5, 5, 0.5, 5, 5, 0.5, -5, 5, 7.5, 5, -5, 7.5, 5, -5, 7.5, -5, -5, 7.5, 5, 5, 7.5, 5, -5, -3.5, 5, -5, -7.5, 5, -5, -7.5, -5, -5, 7.5, -5, 5, 7.5, 5, 5, 2.5, 5, -5, -3.5, 5, -5, -4, -5, -5, 7.5, -5, -5, -7.5, -5, -5, 7.5, -5, -5, -3.5, 5, -5, -7.5, 5, 5, -7.5, -5, 5, -7.5, 5, 5, 0.5, 5, -5, -7.5, 5, 5, -7.5, -5, -5, -7.5, -5, -5, -4, -5, -5, -7.5, -5, 4.76027e-07, -4, -5, 5, 7.5, -5, 5, 2.5, -5, 5, 7.5, 5, 5, 2.5, -5, 5, 2.5, 5, 5, 7.5, 5, -5, 7.5, -5, -5, 7.5, 5, -5, -3.5, 5, -5, 7.5, -5, -5, 7.5, -5, -5, -7.5, -5, -5, -7.5, 5, 5, -7.5, 5, 5, -7.5, -5, -5, 7.5, -5, -5, 7.5, 5, -5, 7.5, -5, 5, 0.5, -5, 4.76027e-07, -7.14041e-07, -5, 5, -7.5, -5, 5, 7.5, -5, 4.75906e-07, 1.75, -5, 4.76027e-07, -7.14041e-07, -5, 5, -7.5, -5, 4.76027e-07, -7.14041e-07, -5, 4.76027e-07, -4, -5, 5, 0.5, -5, 5, 2.5, -5, 4.76027e-07, -7.14041e-07, -5, 4.76027e-07, -7.14041e-07, -5, 5, 2.5, -5, 5, 7.5, -5, 4.76027e-07, -4, -5, -5, -7.5, -5, 5, -7.5, -5, 5, 7.5, -5, 4.75906e-07, 5, -5, 4.75906e-07, 1.75, -5, 4.75906e-07, 5, -5, 5, 7.5, -5, -5, 7.5, -5, 5, 7.5, -5, 5, 7.5, 5, -5, 7.5, -5, 15, 2.5, 8, 15, 0.5, 8, 5, 0.5, 8, 15, 0.5, 8, 15, 2.5, 8, 15, 0.5, -8, 5, 0.5, 8, 15, 0.5, 8, 15, 0.5, -8, 5, 2.5, 5, 15, 2.5, 8, 5, 2.5, 8, 5, 0.5, 8, 5, 2.5, 8, 15, 2.5, 8, 5, 2.5, -5, 15, 2.5, 8, 5, 2.5, 5, 15, 0.5, -8, 5, 0.5, 5, 5, 0.5, 8, 15, 2.5, 8, 15, 2.5, -8, 15, 0.5, -8, 5, 2.5, -8, 15, 2.5, -8, 15, 2.5, 8, 15, 0.5, -8, 15, 2.5, -8, 5, 2.5, -8, 5, 2.5, -5, 15, 2.5, 8, 5, 2.5, -5, 5, 2.5, -5, 5, 2.5, -8, 15, 2.5, 8, 15, 0.5, -8, 5, 0.5, -5, 5, 0.5, 5, 15, 0.5, -8, 5, 2.5, -8, 5, 0.5, -8, 5, 0.5, -5, 5, 0.5, -5, 15, 0.5, -8, 5, 0.5, -5, 15, 0.5, -8, 5, 0.5, -8, 5, 2.5, -5, 5, 2.5, -5, 5, 2.5, -5, 5, 0.5, -5, 5, 2.5, -5, 5, 2.5, -5, 5, 0.5, -5, 5, 0.5, -5, 5, 2.5, -5, 5, 0.5, -5, 5, 0.5, -5, 5, 0.5, -5)
 
-[node name="Characters Demo" type="Node3D"]
+[node name="Characters Demo" type="Node3D" node_paths=PackedStringArray("kinematic_character", "pid_character")]
+script = ExtResource("1_31g7t")
+kinematic_character = NodePath("RapierKinematicCharacter3D")
+pid_character = NodePath("RapierPIDCharacter3D")
 
-[node name="RapierKinematicCharacter3D" parent="." instance=ExtResource("3_nrxd8")]
+[node name="Toolbar" parent="." instance=ExtResource("2_dvojq")]
+
+[node name="RapierKinematicCharacter3D" parent="." instance=ExtResource("3_wxtel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)
+metadata/cuid = "u6q5w4e0am4eoku2nza1xwfa"
+
+[node name="RapierPIDCharacter3D" parent="." instance=ExtResource("4_ltbp8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+metadata/cuid = "u2wvqjck8jhtq5p2xmx4qgvb"
+
+[node name="All Primitives" parent="." instance=ExtResource("5_ipnp5")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -3)
 
 [node name="Env" type="Node3D" parent="."]
 
@@ -23,22 +41,22 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.5127, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 8)
 polygon = PackedVector2Array(-5, -7, -5, -3, 5, 3, 5, -7)
 depth = 3.0
-material = ExtResource("5_c8a4y")
+material = ExtResource("6_a3man")
 
 [node name="UpperRamp" type="CSGPolygon3D" parent="Env/Building/CSGCombiner3D"]
 transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 5, -8)
 polygon = PackedVector2Array(-5, -9, -5, -2.5, 5, 2.5, 5, -9)
 depth = 3.0
-material = ExtResource("5_c8a4y")
+material = ExtResource("6_a3man")
 
 [node name="Main" type="CSGBox3D" parent="Env/Building/CSGCombiner3D"]
 size = Vector3(10, 15, 10)
-material = ExtResource("5_c8a4y")
+material = ExtResource("6_a3man")
 
 [node name="Balcony" type="CSGBox3D" parent="Env/Building/CSGCombiner3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1.5, 0)
 size = Vector3(10, 2, 16)
-material = ExtResource("5_c8a4y")
+material = ExtResource("6_a3man")
 
 [node name="RapierStaticBody3D" type="RapierStaticBody3D" parent="Env/Building/CSGCombiner3D"]
 cuid = "m1088xbhn16lnf647qbmmbx3"
@@ -52,4 +70,4 @@ metadata/cuid = "b4mep1e2d6xvuzvu2lhtxxug"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.5127, 0)
 shape = SubResource("ConcavePolygonShape3D_c8a4y")
 
-[node name="Outdoors" parent="Env" instance=ExtResource("7_fqefj")]
+[node name="Outdoors" parent="Env" instance=ExtResource("7_px7op")]

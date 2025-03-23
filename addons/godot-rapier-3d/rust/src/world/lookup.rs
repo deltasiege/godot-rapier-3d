@@ -1,4 +1,4 @@
-use godot::builtin::GString;
+use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 use serde::{Deserialize, Serialize};
 // use std::collections::HashMap;
@@ -16,6 +16,8 @@ use serde::{Deserialize, Serialize};
 pub struct LookupTable {
     pub godot_to_rapier: HashMap<String, (u32, u32)>,
     pub rapier_to_godot: HashMap<(u32, u32), String>,
+    pub godot_to_node_path: HashMap<String, String>,
+    pub rapier_to_node_path: HashMap<(u32, u32), String>,
     pub snapshot_colliders: Vec<(u32, u32)>,
 }
 
@@ -24,15 +26,21 @@ impl LookupTable {
         Self {
             godot_to_rapier: HashMap::<String, (u32, u32)>::default(),
             rapier_to_godot: HashMap::<(u32, u32), String>::default(),
+            godot_to_node_path: HashMap::<String, String>::default(),
+            rapier_to_node_path: HashMap::<(u32, u32), String>::default(),
             snapshot_colliders: Vec::new(),
         }
     }
 
-    pub fn insert(&mut self, godot_uid: GString, rapier_handle: (u32, u32)) {
+    pub fn insert(&mut self, godot_uid: GString, rapier_handle: (u32, u32), node_path: NodePath) {
         self.godot_to_rapier
             .insert(godot_uid.to_string(), rapier_handle);
         self.rapier_to_godot
             .insert(rapier_handle, godot_uid.to_string());
+        self.godot_to_node_path
+            .insert(godot_uid.to_string(), node_path.to_string());
+        self.rapier_to_node_path
+            .insert(rapier_handle, node_path.to_string());
     }
 
     // Collision check
@@ -55,6 +63,20 @@ impl LookupTable {
         match self.rapier_to_godot.get(rapier_handle) {
             Some(uid) => Some(GString::from(uid)),
             None => None,
+        }
+    }
+
+    // TODO - if nodes are reparented, the node path will be invalid
+    // Need to update lookup table whenever the node is reparented
+    pub fn get_node_from_handle(
+        &self,
+        rapier_handle: &(u32, u32),
+        root_node: Gd<Node>,
+    ) -> Option<Gd<Node>> {
+        if let Some(node_path) = self.rapier_to_node_path.get(rapier_handle) {
+            root_node.get_node_or_null(node_path)
+        } else {
+            None
         }
     }
 
