@@ -97,7 +97,7 @@ static func send_action_messages_to_all_peers(sync: GR3DSync) -> void:
 static var MessageSerializer = preload("./message_serializer.gd")
 
 static func send_action_messages_to_peer(sync: GR3DSync, peer_id: int) -> void:
-	assert(peer_id != sync.network_adapter.get_unique_id(), "Cannot send input to ourselves")
+	assert(peer_id != sync.network_adapter.get_unique_id(), "Cannot send actions to ourselves")
 	var peer = sync.peers[peer_id]
 
 	var state_hashes = get_state_hashes_for_peer(sync, peer)

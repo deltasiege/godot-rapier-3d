@@ -3,16 +3,36 @@ extends Node
 var peers := {}
 var player_peers := {}
 var network_adapter: GR3DNetAdapter
-var mechanized := false
+var message_serializer = preload("./message_serializer.gd")
 
+var mechanized := false
 var started := false
 var host_starting := false
 var spectating := false
-var current_tick: int = 0
 
 var tick_time: float
+var ping_frequency: float
+var input_tick: int
+var current_tick: int
+var skip_ticks: int
+var rollback_ticks: int
+var requested_input_complete_tick: int
+
+var max_buffer_size := 20
+var ticks_to_calculate_advantage := 60
 var max_action_frames_per_message := 5
 var max_messages_at_once := 2
+var max_ticks_to_regain_sync := 300
+var min_lag_to_regain_sync := 5
+var interpolation := false
+var max_state_mismatch_count := 10
+
+var action_buffer := []
+var action_buffer_start_tick: int
+var action_send_queue := []
+var action_send_queue_start_tick: int
+var state_hashes := []
+var state_hashes_start_tick: int
 
 signal sync_started()
 signal sync_stopped()
@@ -50,13 +70,6 @@ var NetworkCallbacks = preload("./network_callbacks.gd")
 var RPCAdapter = preload("./rpc_adapter.gd")
 var Utils = preload("./utils.gd")
 
-var action_buffer := []
-var action_buffer_start_tick: int
-var action_send_queue := []
-var action_send_queue_start_tick: int
-var state_hashes := []
-var state_hashes_start_tick: int
-
 func _ready(): 
 	NetworkCallbacks.init(self, RPCAdapter.new())
 
@@ -79,7 +92,7 @@ func _physics_process(_delta: float) -> void:
 	var timestep_id = local_actions[0]
 	var ser_local_actions = local_actions[3]
 	
-	var ab_frame = Actions.get_or_create_ab_frame(self, timestep_id, action_buffer)
+	var ab_frame = Actions.get_or_create_ab_frame(self, timestep_id)
 	ab_frame.players[network_adapter.get_unique_id()] = ser_local_actions # TODO predicted?
 	
 	if peers.size() <= 0: return # Only send actions when we have real remote peers

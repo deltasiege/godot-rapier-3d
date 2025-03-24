@@ -15,13 +15,7 @@ enum InputMessageKey {
 	STATE_HASHES,
 }
 
-func serialize_input(input: Dictionary) -> PackedByteArray:
-	return var_to_bytes(input)
-
-func unserialize_input(serialized: PackedByteArray) -> Dictionary:
-	return bytes_to_var(serialized)
-
-func serialize_message(msg: Dictionary) -> PackedByteArray:
+static func serialize_message(msg: Dictionary) -> PackedByteArray:
 	var buffer := StreamPeerBuffer.new()
 	buffer.resize(DEFAULT_MESSAGE_BUFFER_SIZE)
 
@@ -58,7 +52,7 @@ func serialize_message(msg: Dictionary) -> PackedByteArray:
 	buffer.resize(buffer.get_position())
 	return buffer.data_array
 
-func unserialize_message(serialized) -> Dictionary:
+static func unserialize_message(serialized) -> Dictionary:
 	var buffer := StreamPeerBuffer.new()
 	buffer.put_data(serialized)
 	buffer.seek(0)
