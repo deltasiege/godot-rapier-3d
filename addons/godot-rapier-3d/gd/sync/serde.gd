@@ -1,10 +1,4 @@
-extends RefCounted
-
-static func is_type(obj: Object):
-	return obj.has_method("serialize_input") \
-		and obj.has_method("serialize_message") \
-		and obj.has_method("unserialize_input") \
-		and obj.has_method("unserialize_message")
+extends Node
 
 const DEFAULT_MESSAGE_BUFFER_SIZE = 1280
 
@@ -15,7 +9,7 @@ enum InputMessageKey {
 	STATE_HASHES,
 }
 
-static func serialize_message(msg: Dictionary) -> PackedByteArray:
+func serialize_message(msg: Dictionary) -> PackedByteArray:
 	var buffer := StreamPeerBuffer.new()
 	buffer.resize(DEFAULT_MESSAGE_BUFFER_SIZE)
 
@@ -52,7 +46,7 @@ static func serialize_message(msg: Dictionary) -> PackedByteArray:
 	buffer.resize(buffer.get_position())
 	return buffer.data_array
 
-static func unserialize_message(serialized) -> Dictionary:
+func unserialize_message(serialized) -> Dictionary:
 	var buffer := StreamPeerBuffer.new()
 	buffer.put_data(serialized)
 	buffer.seek(0)

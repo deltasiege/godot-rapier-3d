@@ -159,8 +159,7 @@ impl GR3D {
     }
 
     #[func]
-    /// Returns the serialized actions for the previous timestep, along with
-    /// the timestep id and the number of actions that were serialized, and the hash
+    /// Returns [timestep_id, num_actions, hash, serialized actions]
     pub fn _get_serialized_actions(&self) -> Array<Variant> {
         let timestep_id = self.world.state.timestep_id - 1;
         let (bytes, num_actions) = match self.world.buffer.get_serialized_actions(timestep_id) {

@@ -10,10 +10,12 @@ var paused: bool = false
 var pending_actions = []
 
 @onready var DrawLine = preload("./draw_line.gd").new()
+@onready var PingTimer = preload("./ping_timer.gd").new()
+const DEFAULT_NETWORK_ADAPTER_PATH = "res://addons/godot-rapier-3d/gd/rpc_adapter.gd"
 
 func _ready():
 	if Engine.is_editor_hint(): return
-	add_child(DrawLine)
+	_add_child_modules()
 	if autoplay: play()
 
 func _exit_tree():
@@ -38,6 +40,16 @@ func pause():
 func toggle_pause(_paused: bool):
 	playing = !_paused
 	paused = _paused
+
+func _add_child_modules():
+	add_child(DrawLine)
+	add_child(PingTimer)
+	_add_network_adapter()
+
+func _add_network_adapter():
+	var network_adapter = load(DEFAULT_NETWORK_ADAPTER_PATH).new()
+	add_child(network_adapter)
+	GR3DSync._attach_network_adapter(network_adapter)
 
 func _draw_line(origin: Vector3, end: Vector3):
 	DrawLine.draw_line(origin, end, Color.WHITE)

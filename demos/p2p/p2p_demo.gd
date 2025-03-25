@@ -30,5 +30,5 @@ func reset(): GR3DNet.reset(self)
 func start():
 	if !multiplayer.is_server(): return
 	GR3DNet.start_sync(self)
-	await get_tree().create_timer(2.1).timeout
+	await get_tree().create_timer(2.01).timeout
 	player_spawner.spawn_all_players()

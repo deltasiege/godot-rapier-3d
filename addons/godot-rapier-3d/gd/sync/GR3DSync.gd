@@ -1,100 +1,54 @@
 extends Node
 
+const INITIAL_FRAME = 0
+const MAX_ROLLBACK_FRAMES = 20 # How far back can we reload previous game states
+const ADVANTAGE_LIMIT = 20 # How many ticks can any peer get ahead/behind another peer
+
 var peers := {}
-var player_peers := {}
-var network_adapter: GR3DNetAdapter
-var message_serializer = preload("./message_serializer.gd")
+var players := {}
 
-var mechanized := false
-var started := false
-var host_starting := false
-var spectating := false
+var started = false
 
-var tick_time: float
-var ping_frequency: float
-var input_tick: int
-var current_tick: int
-var skip_ticks: int
-var rollback_ticks: int
-var requested_input_complete_tick: int
+var local_tick = INITIAL_FRAME
+var peer_ticks := {} # { peer_id: peer's current tick }
+var peer_advantages := {} # { peer_id: peer's advantage (how far ahead/behind) }
+var peer_actions := {} # { peer_id: [ActionBufferStep, ..], .. }
+var completed_tick = INITIAL_FRAME # Latest frame that all peers are action complete and state is synchronized
 
-var max_buffer_size := 20
-var ticks_to_calculate_advantage := 60
-var max_action_frames_per_message := 5
-var max_messages_at_once := 2
-var max_ticks_to_regain_sync := 300
-var min_lag_to_regain_sync := 5
-var interpolation := false
-var max_state_mismatch_count := 10
+var Classes = preload("./classes.gd")
+#var RPC = preload("./rpc.gd")
 
-var action_buffer := []
-var action_buffer_start_tick: int
-var action_send_queue := []
-var action_send_queue_start_tick: int
-var state_hashes := []
-var state_hashes_start_tick: int
-
-signal sync_started()
-signal sync_stopped()
-signal sync_lost()
-signal sync_regained()
-signal sync_error(msg)
-
-signal skip_ticks_flagged(count)
-signal rollback_flagged(tick)
-signal prediction_missed(tick, peer_id, local_input, remote_input)
-signal remote_state_mismatch(tick, peer_id, local_hash, remote_hash)
-
-signal peer_added(peer_id)
-signal peer_removed(peer_id)
-signal peer_pinged_back(peer)
-
-signal state_loaded(_rollback_ticks)
-signal tick_finished(is_rollback)
-signal tick_retired(tick)
-signal tick_input_complete(tick)
-signal scene_spawned(name, spawned_node, scene, data)
-signal scene_despawned(name, node)
-signal interpolation_frame()
-
-var on_received_ping: Callable
-var on_received_ping_back: Callable
-var on_received_remote_start: Callable
-var on_received_remote_stop: Callable
-var on_received_input_tick: Callable
-
-var Actions = preload("./actions.gd")
-var Peers = preload("./peers.gd")
-var Lifecycle = preload("./lifecycle.gd")
-var NetworkCallbacks = preload("./network_callbacks.gd")
-var RPCAdapter = preload("./rpc_adapter.gd")
-var Utils = preload("./utils.gd")
-
-func _ready(): 
-	NetworkCallbacks.init(self, RPCAdapter.new())
-
-func start(): Lifecycle.start(self)
-func stop(): Lifecycle.stop(self)
-func reset(): Lifecycle.reset(self)
-
-func clear_peers(): Peers.clear_peers(self)
-func add_peer(peer_id: int): Peers.add_peer(self, peer_id)
-func remove_peer(peer_id: int): Peers.remove_peer(self, peer_id)
-
-
+# store game state = in rust already
+# Restore game state to the given tick (half in rust - lets see)
 
 func _physics_process(_delta: float) -> void:
 	if not started: return
 	
-	var local_actions = GR3D._get_serialized_actions() # [timestep_id, num_actions, hash, bytes]
-	if local_actions.size() == 0: return
+	# TODO send input ticks
+	# TODO Receive peer ticks and advantages
+	# TODO receive peer serialized actions and place into peer_actions
 	
-	var timestep_id = local_actions[0]
-	var ser_local_actions = local_actions[3]
 	
-	var ab_frame = Actions.get_or_create_ab_frame(self, timestep_id)
-	ab_frame.players[network_adapter.get_unique_id()] = ser_local_actions # TODO predicted?
+
+func determine_peer_completed_tick(peer_id: int) -> int:
+	if !peer_ticks.has(peer_id): return -1
+	if !peer_actions.has(peer_id): return -1
+	var peer_tick = peer_ticks[peer_id]
+	var final_tick = local_tick if peer_tick > local_tick else peer_tick # Only check inputs up to the current tick of the slowest party
+	var action_buffer = peer_actions[peer_id]
+	# select frames from (sync_frame + 1) through final_frame and find the first frame where predicted and remote inputs don't match
 	
-	if peers.size() <= 0: return # Only send actions when we have real remote peers
-	action_send_queue.append(ser_local_actions)
-	Peers.send_action_messages_to_all_peers(self)
+	return -1
+
+# Returns false if there is no need to rollback for the given peer because we are both complete already
+func rollback_is_possible(peer_id: int) -> bool:
+	if peer_ticks.has(peer_id): return false
+	return local_tick > completed_tick and peer_ticks[peer_id] > completed_tick
+
+# Returns true if the local client is acceptably time synced with the given peer
+func time_is_synced(peer_id: int) -> bool:
+	if peer_ticks.has(peer_id): return false
+	if peer_advantages.has(peer_id): return false
+	var local_advantage = local_tick - peer_ticks[peer_id]
+	var advantage_delta = local_advantage - peer_advantages[peer_id]
+	return local_advantage < MAX_ROLLBACK_FRAMES and advantage_delta <= ADVANTAGE_LIMIT

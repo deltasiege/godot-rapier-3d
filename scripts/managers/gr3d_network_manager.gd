@@ -1,6 +1,6 @@
 class_name GR3DNet
 
-const LOG_PREFIX = "[GR3DSync]: "
+const LOG_PREFIX = "[GR3DNet]: "
 const MAX_CLIENTS = 6
 
 static func start_server(port: int, tree: Node):
@@ -21,12 +21,12 @@ static func start_sync(tree: Node):
 
 static func reset(tree: Node):
 	tree.multiplayer.multiplayer_peer = null
-	GR3DSync.stop()
-	GR3DSync.clear_peers()
+	#GR3DSync.stop()
+	#GR3DSync.clear_peers()
 
 static func on_ready(tree: Node):
 	GR3DNet.connect_console(tree)
-	GR3DSync.connect("sync_error", func(): GR3DNet.reset(tree))
+	#GR3DSync.connect("sync_error", func(): GR3DNet.reset(tree))
 	tree.multiplayer.connect("peer_connected", GR3DSync.add_peer)
 	tree.multiplayer.connect("peer_disconnected", GR3DSync.remove_peer)
 
@@ -34,9 +34,9 @@ static func on_ready(tree: Node):
 static func connect_console(tree: Node):
 	GR3DSync.connect("peer_added", func(id: int): print(LOG_PREFIX, "peer_added: ", id))
 	GR3DSync.connect("peer_removed", func(id: int): print(LOG_PREFIX, "peer_removed: ", id))
-	GR3DSync.connect("sync_lost", func(): print(LOG_PREFIX, "sync_lost"))
-	GR3DSync.connect("sync_regained", func(): print(LOG_PREFIX, "sync_regained"))
-	GR3DSync.connect("sync_error", func(msg: String): push_error(LOG_PREFIX, "sync_error: ", msg))
+	#GR3DSync.connect("sync_lost", func(): print(LOG_PREFIX, "sync_lost"))
+	#GR3DSync.connect("sync_regained", func(): print(LOG_PREFIX, "sync_regained"))
+	#GR3DSync.connect("sync_error", func(msg: String): push_error(LOG_PREFIX, "sync_error: ", msg))
 	tree.multiplayer.connect("peer_connected", func(id: int): print(LOG_PREFIX, "peer_connected: ", id))
 	tree.multiplayer.connect("peer_disconnected", func(id: int): print(LOG_PREFIX, "peer_disconnected: ", id))
 	tree.multiplayer.connect("connected_to_server", func(): print(LOG_PREFIX, "connected_to_server as: ", tree.multiplayer.get_unique_id()))
