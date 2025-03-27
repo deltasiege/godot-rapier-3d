@@ -2,17 +2,9 @@ use godot::prelude::*;
 use std::cmp::Ordering;
 
 use crate::{
+    actions::{Action, Operation},
     utils::extract_from_dict,
-    world::buffer::{Action, Operation},
 };
-
-// NOTE sorting should happen right before stepping the world (so that it only happens once per timestep)
-// sorting = by cuid -> by operation -> (within move operations, magnitude of movement)
-pub fn sort_actions(actions: Vec<&Action>) -> Vec<&Action> {
-    let mut sorted_actions = actions;
-    sorted_actions.sort();
-    sorted_actions
-}
 
 /// Sort actions by CUID and then by operation and then by magnitude of movement
 impl Ord for Action {

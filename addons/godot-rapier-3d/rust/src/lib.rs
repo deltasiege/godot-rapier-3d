@@ -1,14 +1,16 @@
 use godot::prelude::*;
 
+mod actions;
 pub mod config;
 mod interface;
+mod network;
 mod nodes;
-mod sync;
 mod utils;
 mod world;
 
-pub use world::lookup::LookupTable;
-pub use world::world::World;
+pub use actions::Action;
+pub use world::LookupTable;
+pub use world::World;
 
 struct GodotRapier3D;
 

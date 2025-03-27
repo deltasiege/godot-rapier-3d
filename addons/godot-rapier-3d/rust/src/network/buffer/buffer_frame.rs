@@ -3,28 +3,28 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
-use super::{actions::serde::serialize_actions, Action};
+use crate::actions::{serialize_actions, Action};
 
-/// Represents a single timestep in the buffer
-pub struct BufferStep {
-    pub timestep_id: usize,                    // The timestep id of this step
-    pub physics_state: Option<Vec<u8>>, // The state of the physics world at the beginning of this timestep
-    pub physics_hash: Option<u64>, // Hash of the physics state at the beginning of this timestep, should always exist if physics_state exists
-    pub actions: HashMap<String, Vec<Action>>, // Map of node CUIDS against their list of actions to apply during this timestep // TODO maybe change the key to node path?
-    pub ser_actions: Option<Vec<u8>>, // Serialized actions for this timestep. May not exist if serialization fails
-    pub actions_hash: Option<u64>, // Hash of the serialized actions for this timestep. May not exist if serialization fails
+/// Represents a single tick in the buffer
+pub struct BufferFrame {
+    pub tick: usize,                           // The tick that this frame affects
+    pub physics_state: Option<Vec<u8>>, // The state of the physics world at the beginning of this tick
+    pub physics_hash: Option<u64>, // Hash of the physics state at the beginning of this tick, should always exist if physics_state exists
+    pub actions: HashMap<String, Vec<Action>>, // Map of node CUIDS against their list of actions to apply during this tick // TODO maybe change the key to node path?
+    pub ser_actions: Option<Vec<u8>>, // Serialized actions for this tick. May not exist if serialization fails
+    pub actions_hash: Option<u64>, // Hash of the serialized actions for this tick. May not exist if serialization fails
     pub nodes: HashMap<String, Gd<Node>>, // Map of node paths against their Godot pointers for this timestemp
 }
 
-impl BufferStep {
-    pub fn new(timestep_id: usize, physics_state: Option<Vec<u8>>, actions: Vec<Action>) -> Self {
+impl BufferFrame {
+    pub fn new(tick: usize, physics_state: Option<Vec<u8>>, actions: Vec<Action>) -> Self {
         let nodes = extract_node_entries_from_actions(&actions);
         let ser_actions = match serialize_actions(&actions) {
             Ok(actions) => Some(actions),
             Err(e) => {
                 log::error!(
-                    "Actions could not be serialized when creating BufferStep at {} Error: {:?}",
-                    timestep_id,
+                    "Actions could not be serialized when creating BufferFrame at {} Error: {:?}",
+                    tick,
                     e
                 );
                 None
@@ -35,7 +35,7 @@ impl BufferStep {
         let actions_map = extract_action_entries_from_actions(actions);
 
         Self {
-            timestep_id,
+            tick,
             physics_state,
             physics_hash,
             actions: actions_map,

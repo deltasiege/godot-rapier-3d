@@ -32,8 +32,8 @@ func on_popup_opened(popup: Control):
 func _get_data(title: String):
 	if title == "Character" and !character: return
 	match title:
-		"Network":
-			var peer_data = GR3DSync.get_all_peer_data()
+		"Peers":
+			var peer_data = GR3DNet._get_all_peer_data()
 			var grouped = {}
 			grouped["Local ID"] = str(multiplayer.get_unique_id())
 			for peer in peer_data:
@@ -41,6 +41,12 @@ func _get_data(title: String):
 				data.erase("peer_id")
 				grouped["Peer " + str(peer.peer_id)] = data
 			return grouped
+		"Sync":
+			return GR3DNet._get_debug_data()
+		"Buffer":
+			return {
+				"length": "TBA"
+			}
 		"Character":
 			var common_data = {
 				"type": character.get_class(),

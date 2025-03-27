@@ -7,7 +7,7 @@ use rapier3d::parry::utils::hashmap::HashMap;
 use serde::{Deserialize, Serialize};
 
 use super::{GR3DNetworkAdapter, Peer};
-use crate::{interface::GR3DSync, World};
+use crate::{interface::GR3DNet, World};
 
 // TODO need serialized buffer of all timestep -> local actions - should go in world buffer
 // and separate HashMap of all timestep -> local state hashes - should go in world buffer
@@ -24,21 +24,18 @@ pub struct UpdateMessage {
 
 pub fn send_local_actions_to_all_peers(
     peers: &Vec<Peer>,
-    world: &World,
+    sync: &GR3DNet,
     network_adapter: &Gd<GR3DNetworkAdapter>,
 ) {
     for peer in peers {
         let message = match create_update_message_for_peer(
             peer,
-            world,
+            sync,
             peer.next_local_action_tick_requested,
             peer.next_local_hash_tick_requested,
         ) {
             Some(message) => message,
-            None => {
-                log::error!("Failed to create update message for peer {}", peer.peer_id);
-                continue;
-            }
+            None => continue,
         };
         let data = PackedByteArray::from(message.as_slice());
         network_adapter.bind().send_tick_data(peer.peer_id, data);
@@ -46,7 +43,7 @@ pub fn send_local_actions_to_all_peers(
 }
 
 pub fn record_peer_tick_data(
-    sync: &mut GR3DSync,
+    sync: &mut GR3DNet,
     sender_peer_id: i64,
     ser_message: PackedByteArray,
 ) {
@@ -75,18 +72,17 @@ pub fn record_peer_tick_data(
 
 fn create_update_message_for_peer(
     peer: &Peer,
-    world: &World,
+    sync: &GR3DNet,
     next_action_tick_requested: u64,
     next_hash_tick_requested: u64,
 ) -> Option<Vec<u8>> {
-    let tick = world.state.timestep_id;
-    let bufferstep = world.buffer.get_step(tick as usize)?;
+    let bufferstep = sync.world_buffer.get_frame(sync.tick)?;
     let actions = bufferstep.ser_actions.clone()?;
 
     let message = UpdateMessage {
-        tick: tick as u64,
+        tick: sync.tick as u64,
         actions,
-        state_hashes: get_state_hashes_for_peer(peer, world),
+        state_hashes: HashMap::default(), //get_state_hashes_for_peer(peer, world),
         next_action_tick_requested,
         next_hash_tick_requested,
     };
@@ -100,30 +96,30 @@ fn create_update_message_for_peer(
     }
 }
 
-/// only give action complete state hashes?
-fn get_state_hashes_for_peer(peer: &Peer, world: &World) -> HashMap<u64, u64> {
-    let mut state_hashes = HashMap::default();
-    let requested_tick = peer.next_local_hash_tick_requested;
-    let mut idx = requested_tick;
-    if idx >= (world.state.timestep_id - 1) as u64 {
-        // TODO only go up to synchronized tick, not latest world tick
-        log::error!("Requested state hash tick is beyond current tick");
-        return state_hashes;
-    }
-    while idx < (world.state.timestep_id - 1) as u64 {
-        match world.buffer.get_state_hash(idx as usize) {
-            Some(hash) => {
-                state_hashes.insert(idx, hash);
-            }
-            None => {}
-        };
-        idx += 1;
-    }
-    state_hashes
-}
+// only give action complete state hashes?
+// fn get_state_hashes_for_peer(peer: &Peer, world: &World) -> HashMap<u64, u64> {
+//     let mut state_hashes = HashMap::default();
+//     let requested_tick = peer.next_local_hash_tick_requested;
+//     let mut idx = requested_tick;
+//     if idx >= (world.state.timestep_id - 1) as u64 {
+//         // TODO only go up to synchronized tick, not latest world tick
+//         log::error!("Requested state hash tick is beyond current tick");
+//         return state_hashes;
+//     }
+//     while idx < (world.state.timestep_id - 1) as u64 {
+//         match world.buffer.get_state_hash(idx as usize) {
+//             Some(hash) => {
+//                 state_hashes.insert(idx, hash);
+//             }
+//             None => {}
+//         };
+//         idx += 1;
+//     }
+//     state_hashes
+// }
 
 // TODO unneeded?
-// Returns the earliest BufferStep that has a calculated physics state
+// Returns the earliest BufferFrame that has a calculated physics state
 // fn get_earliest_physics_step(buffer: &WorldBuffer) -> u64 {
 //     let mut earliest = u64::MAX;
 //     for (tick, step) in buffer.buffer.iter() {

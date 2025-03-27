@@ -6,12 +6,9 @@ use rapier3d::{
 };
 
 use crate::{
-    nodes::{
-        IRapierObject, Identifiable, RapierKinematicCharacter3D, RapierPIDCharacter3D,
-        RapierRigidBody3D,
-    },
+    nodes::*,
     utils::{uniform_rapier_vector, vector_to_rapier},
-    world::state::PhysicsState,
+    world::PhysicsState,
 };
 
 pub fn configure_node(node: Gd<Node3D>) {

@@ -9,9 +9,12 @@ use super::super::{
     RapierKinematicCharacter3D, RapierRigidBody3D, RapierStaticBody3D,
 };
 use super::identifiable::Identifiable;
+use crate::actions::Operation;
 use crate::nodes::generate_cuid;
-use crate::world::Operation;
-use crate::{interface::get_singleton, utils::isometry_to_transform};
+use crate::{
+    interface::{get_net_singleton, get_singleton},
+    utils::isometry_to_transform,
+};
 
 pub trait IRapierObject: Identifiable + WithBaseField + GodotClass<Base = Node3D> {
     fn on_enter_tree(&mut self) {
@@ -29,7 +32,7 @@ pub trait IRapierObject: Identifiable + WithBaseField + GodotClass<Base = Node3D
     }
 
     fn on_enter_runtime_tree(&mut self) {
-        if let Some(mut singleton) = get_singleton() {
+        if let Some(mut singleton) = get_net_singleton() {
             singleton.call_deferred(
                 "_ingest_local_action",
                 &[
@@ -58,7 +61,7 @@ pub trait IRapierObject: Identifiable + WithBaseField + GodotClass<Base = Node3D
     }
 
     fn on_exit_runtime_tree(&mut self) {
-        if let Some(mut singleton) = get_singleton() {
+        if let Some(mut singleton) = get_net_singleton() {
             singleton.call_deferred(
                 "_ingest_local_action",
                 &[

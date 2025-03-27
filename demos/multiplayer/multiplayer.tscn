@@ -13,8 +13,8 @@ script = ExtResource("1_11r3s")
 player_spawner = NodePath("PlayerSpawner")
 
 [node name="Toolbar" parent="." instance=ExtResource("2_di6ge")]
-popup_titles = Array[String](["Network"])
-button_icons = Array[CompressedTexture2D]([ExtResource("3_r4ogj")])
+popup_titles = Array[String](["Sync", "Peers", "Buffer"])
+button_icons = Array[CompressedTexture2D]([ExtResource("3_r4ogj"), ExtResource("3_r4ogj"), ExtResource("3_r4ogj")])
 metadata/_edit_lock_ = true
 
 [node name="Lobby" parent="." instance=ExtResource("2_i6dhd")]

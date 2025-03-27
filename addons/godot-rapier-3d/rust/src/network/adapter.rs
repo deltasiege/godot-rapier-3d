@@ -1,6 +1,6 @@
 use godot::prelude::*;
 
-use crate::interface::GR3DSync;
+use crate::interface::GR3DNet;
 
 #[derive(GodotClass)]
 #[class(base = Node)]
@@ -122,7 +122,7 @@ impl GR3DNetworkAdapter {
     }
 }
 
-pub fn attach_network_adapter(sync: &mut GR3DSync, mut network_adapter: Gd<GR3DNetworkAdapter>) {
+pub fn attach_network_adapter(sync: &mut GR3DNet, mut network_adapter: Gd<GR3DNetworkAdapter>) {
     log::debug!("Attaching network adapter: {:?}", network_adapter);
     network_adapter.bind().on_attached();
     let ping_cb = sync.to_gd().callable("_on_received_ping");
@@ -134,7 +134,7 @@ pub fn attach_network_adapter(sync: &mut GR3DSync, mut network_adapter: Gd<GR3DN
     sync.network_adapter = Some(network_adapter);
 }
 
-pub fn detach_network_adapter(sync: &mut GR3DSync, mut network_adapter: Gd<GR3DNetworkAdapter>) {
+pub fn detach_network_adapter(sync: &mut GR3DNet, mut network_adapter: Gd<GR3DNetworkAdapter>) {
     log::debug!("Detaching network adapter: {:?}", network_adapter);
     network_adapter.bind().on_detached();
     let ping_cb = sync.to_gd().callable("_on_received_ping");

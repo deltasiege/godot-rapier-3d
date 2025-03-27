@@ -1,11 +1,14 @@
+mod adapter;
+mod buffer;
 mod lifecycle;
 mod messaging;
-mod network_adapter;
 mod peer;
 mod ping;
 
+pub use adapter::*;
 pub use lifecycle::*;
 pub use messaging::*;
-pub use network_adapter::*;
 pub use peer::Peer;
 pub use ping::*;
+
+pub use buffer::buffer::{ingest_local_action, WorldBuffer};

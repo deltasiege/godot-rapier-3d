@@ -1,12 +1,9 @@
 use super::debugger::GR3DDebugger;
+use super::get_net_singleton;
 use crate::nodes::{generate_cuid, IRapierObject};
-use crate::utils::extract_from_dict;
-use crate::utils::{init_logger, set_log_level};
-use crate::world::buffer::{ingest_local_action, Action};
-use crate::world::state::{restore_snapshot, unpack_snapshot};
-use crate::world::Operation;
-use crate::World;
-use godot::classes::file_access::CompressionMode;
+use crate::utils::{extract_from_dict, init_logger, set_log_level};
+use crate::world::{restore_snapshot, unpack_snapshot};
+use crate::{Action, World};
 use godot::classes::{Engine, IObject, Object};
 use godot::prelude::*;
 
@@ -39,32 +36,58 @@ impl GR3D {
     #[func]
     /// Advance the simulation by the given number of steps
     pub fn step(&mut self, count: i64) {
+        let mut net = match get_net_singleton() {
+            Some(net) => net,
+            None => {
+                log::error!("Failed to get network singleton");
+                return;
+            }
+        };
+
         for _ in 0..count {
-            self.world.step();
+            let tick = net.bind().tick;
+            net.bind_mut()
+                .world_buffer
+                .apply_actions_to_world(tick, &mut self.world.physics);
+
+            let (resulting_state, next_tick) = self.world.step();
+
+            net.bind_mut().tick = next_tick;
+            net.bind_mut()
+                .world_buffer
+                .on_world_stepped(next_tick, resulting_state);
         }
     }
 
     #[func]
     /// Returns a past world state as a snapshot. The timestep_id must still be in the world buffer.
     pub fn get_snapshot(&mut self, timestep_id: i64) -> PackedByteArray {
-        match self.world.get_snapshot(Some(timestep_id)) {
-            Some(snapshot) => {
-                match PackedByteArray::from(snapshot.as_slice()).compress(CompressionMode::BROTLI) {
-                    Ok(compressed) => compressed,
-                    Err(e) => {
-                        log::error!("Failed to compress snapshot: {:?}", e);
-                        PackedByteArray::from(&[])
-                    }
-                }
+        let net = match get_net_singleton() {
+            Some(net) => net,
+            None => {
+                log::error!("Failed to get network singleton");
+                return PackedByteArray::from(&[]);
             }
-            None => PackedByteArray::from(&[]),
+        };
+
+        let buffered_snap = net
+            .bind()
+            .world_buffer
+            .get_physics_state(timestep_id as usize);
+
+        match buffered_snap {
+            Some(snapshot) => PackedByteArray::from(snapshot),
+            None => match self.world.get_current_snapshot() {
+                Some(snapshot) => PackedByteArray::from(snapshot),
+                None => PackedByteArray::from(&[]),
+            },
         }
     }
 
     #[func]
     /// Returns the current world state as a snapshot
     pub fn save_snapshot(&mut self) -> PackedByteArray {
-        match self.world.get_snapshot(None) {
+        match self.world.get_current_snapshot() {
             Some(snapshot) => PackedByteArray::from(snapshot.as_slice()),
             None => PackedByteArray::from(&[]),
         }
@@ -90,11 +113,12 @@ impl GR3D {
         actions_to_add: Array<Dictionary>,
         snapshot: PackedByteArray,
     ) {
-        self.world.corrective_rollback(
-            timestep_id as usize,
-            actions_from_array(actions_to_add),
-            unpack_snapshot(snapshot.to_vec()),
-        );
+        // TODO
+        // self.world.corrective_rollback(
+        //     timestep_id as usize,
+        //     actions_from_array(actions_to_add),
+        //     unpack_snapshot(snapshot.to_vec()),
+        // );
     }
 
     #[func]
@@ -119,36 +143,6 @@ impl GR3D {
     /// Returns the current timestamp
     pub fn get_time(&self) -> f64 {
         self.world.state.time as f64
-    }
-
-    #[func]
-    /// TODO replace wiht "ingest serialized actions"
-    pub fn get_actions(&self) -> Array<Dictionary> {
-        let timestep_id = self.world.state.timestep_id;
-        let mut result = Array::new();
-
-        if let Some(actions) = self.world.buffer.get_actions(timestep_id - 1) {
-            for action in actions {
-                let mut dict = Dictionary::new();
-                dict.set("cuid", action.cuid.to_variant());
-
-                if let Some(handle) = action.handle {
-                    dict.set("handle", [handle.0, handle.1].to_variant());
-                }
-
-                dict.set("node", action.node.to_variant());
-                dict.set("operation", action.operation.to_variant());
-                dict.set("data", action.data.to_variant());
-                result.push(&dict);
-            }
-        }
-        result
-    }
-
-    #[func]
-    /// Consume a local action and apply it to the world immediately
-    pub fn _ingest_local_action(&mut self, node: Gd<Node>, operation: Operation, data: Dictionary) {
-        ingest_local_action(node, operation, data, &mut self.world);
     }
 
     #[func]

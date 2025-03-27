@@ -28,7 +28,7 @@ func _process(_delta):
 func _physics_process(_delta):
 	if Engine.is_editor_hint(): return
 	if playing and !paused: GR3D.step(1)
-	GR3DSync.physics_process()
+	GR3DNet.physics_process()
 
 func play():
 	playing = true
@@ -50,7 +50,7 @@ func _add_child_modules():
 func _add_network_adapter():
 	var network_adapter = load(DEFAULT_NETWORK_ADAPTER_PATH).new()
 	add_child(network_adapter)
-	GR3DSync._attach_network_adapter(network_adapter)
+	GR3DNet._attach_network_adapter(network_adapter)
 
 func _draw_line(origin: Vector3, end: Vector3):
 	DrawLine.draw_line(origin, end, Color.WHITE)

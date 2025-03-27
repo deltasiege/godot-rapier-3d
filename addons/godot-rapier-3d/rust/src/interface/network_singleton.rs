@@ -2,28 +2,23 @@ use std::collections::HashMap;
 
 use godot::{classes::Engine, prelude::*};
 
-use crate::{
-    sync::{
-        attach_network_adapter, detach_network_adapter, on_received_remote_start,
-        on_received_remote_stop, ping_all_peers, record_all_advantages, record_rtt, return_ping,
-        send_local_actions_to_all_peers, sync_start, sync_stop, GR3DNetworkAdapter, Peer,
-    },
-    world::buffer::Action,
-};
+use crate::interface::get_singleton;
+use crate::world::apply_actions_to_world;
+use crate::World;
+use crate::{actions::Operation, network::*, Action};
 
-use super::get_singleton;
-
-/// Use the GR3DSync singleton to share physics + action data between network clients
+/// Use the GR3DNet singleton to share physics + action data between network clients
 #[derive(GodotClass)]
 #[class(base = Object)]
-pub struct GR3DSync {
-    pub host_starting: bool,
-    pub started: bool,
-    pub tick_interval: f64,     // Time between physics ticks in seconds
+pub struct GR3DNet {
     pub tick: usize, // Current tick - updated every physics frame - should match World's timestep
+    pub tick_interval: f64, // Time between physics ticks in seconds
     pub synchronized_tick: u64, // The latest tick that has received all peer actions and matching state hashes
-    pub peers: Vec<Peer>,       // List of connected peers
+    pub started: bool,
+    pub host_starting: bool,
+    pub peers: Vec<Peer>,                           // List of connected peers
     pub local_actions: HashMap<usize, Vec<Action>>, // Tick -> List of local actions that have been added to local world
+    pub world_buffer: WorldBuffer,
 
     #[export]
     pub network_adapter: Option<Gd<GR3DNetworkAdapter>>,
@@ -31,16 +26,17 @@ pub struct GR3DSync {
 }
 
 #[godot_api]
-impl IObject for GR3DSync {
+impl IObject for GR3DNet {
     fn init(base: Base<Object>) -> Self {
         Self {
-            host_starting: false,
-            started: false,
-            tick_interval: 0.0,
             tick: 0,
+            tick_interval: 0.0,
             synchronized_tick: 0,
+            started: false,
+            host_starting: false,
             peers: Vec::new(),
             local_actions: HashMap::new(),
+            world_buffer: WorldBuffer::new(1000), // TODO expose as project setting
             network_adapter: None,
             base,
         }
@@ -48,7 +44,7 @@ impl IObject for GR3DSync {
 }
 
 #[godot_api]
-impl GR3DSync {
+impl GR3DNet {
     #[signal]
     fn sync_started(&self);
 
@@ -108,8 +104,7 @@ impl GR3DSync {
             }
         };
 
-        self.tick = singleton.bind().world.state.timestep_id;
-        send_local_actions_to_all_peers(&self.peers, &singleton.bind().world, network_adapter);
+        send_local_actions_to_all_peers(&self.peers, self, network_adapter);
     }
 
     #[func]
@@ -157,17 +152,6 @@ impl GR3DSync {
         ping_all_peers(self);
     }
 
-    /// Record a copy whenever the local world adds a new action
-    pub fn record_local_action(&mut self, tick: usize, action: &Action) {
-        if !self.local_actions.contains_key(&tick) {
-            self.local_actions.insert(tick, Vec::new());
-        }
-        self.local_actions
-            .get_mut(&tick)
-            .unwrap()
-            .push(action.clone());
-    }
-
     #[func]
     fn _on_received_ping(&mut self, peer_id: i64, origin_time: GString) {
         log::trace!("Received ping from peer: {} at {}", peer_id, origin_time);
@@ -184,11 +168,17 @@ impl GR3DSync {
 
     #[func]
     fn _on_received_tick_data(&mut self, sender_peer_id: i64, data: PackedByteArray) {
-        godot_print!("Received tick data from peer: {}", sender_peer_id);
+        godot_print!("Received tick data from peer: {}", sender_peer_id); // UP TO - actually do something with update message
     }
 
     #[func]
-    fn get_all_peer_data(&self) -> Array<Dictionary> {
+    /// Consume a local action and apply it to the world immediately
+    pub fn _ingest_local_action(&mut self, node: Gd<Node>, operation: Operation, data: Dictionary) {
+        ingest_local_action(self, node, operation, data);
+    }
+
+    #[func]
+    fn _get_all_peer_data(&self) -> Array<Dictionary> {
         let mut peer_data = Array::new();
         for peer in &self.peers {
             let mut peer_dict = Dictionary::new();
@@ -220,12 +210,24 @@ impl GR3DSync {
         }
         peer_data
     }
+
+    #[func]
+    fn _get_debug_data(&self) -> Dictionary {
+        let mut dict = Dictionary::new();
+        dict.set("tick", self.tick as i64);
+        dict.set("synchronized_tick", self.synchronized_tick as i64);
+        dict.set("started", self.started);
+        dict.set("host_starting", self.host_starting);
+        dict.set("peers", self.peers.len() as i64);
+        dict.set("local_actions", self.local_actions.len() as i64);
+        dict
+    }
 }
 
-const NAME: &str = "GR3DSync";
+const NAME: &str = "GR3DNet";
 
 pub fn register() {
-    Engine::singleton().register_singleton(NAME, &GR3DSync::new_alloc());
+    Engine::singleton().register_singleton(NAME, &GR3DNet::new_alloc());
 }
 
 pub fn unregister() {
@@ -238,9 +240,9 @@ pub fn unregister() {
     }
 }
 
-pub fn get_sync_singleton() -> Option<Gd<GR3DSync>> {
+pub fn get_net_singleton() -> Option<Gd<GR3DNet>> {
     match Engine::singleton().get_singleton(NAME) {
-        Some(singleton) => Some(singleton.cast::<GR3DSync>()),
+        Some(singleton) => Some(singleton.cast::<GR3DNet>()),
         None => {
             log::error!("Failed to get {} singleton", NAME);
             None

@@ -1,9 +1,8 @@
-[gd_scene load_steps=16 format=3 uid="uid://07ltx5ojv5fx"]
+[gd_scene load_steps=15 format=3 uid="uid://07ltx5ojv5fx"]
 
 [ext_resource type="Script" uid="uid://b7hrj0yttrkvw" path="res://demos/characters/characters_demo.gd" id="1_31g7t"]
 [ext_resource type="PackedScene" uid="uid://catsbly4tdfm0" path="res://demo_assets/entities/ui/toolbar/toolbar.tscn" id="2_dvojq"]
 [ext_resource type="Texture2D" uid="uid://lk8nr4d22vyy" path="res://demo_assets/entities/ui/icons/character.svg" id="3_px7op"]
-[ext_resource type="Texture2D" uid="uid://brjth02j3ci4j" path="res://demo_assets/entities/ui/icons/network.svg" id="3_tg87h"]
 [ext_resource type="PackedScene" uid="uid://dohhufgjerc06" path="res://demo_assets/entities/characters/kinematic_character/kinematic_character.tscn" id="3_wxtel"]
 [ext_resource type="PackedScene" uid="uid://cqn1q33aroykb" path="res://demo_assets/entities/characters/pid_character/pid_character.tscn" id="4_ltbp8"]
 [ext_resource type="Texture2D" uid="uid://cwtbqb2w8bax6" path="res://demo_assets/entities/ui/icons/playback.svg" id="4_tg87h"]
@@ -24,8 +23,8 @@ kinematic_character = NodePath("RapierKinematicCharacter3D")
 pid_character = NodePath("RapierPIDCharacter3D")
 
 [node name="Toolbar" parent="." instance=ExtResource("2_dvojq")]
-popup_titles = Array[String](["Network", "Character", "Playback", "Snapshots", "Rollback", "Hotkeys", "World"])
-button_icons = Array[CompressedTexture2D]([ExtResource("3_tg87h"), ExtResource("3_px7op"), ExtResource("4_tg87h"), ExtResource("5_n7ru6"), ExtResource("6_2loot"), ExtResource("7_ohlh5"), ExtResource("8_ui2cb")])
+popup_titles = Array[String](["Character", "Playback", "Snapshots", "Rollback", "Hotkeys", "World"])
+button_icons = Array[CompressedTexture2D]([ExtResource("3_px7op"), ExtResource("4_tg87h"), ExtResource("5_n7ru6"), ExtResource("6_2loot"), ExtResource("7_ohlh5"), ExtResource("8_ui2cb")])
 
 [node name="RapierKinematicCharacter3D" parent="." instance=ExtResource("3_wxtel")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)

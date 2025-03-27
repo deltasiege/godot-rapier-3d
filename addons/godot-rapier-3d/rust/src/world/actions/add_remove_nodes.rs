@@ -1,10 +1,6 @@
-use crate::nodes::{IRapierObject, Identifiable};
-use crate::nodes::{
-    RapierArea3D, RapierCollisionShape3D, RapierKinematicCharacter3D, RapierPIDCharacter3D,
-    RapierRigidBody3D, RapierStaticBody3D,
-};
+use crate::nodes::*;
 use crate::utils::{transform_to_isometry, vector_to_point, vector_to_rapier};
-use crate::world::state::PhysicsState;
+use crate::world::PhysicsState;
 use godot::classes::{
     BoxShape3D, CapsuleShape3D, ConcavePolygonShape3D, CylinderShape3D, SphereShape3D,
 };

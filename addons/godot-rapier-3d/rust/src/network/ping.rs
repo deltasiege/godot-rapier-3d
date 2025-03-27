@@ -1,10 +1,10 @@
 use crate::{
-    interface::GR3DSync,
+    interface::GR3DNet,
     utils::{get_system_time_ms, get_system_time_ms_gstr},
 };
 use godot::prelude::*;
 
-pub fn ping_all_peers(sync: &GR3DSync) {
+pub fn ping_all_peers(sync: &GR3DNet) {
     let peers = &sync.peers;
     let adapter = sync
         .network_adapter
@@ -28,7 +28,7 @@ pub fn ping_all_peers(sync: &GR3DSync) {
     }
 }
 
-pub fn return_ping(peer_id: i64, origin_time: GString, sync: &GR3DSync) {
+pub fn return_ping(peer_id: i64, origin_time: GString, sync: &GR3DNet) {
     let adapter = sync
         .network_adapter
         .as_ref()
@@ -44,7 +44,7 @@ pub fn return_ping(peer_id: i64, origin_time: GString, sync: &GR3DSync) {
     adapter.send_ping_back(peer_id, origin_time, local_time);
 }
 
-pub fn record_rtt(sync: &mut GR3DSync, peer_id: i64, local_time: u128, remote_time: u128) {
+pub fn record_rtt(sync: &mut GR3DNet, peer_id: i64, local_time: u128, remote_time: u128) {
     let system_time = get_system_time_ms();
 
     let peer = sync
@@ -64,7 +64,7 @@ pub fn record_rtt(sync: &mut GR3DSync, peer_id: i64, local_time: u128, remote_ti
         .emit_signal("peer_pinged_back", &[Variant::from(peer_id)]);
 }
 
-pub fn record_all_advantages(sync: &mut GR3DSync, force_recalculate: bool) {
+pub fn record_all_advantages(sync: &mut GR3DNet, force_recalculate: bool) {
     for peer in &mut sync.peers {
         peer.record_advantage(sync.tick as u64, force_recalculate);
     }

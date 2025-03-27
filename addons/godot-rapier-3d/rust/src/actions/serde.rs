@@ -6,8 +6,8 @@ use godot::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    actions::{Action, Operation},
     utils::extract_from_dict,
-    world::buffer::{Action, Operation},
 };
 
 // Struct sent over the network

@@ -1,9 +1,9 @@
 use godot::{classes::Engine, prelude::*};
 
 use super::GR3DNetworkAdapter;
-use crate::interface::GR3DSync;
+use crate::interface::GR3DNet;
 
-pub fn sync_start(sync: &mut GR3DSync) {
+pub fn sync_start(sync: &mut GR3DNet) {
     match &sync.network_adapter {
         Some(adapter) => {
             if !adapter.bind().is_network_host() {
@@ -32,7 +32,7 @@ pub fn sync_start(sync: &mut GR3DSync) {
     }
 }
 
-pub fn sync_stop(sync: &mut GR3DSync) {
+pub fn sync_stop(sync: &mut GR3DNet) {
     match &sync.network_adapter {
         Some(adapter) => {
             if !adapter.bind().is_network_host() {
@@ -50,7 +50,7 @@ pub fn sync_stop(sync: &mut GR3DSync) {
     }
 }
 
-pub fn on_received_remote_start(sync: &mut GR3DSync) {
+pub fn on_received_remote_start(sync: &mut GR3DNet) {
     // _reset()
     sync.tick_interval = 1.0 / Engine::singleton().get_physics_ticks_per_second() as f64; // TODO set physics engine integration parameters to match this
     sync.started = true;
@@ -63,7 +63,7 @@ pub fn on_received_remote_start(sync: &mut GR3DSync) {
     sync.base_mut().emit_signal("sync_started", &[]);
 }
 
-pub fn on_received_remote_stop(sync: &mut GR3DSync) {
+pub fn on_received_remote_stop(sync: &mut GR3DNet) {
     if !(sync.started || sync.host_starting) {
         return;
     }
