@@ -1,46 +1,16 @@
-use std::hash::{DefaultHasher, Hash, Hasher};
-
 use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
 use crate::utils::extract_from_dict;
 
 use super::{
-    super::state::PhysicsState,
-    actions::{
-        serde::{deserialize_actions, serialize_actions},
-        sort_actions,
-    },
-    add_node_to_world, configure_node,
-    modify_nodes::teleport_node,
-    move_node, remove_node_from_world, Action, Operation,
+    super::state::PhysicsState, actions::sort_actions, add_node_to_world, configure_node,
+    modify_nodes::teleport_node, move_node, remove_node_from_world, Action, BufferStep, Operation,
 };
 
 pub struct WorldBuffer {
-    pub buffer: HashMap<usize, BufferStep>,
-    pub max_len: usize,
-}
-
-/// Represents a single timestep in the buffer
-pub struct BufferStep {
-    pub timestep_id: usize,                    // The timestep id of this step
-    pub physics_state: Option<Vec<u8>>, // The state of the physics world at the beginning of this timestep
-    pub actions: HashMap<String, Vec<Action>>, // Map of node CUIDS against their list of actions to apply during this timestep // TODO maybe change the key to node path?
-    pub nodes: HashMap<String, Gd<Node>>, // Map of node paths against their Godot pointers for this timestemp
-}
-
-impl BufferStep {
-    pub fn new(timestep_id: usize, physics_state: Option<Vec<u8>>, actions: Vec<Action>) -> Self {
-        let nodes = extract_node_entries_from_actions(&actions);
-        let actions_map = extract_action_entries_from_actions(actions);
-
-        Self {
-            timestep_id,
-            physics_state,
-            actions: actions_map,
-            nodes,
-        }
-    }
+    pub buffer: HashMap<usize, BufferStep>, // Timestep id -> BufferStep
+    pub max_len: usize,                     // Maximum number of steps to keep in the buffer
 }
 
 impl WorldBuffer {
@@ -221,40 +191,10 @@ impl WorldBuffer {
         }
     }
 
-    /// Returns the serialized form of actions in the buffer at the given timestep
-    pub fn get_serialized_actions(&self, timestep_id: usize) -> Option<(Vec<u8>, usize)> {
-        serialize_actions(self, timestep_id)
-    }
-
-    pub fn ingest_serialized_actions(&mut self, timestep_id: usize, bytes: Vec<u8>) {
-        // deserialize_actions(bytes, scene_root)
-        // TODO
-    }
-
     /// Returns the hash of the physics state in the buffer at the given timestep
     pub fn get_state_hash(&self, timestep_id: usize) -> Option<u64> {
-        self.buffer.get(&timestep_id).map(|step| {
-            let mut hasher = DefaultHasher::new();
-            step.physics_state.hash(&mut hasher);
-            hasher.finish()
-        })
+        self.buffer
+            .get(&timestep_id)
+            .and_then(|step| step.physics_hash)
     }
-}
-
-fn extract_node_entries_from_actions(actions: &Vec<Action>) -> HashMap<String, Gd<Node>> {
-    let mut map = HashMap::default();
-    for action in actions {
-        map.entry(action.node.get_path().to_string())
-            .or_insert(action.node.clone());
-    }
-    map
-}
-
-fn extract_action_entries_from_actions(actions: Vec<Action>) -> HashMap<String, Vec<Action>> {
-    let mut map = HashMap::default();
-    for action in actions {
-        let existing = map.entry(action.cuid.to_string()).or_insert(Vec::new());
-        existing.push(action);
-    }
-    map
 }

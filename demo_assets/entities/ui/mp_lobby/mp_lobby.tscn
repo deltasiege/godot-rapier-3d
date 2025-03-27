@@ -1,0 +1,127 @@
+[gd_scene load_steps=2 format=3 uid="uid://kwx04lun14rx"]
+
+[ext_resource type="Script" uid="uid://cf6hixq4r2x0x" path="res://demo_assets/entities/ui/mp_lobby/mp_lobby.gd" id="1_dqgam"]
+
+[node name="Lobby" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_dqgam")
+
+[node name="Peer Type" type="PanelContainer" parent="."]
+visible = false
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -58.5
+offset_right = 150.0
+offset_bottom = 58.5
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="MarginContainer" type="MarginContainer" parent="Peer Type"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Peer Type/MarginContainer"]
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="Peer Type/MarginContainer/VBoxContainer"]
+layout_mode = 2
+columns = 2
+
+[node name="IP Label" type="Label" parent="Peer Type/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "IP address: "
+
+[node name="IP" type="LineEdit" parent="Peer Type/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "127.0.0.1"
+placeholder_text = "127.0.0.1"
+emoji_menu_enabled = false
+
+[node name="Port Label" type="Label" parent="Peer Type/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "Port: "
+
+[node name="Port" type="LineEdit" parent="Peer Type/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "4321"
+placeholder_text = "4321"
+emoji_menu_enabled = false
+
+[node name="Host" type="Button" parent="Peer Type/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Host game"
+
+[node name="Join" type="Button" parent="Peer Type/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Join game"
+
+[node name="Lobby" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(300, 200)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Lobby"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Lobby/VBoxContainer"]
+layout_mode = 2
+text = "Lobby"
+horizontal_alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="Lobby/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Lobby/VBoxContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="Players" type="VBoxContainer" parent="Lobby/VBoxContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Start" type="Button" parent="Lobby/VBoxContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Start"
+
+[node name="Back" type="Button" parent="Lobby/VBoxContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Back"
+
+[connection signal="pressed" from="Peer Type/MarginContainer/VBoxContainer/Host" to="." method="_on_host_pressed"]
+[connection signal="pressed" from="Peer Type/MarginContainer/VBoxContainer/Join" to="." method="_on_join_pressed"]
+[connection signal="pressed" from="Lobby/VBoxContainer/MarginContainer/VBoxContainer/Start" to="." method="_on_start_pressed"]
+[connection signal="pressed" from="Lobby/VBoxContainer/MarginContainer/VBoxContainer/Back" to="." method="_on_back_pressed"]

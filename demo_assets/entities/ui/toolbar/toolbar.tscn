@@ -1,19 +1,13 @@
-[gd_scene load_steps=11 format=3 uid="uid://catsbly4tdfm0"]
+[gd_scene load_steps=5 format=3 uid="uid://catsbly4tdfm0"]
 
 [ext_resource type="FontFile" uid="uid://bbojb47dw42nl" path="res://demo_assets/entities/ui/font/FixelDisplay-Regular.woff2" id="1_0fuqr"]
 [ext_resource type="Script" uid="uid://6up10ut5ujb0" path="res://demo_assets/entities/ui/toolbar/toolbar.gd" id="1_70jrx"]
-[ext_resource type="Texture2D" uid="uid://bmmnyrgr6vmde" path="res://demo_assets/entities/ui/icons/world.svg" id="1_fp30f"]
-[ext_resource type="Texture2D" uid="uid://lk8nr4d22vyy" path="res://demo_assets/entities/ui/icons/character.svg" id="1_nuo16"]
 [ext_resource type="Script" uid="uid://dvedonthhj4mh" path="res://demo_assets/entities/ui/popups.gd" id="2_6xmtj"]
-[ext_resource type="Texture2D" uid="uid://dm0c2jfrfxcom" path="res://demo_assets/entities/ui/icons/state.svg" id="2_ynmef"]
-[ext_resource type="Texture2D" uid="uid://cut2eiy7xp5di" path="res://demo_assets/entities/ui/icons/hotkeys.svg" id="4_ynmef"]
-[ext_resource type="Texture2D" uid="uid://cwtbqb2w8bax6" path="res://addons/godot-rapier-3d/icons/rapier_playback.svg" id="4_yybin"]
-[ext_resource type="Texture2D" uid="uid://cx6u464uxfxnu" path="res://addons/godot-rapier-3d/icons/rapier_snapshot.svg" id="5_6xmtj"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_t7uuf"]
 font = ExtResource("1_0fuqr")
 
-[node name="Toolbar" type="Control"]
+[node name="Toolbar" type="Control" node_paths=PackedStringArray("button_container")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -22,6 +16,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_70jrx")
+button_container = NodePath("Left/MarginContainer/VBoxContainer")
 
 [node name="Popups" type="Node" parent="."]
 script = ExtResource("2_6xmtj")
@@ -52,126 +47,6 @@ theme_override_constants/margin_bottom = 32
 custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
 
-[node name="Character" type="Button" parent="Left/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_vertical = 4
-
-[node name="TextureRect" type="TextureRect" parent="Left/MarginContainer/VBoxContainer/Character"]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -8.0
-offset_right = 8.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("1_nuo16")
-expand_mode = 2
-
-[node name="Playback" type="Button" parent="Left/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_vertical = 4
-
-[node name="TextureRect" type="TextureRect" parent="Left/MarginContainer/VBoxContainer/Playback"]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -8.0
-offset_right = 8.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("4_yybin")
-expand_mode = 2
-
-[node name="Snapshots" type="Button" parent="Left/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_vertical = 4
-
-[node name="TextureRect" type="TextureRect" parent="Left/MarginContainer/VBoxContainer/Snapshots"]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -8.0
-offset_right = 8.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("5_6xmtj")
-expand_mode = 2
-
-[node name="Rollback" type="Button" parent="Left/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_vertical = 4
-
-[node name="TextureRect" type="TextureRect" parent="Left/MarginContainer/VBoxContainer/Rollback"]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -8.0
-offset_right = 8.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("2_ynmef")
-expand_mode = 2
-
-[node name="Hotkeys" type="Button" parent="Left/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_vertical = 4
-
-[node name="TextureRect" type="TextureRect" parent="Left/MarginContainer/VBoxContainer/Hotkeys"]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -8.0
-offset_right = 8.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("4_ynmef")
-expand_mode = 2
-
-[node name="World" type="Button" parent="Left/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-size_flags_vertical = 4
-
-[node name="TextureRect" type="TextureRect" parent="Left/MarginContainer/VBoxContainer/World"]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -8.0
-offset_right = 8.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("1_fp30f")
-expand_mode = 2
-
 [node name="Panels" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 1
@@ -180,10 +55,3 @@ anchor_right = 1.0
 grow_horizontal = 0
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
-
-[connection signal="pressed" from="Left/MarginContainer/VBoxContainer/Character" to="." method="_on_character_pressed"]
-[connection signal="pressed" from="Left/MarginContainer/VBoxContainer/Playback" to="." method="_on_playback_pressed"]
-[connection signal="pressed" from="Left/MarginContainer/VBoxContainer/Snapshots" to="." method="_on_snapshots_pressed"]
-[connection signal="pressed" from="Left/MarginContainer/VBoxContainer/Rollback" to="." method="_on_rollback_pressed"]
-[connection signal="pressed" from="Left/MarginContainer/VBoxContainer/Hotkeys" to="." method="_on_hotkeys_pressed"]
-[connection signal="pressed" from="Left/MarginContainer/VBoxContainer/World" to="." method="_on_world_pressed"]

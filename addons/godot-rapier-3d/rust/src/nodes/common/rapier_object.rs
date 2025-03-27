@@ -31,7 +31,7 @@ pub trait IRapierObject: Identifiable + WithBaseField + GodotClass<Base = Node3D
     fn on_enter_runtime_tree(&mut self) {
         if let Some(mut singleton) = get_singleton() {
             singleton.call_deferred(
-                "_ingest_action",
+                "_ingest_local_action",
                 &[
                     self.base().to_variant(),
                     Operation::AddNode.to_variant(),
@@ -40,7 +40,7 @@ pub trait IRapierObject: Identifiable + WithBaseField + GodotClass<Base = Node3D
             );
 
             singleton.call_deferred(
-                "_ingest_action",
+                "_ingest_local_action",
                 &[
                     self.base().to_variant(),
                     Operation::ConfigureNode.to_variant(),
@@ -60,7 +60,7 @@ pub trait IRapierObject: Identifiable + WithBaseField + GodotClass<Base = Node3D
     fn on_exit_runtime_tree(&mut self) {
         if let Some(mut singleton) = get_singleton() {
             singleton.call_deferred(
-                "_ingest_action",
+                "_ingest_local_action",
                 &[
                     self.base().to_variant(),
                     Operation::RemoveNode.to_variant(),

@@ -2,7 +2,7 @@ use super::debugger::GR3DDebugger;
 use crate::nodes::{generate_cuid, IRapierObject};
 use crate::utils::extract_from_dict;
 use crate::utils::{init_logger, set_log_level};
-use crate::world::buffer::{ingest_action, Action};
+use crate::world::buffer::{ingest_local_action, Action};
 use crate::world::state::{restore_snapshot, unpack_snapshot};
 use crate::world::Operation;
 use crate::World;
@@ -146,32 +146,9 @@ impl GR3D {
     }
 
     #[func]
-    pub fn _ingest_action(&mut self, node: Gd<Node>, operation: Operation, data: Dictionary) {
-        ingest_action(node, operation, data, &mut self.world);
-    }
-
-    #[func]
-    pub fn _ingest_serialized_actions(&mut self, timestep_id: i64, actions: PackedByteArray) {
-        let bytes = actions.to_vec();
-        self.world
-            .buffer
-            .ingest_serialized_actions(timestep_id as usize, bytes);
-    }
-
-    #[func]
-    /// Returns [timestep_id, num_actions, hash, serialized actions]
-    pub fn _get_serialized_actions(&self) -> Array<Variant> {
-        let timestep_id = self.world.state.timestep_id - 1;
-        let (bytes, num_actions) = match self.world.buffer.get_serialized_actions(timestep_id) {
-            Some((actions, count)) => (PackedByteArray::from(actions), count),
-            None => (PackedByteArray::new(), 0),
-        };
-        let mut result = Array::new();
-        result.push(&(timestep_id as i64).to_variant());
-        result.push(&(num_actions as i64).to_variant());
-        result.push(&bytes.to_variant().hash().to_variant());
-        result.push(&bytes.to_variant());
-        result
+    /// Consume a local action and apply it to the world immediately
+    pub fn _ingest_local_action(&mut self, node: Gd<Node>, operation: Operation, data: Dictionary) {
+        ingest_local_action(node, operation, data, &mut self.world);
     }
 
     #[func]

@@ -90,6 +90,16 @@ impl World {
             .on_world_stepped(self.state.timestep_id, self.get_current_snapshot());
     }
 
+    pub fn rollback_step(&mut self) {
+        if self.state.timestep_id > 0 {
+            self.state.timestep_id -= 1;
+            self.state.time -= self.physics.integration_parameters.dt as f32;
+
+            self.buffer
+                .on_world_stepped(self.state.timestep_id, self.get_current_snapshot());
+        }
+    }
+
     /// Retrieve either the current or a buffered snapshot
     pub fn get_snapshot(&mut self, timestep_id: Option<i64>) -> Option<Vec<u8>> {
         match timestep_id {
@@ -112,12 +122,12 @@ impl World {
 
     /// Rolls this world back to the given timestep and:
     /// - optionally adds the given actions to the buffer
-    /// - optionally applies the given snapshots physics state
+    /// - optionally applies the given snapshot physics state
     /// - re-simulates the world back to the current timestep with changes applied
     pub fn corrective_rollback(
         &mut self,
         timestep_id: usize,
-        actions_to_add: Option<Vec<Action>>, // TODO do I need to support adding actions at different timesteps during a single rollback?
+        actions_to_add: Option<Vec<Action>>, // TODO do I need to support adding actions at different timesteps during a single rollback? probably
         snapshot: Option<DeserializedPhysicsSnapshot>,
     ) {
         if let Some(_target_step) = self.buffer.get_step_mut(timestep_id) {

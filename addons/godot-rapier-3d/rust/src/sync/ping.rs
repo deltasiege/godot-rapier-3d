@@ -64,11 +64,8 @@ pub fn record_rtt(sync: &mut GR3DSync, peer_id: i64, local_time: u128, remote_ti
         .emit_signal("peer_pinged_back", &[Variant::from(peer_id)]);
 }
 
-const TICKS_TO_CALCULATE_ADVANTAGE: i64 = 60;
-
 pub fn record_all_advantages(sync: &mut GR3DSync, force_recalculate: bool) {
     for peer in &mut sync.peers {
-        peer.local_lag = sync.input_tick + 1 - peer.last_remote_input_tick_received;
-        peer.record_advantage(TICKS_TO_CALCULATE_ADVANTAGE, force_recalculate);
+        peer.record_advantage(sync.tick as u64, force_recalculate);
     }
 }

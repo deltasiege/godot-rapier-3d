@@ -25,12 +25,22 @@ func _physics_process(_delta):
 	if opened_popup: opened_popup.current_content.set_entries(_get_data(opened_popup.title))
 
 func on_popup_opened(popup: Control):
+	character = get_tree().root.find_child("Active Character", true, false)
 	opened_popup = popup
 	opened_popup.current_content.force_set_entries(_get_data(opened_popup.title))
 
 func _get_data(title: String):
 	if title == "Character" and !character: return
 	match title:
+		"Network":
+			var peer_data = GR3DSync.get_all_peer_data()
+			var grouped = {}
+			grouped["Local ID"] = str(multiplayer.get_unique_id())
+			for peer in peer_data:
+				var data = peer.duplicate()
+				data.erase("peer_id")
+				grouped["Peer " + str(peer.peer_id)] = data
+			return grouped
 		"Character":
 			var common_data = {
 				"type": character.get_class(),
@@ -50,23 +60,23 @@ func _get_data(title: String):
 					return common_data.merged({})
 		"Playback":
 			return [
-				{ "text": "time", "value": snapped(GR3D.get_time(), 0.1) },
-				{ "text": "tick", "value": GR3D.get_tick() },
-				{ "type": "button", "id": "pause_sim", "text": "Pause simulation" if !GR3DRuntime.paused else "Play simulation", "on_pressed": toggle_sim },
-				{ "type": "button", "text": "Advance 1 tick", "on_pressed": step },
+				{ "key": "time", "value": snapped(GR3D.get_time(), 0.1) },
+				{ "key": "tick", "value": GR3D.get_tick() },
+				{ "type": "button", "id": "pause_sim", "key": "Pause simulation" if !GR3DRuntime.paused else "Play simulation", "on_pressed": toggle_sim },
+				{ "type": "button", "key": "Advance 1 tick", "on_pressed": step },
 			]
 		"Snapshots":
 			return [
-				{ "type": "button", "text": "Reset simulation", "on_pressed": reset_sim  },
-				{ "type": "button", "text": "Take snapshot", "on_pressed": take_snapshot },
-				{ "type": "button", "text": "Restore snapshot", "on_pressed": restore_snapshot },
-				{ "text": "snapshot_bytes", "value": _last_snapshot_data.get("snapshot_bytes") },
-				{ "text": "godot_hash", "value": _last_snapshot_data.get("godot_hash") },
-				{ "text": "rapier_hash", "value": _last_snapshot_data.get("rapier_hash") },
+				{ "type": "button", "key": "Reset simulation", "on_pressed": reset_sim  },
+				{ "type": "button", "key": "Take snapshot", "on_pressed": take_snapshot },
+				{ "type": "button", "key": "Restore snapshot", "on_pressed": restore_snapshot },
+				{ "key": "snapshot_bytes", "value": _last_snapshot_data.get("snapshot_bytes") },
+				{ "key": "godot_hash", "value": _last_snapshot_data.get("godot_hash") },
+				{ "key": "rapier_hash", "value": _last_snapshot_data.get("rapier_hash") },
 			]
 		"Rollback":
 			return [
-				{ "text": "TBA", "value": "Show full buffer here" },
+				{ "key": "TBA", "value": "Show full buffer here" },
 			]
 		"Hotkeys":
 			return {

@@ -1,0 +1,29 @@
+[gd_scene load_steps=8 format=3 uid="uid://8ufpiaivcyt2"]
+
+[ext_resource type="Script" uid="uid://6hnkj810hs6k" path="res://demos/multiplayer/multiplayer.gd" id="1_11r3s"]
+[ext_resource type="PackedScene" uid="uid://catsbly4tdfm0" path="res://demo_assets/entities/ui/toolbar/toolbar.tscn" id="2_di6ge"]
+[ext_resource type="PackedScene" uid="uid://kwx04lun14rx" path="res://demo_assets/entities/ui/mp_lobby/mp_lobby.tscn" id="2_i6dhd"]
+[ext_resource type="Texture2D" uid="uid://brjth02j3ci4j" path="res://demo_assets/entities/ui/icons/network.svg" id="3_r4ogj"]
+[ext_resource type="Script" uid="uid://cd6mcq4pqje4b" path="res://demos/multiplayer/player_spawner.gd" id="5_uavhj"]
+[ext_resource type="PackedScene" uid="uid://djk6gksnqngk2" path="res://demos/multiplayer/player.tscn" id="6_k6fr7"]
+[ext_resource type="PackedScene" uid="uid://drbstenfl2i1o" path="res://demo_assets/env/outdoors/outdoors.tscn" id="7_k6fr7"]
+
+[node name="Multiplayer" type="Node" node_paths=PackedStringArray("player_spawner")]
+script = ExtResource("1_11r3s")
+player_spawner = NodePath("PlayerSpawner")
+
+[node name="Toolbar" parent="." instance=ExtResource("2_di6ge")]
+popup_titles = Array[String](["Network"])
+button_icons = Array[CompressedTexture2D]([ExtResource("3_r4ogj")])
+metadata/_edit_lock_ = true
+
+[node name="Lobby" parent="." instance=ExtResource("2_i6dhd")]
+metadata/_edit_lock_ = true
+
+[node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("uid://djk6gksnqngk2")
+spawn_path = NodePath(".")
+script = ExtResource("5_uavhj")
+player_scene = ExtResource("6_k6fr7")
+
+[node name="Outdoors" parent="." instance=ExtResource("7_k6fr7")]

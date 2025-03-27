@@ -1,7 +1,11 @@
 use godot::prelude::*;
 
+use crate::interface::GR3DSync;
+
 #[derive(GodotClass)]
 #[class(base = Node)]
+/// Base class that can be overriden by GDScript
+/// Responsible for sending & receiving network messages between peers
 pub struct GR3DNetworkAdapter {
     base: Base<Node>,
 }
@@ -116,4 +120,28 @@ impl GR3DNetworkAdapter {
         );
         1
     }
+}
+
+pub fn attach_network_adapter(sync: &mut GR3DSync, mut network_adapter: Gd<GR3DNetworkAdapter>) {
+    log::debug!("Attaching network adapter: {:?}", network_adapter);
+    network_adapter.bind().on_attached();
+    let ping_cb = sync.to_gd().callable("_on_received_ping");
+    let ping_back_cb = sync.to_gd().callable("_on_received_ping_back");
+    let tick_data_cb = sync.to_gd().callable("_on_received_tick_data");
+    network_adapter.connect("received_ping", &ping_cb);
+    network_adapter.connect("received_ping_back", &ping_back_cb);
+    network_adapter.connect("received_tick_data", &tick_data_cb);
+    sync.network_adapter = Some(network_adapter);
+}
+
+pub fn detach_network_adapter(sync: &mut GR3DSync, mut network_adapter: Gd<GR3DNetworkAdapter>) {
+    log::debug!("Detaching network adapter: {:?}", network_adapter);
+    network_adapter.bind().on_detached();
+    let ping_cb = sync.to_gd().callable("_on_received_ping");
+    let ping_back_cb = sync.to_gd().callable("_on_received_ping_back");
+    let tick_data_cb = sync.to_gd().callable("_on_received_tick_data");
+    network_adapter.disconnect("received_ping", &ping_cb);
+    network_adapter.disconnect("received_ping_back", &ping_back_cb);
+    network_adapter.disconnect("received_tick_data", &tick_data_cb);
+    sync.network_adapter = None;
 }

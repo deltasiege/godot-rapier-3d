@@ -1,10 +1,13 @@
-use bincode::config::standard;
+use bincode::{
+    config::standard,
+    serde::{decode_from_slice, encode_to_vec},
+};
 use godot::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     utils::extract_from_dict,
-    world::buffer::{Action, Operation, WorldBuffer},
+    world::buffer::{Action, Operation},
 };
 
 // Struct sent over the network
@@ -16,70 +19,48 @@ pub struct DeserializedAction {
     pub strings: Vec<String>,
 }
 
-pub fn serialize_actions(buffer: &WorldBuffer, timestep_id: usize) -> Option<(Vec<u8>, usize)> {
-    let actions: Vec<DeserializedAction> = match buffer.get_actions(timestep_id) {
-        Some(actions) => actions
-            .iter()
-            .map(|action| DeserializedAction::from(action))
-            .collect(),
-        None => {
-            // No actions to serialize
-            return None;
-        }
-    };
-
-    let count = actions.len();
-
-    match bincode::serde::encode_to_vec(actions, standard()) {
-        Ok(serialized) => Some((serialized, count)),
-        Err(e) => {
-            log::error!(
-                "Failed serializing actions on timestep: {} Error: {:?}",
-                timestep_id,
-                e
-            );
-            None
-        }
-    }
+/// Serialize the given actions vector into byte vector
+pub fn serialize_actions(actions: &Vec<Action>) -> Result<Vec<u8>, bincode::error::EncodeError> {
+    let actions: Vec<DeserializedAction> = actions
+        .iter()
+        .map(|action| DeserializedAction::from(action))
+        .collect();
+    encode_to_vec(actions, standard())
 }
 
-pub fn deserialize_actions(serialized: Vec<u8>, scene_root: Gd<Node>) -> Vec<Action> {
-    let de: Vec<DeserializedAction> =
-        match bincode::serde::decode_from_slice(&serialized, standard()) {
-            Ok(de) => de.0,
-            Err(e) => {
-                log::error!("Failed to decode actions: {:?}", e);
-                return Vec::new();
-            }
-        };
+pub fn deserialize_actions(
+    serialized: Vec<u8>,
+    scene_root: &Gd<Node>,
+) -> Result<Vec<Action>, bincode::error::DecodeError> {
+    let de: Vec<DeserializedAction> = match decode_from_slice(&serialized, standard()) {
+        Ok(de) => de.0,
+        Err(e) => return Err(e),
+    };
 
-    de.iter()
-        .filter_map(|de_action| Action::deserialize(de_action, scene_root.clone()))
-        .collect()
+    Ok(de
+        .iter()
+        .filter_map(|de_action| Action::deserialize(de_action, scene_root))
+        .collect())
 }
 
 impl Action {
     pub fn serialize(&self) -> Result<Vec<u8>, bincode::error::EncodeError> {
-        Ok(bincode::serde::encode_to_vec(
-            DeserializedAction::from(self),
-            standard(),
-        )?)
+        Ok(encode_to_vec(DeserializedAction::from(self), standard())?)
     }
 
-    pub fn deserialize_from_bytes(serialized: Vec<u8>, scene_root: Gd<Node>) -> Option<Action> {
-        let de: DeserializedAction =
-            match bincode::serde::decode_from_slice(&serialized, standard()) {
-                Ok(de) => de.0,
-                Err(e) => {
-                    log::error!("Failed to decode action: {:?}", e);
-                    return None;
-                }
-            };
+    pub fn deserialize_from_bytes(serialized: Vec<u8>, scene_root: &Gd<Node>) -> Option<Action> {
+        let de: DeserializedAction = match decode_from_slice(&serialized, standard()) {
+            Ok(de) => de.0,
+            Err(e) => {
+                log::error!("Failed to decode action: {:?}", e);
+                return None;
+            }
+        };
 
         Action::deserialize(&de, scene_root)
     }
 
-    pub fn deserialize(de: &DeserializedAction, scene_root: Gd<Node>) -> Option<Action> {
+    pub fn deserialize(de: &DeserializedAction, scene_root: &Gd<Node>) -> Option<Action> {
         match scene_root.get_node_or_null(&de.strings[0]) {
             Some(node) => {
                 let cuid = match node.get_meta("cuid").get_type() {

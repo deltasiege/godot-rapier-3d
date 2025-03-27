@@ -3,7 +3,7 @@ use godot::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 
-use crate::{nodes::*, World};
+use crate::{interface::get_sync_singleton, nodes::*, World};
 
 #[derive(
     GodotConvert,
@@ -61,11 +61,27 @@ impl Action {
 }
 
 /// Constructs a new action and then adds it to the world buffer at the current timestep
-pub fn ingest_action(node: Gd<Node>, operation: Operation, data: Dictionary, world: &mut World) {
+pub fn ingest_local_action(
+    node: Gd<Node>,
+    operation: Operation,
+    data: Dictionary,
+    world: &mut World,
+) {
     if let Some((cuid, handle)) = extract_ids(node.clone()) {
         let action = Action::new(cuid, handle, node, operation, data);
         let timestep_id = world.state.timestep_id;
-        world.buffer.insert_action(action, timestep_id);
+
+        match get_sync_singleton() {
+            Some(mut sync) => {
+                sync.bind_mut().record_local_action(timestep_id, &action);
+                world.buffer.insert_action(action, timestep_id);
+            }
+            None => {
+                log::error!(
+                    "Failed to ingest_local_action because GR3DSync singleton was not found"
+                );
+            }
+        }
     }
 }
 

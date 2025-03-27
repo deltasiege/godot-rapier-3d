@@ -1,3 +1,7 @@
+use bincode::{
+    config::standard,
+    serde::{decode_from_slice, encode_to_vec},
+};
 use rapier3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -82,11 +86,11 @@ pub fn pack_snapshot(world: &World) -> Result<Vec<u8>, bincode::error::EncodeErr
         lookup_table: world.physics.lookup_table.clone(),
     };
 
-    bincode::serde::encode_to_vec(&output, bincode::config::standard())
+    encode_to_vec(&output, standard())
 }
 
 pub fn unpack_snapshot(bytes: Vec<u8>) -> Option<DeserializedPhysicsSnapshot> {
-    let deserialized = bincode::serde::decode_from_slice(&bytes, bincode::config::standard());
+    let deserialized = decode_from_slice(&bytes, standard());
     match deserialized {
         Ok((snapshot, _size)) => Some(snapshot),
         Err(e) => {

@@ -15,7 +15,7 @@ pub trait Controllable: IRapierObject {
             dict.set("movement", amount);
 
             singleton.call_deferred(
-                "_ingest_action",
+                "_ingest_local_action",
                 &[
                     self.to_gd().to_variant(),
                     Operation::MoveNode.to_variant(),
@@ -31,7 +31,7 @@ pub trait Controllable: IRapierObject {
             dict.set("position", position);
 
             singleton.call_deferred(
-                "_ingest_action",
+                "_ingest_local_action",
                 &[
                     self.to_gd().to_variant(),
                     Operation::MoveNode.to_variant(),

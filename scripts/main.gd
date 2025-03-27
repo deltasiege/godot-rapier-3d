@@ -1,7 +1,7 @@
 extends Node
 
 var cmd = preload("res://test_assets/tools/cmd.gd")
-const DEFAULT_DEMO = "p2p/p2p"
+const DEFAULT_DEMO = "multiplayer/multiplayer"
 
 func _ready():
 	print("[GR3D MAIN]")
