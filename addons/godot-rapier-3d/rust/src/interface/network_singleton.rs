@@ -1,11 +1,6 @@
-use std::collections::HashMap;
-
 use godot::{classes::Engine, prelude::*};
 
-use crate::interface::get_singleton;
-use crate::world::apply_actions_to_world;
-use crate::World;
-use crate::{actions::Operation, network::*, Action};
+use crate::{actions::Operation, config::MAX_BUFFER_LEN, network::*};
 
 /// Use the GR3DNet singleton to share physics + action data between network clients
 #[derive(GodotClass)]
@@ -16,8 +11,7 @@ pub struct GR3DNet {
     pub synchronized_tick: u64, // The latest tick that has received all peer actions and matching state hashes
     pub started: bool,
     pub host_starting: bool,
-    pub peers: Vec<Peer>,                           // List of connected peers
-    pub local_actions: HashMap<usize, Vec<Action>>, // Tick -> List of local actions that have been added to local world
+    pub peers: Vec<Peer>, // List of connected peers
     pub world_buffer: WorldBuffer,
 
     #[export]
@@ -35,8 +29,7 @@ impl IObject for GR3DNet {
             started: false,
             host_starting: false,
             peers: Vec::new(),
-            local_actions: HashMap::new(),
-            world_buffer: WorldBuffer::new(1000), // TODO expose as project setting
+            world_buffer: WorldBuffer::new(MAX_BUFFER_LEN),
             network_adapter: None,
             base,
         }
@@ -81,20 +74,12 @@ impl GR3DNet {
     // signal tick_input_complete (tick)
 
     #[func]
-    pub fn physics_process(&mut self) {
+    pub fn on_physics_process(&mut self) {
         if !self.started {
             return;
         }
 
         record_all_advantages(self, false);
-
-        let singleton = match get_singleton() {
-            Some(singleton) => singleton,
-            None => {
-                log::error!("Failed to get GR3D singleton");
-                return;
-            }
-        };
 
         let network_adapter = match &self.network_adapter {
             Some(adapter) => adapter,
@@ -104,51 +89,57 @@ impl GR3DNet {
             }
         };
 
-        send_local_actions_to_all_peers(&self.peers, self, network_adapter);
+        send_local_actions_to_all_peers(self, network_adapter);
+
+        for peer in &mut self.peers {
+            peer.prune_buffers();
+        }
     }
 
     #[func]
-    pub fn add_peer(&mut self, peer_id: i64) {
+    fn add_peer(&mut self, peer_id: i64) {
         self.peers.push(Peer::new(peer_id));
         log::debug!("Added peer: {}", peer_id);
     }
 
     #[func]
-    pub fn remove_peer(&mut self, peer_id: i64) {
+    fn remove_peer(&mut self, peer_id: i64) {
         self.peers.retain(|peer| peer.peer_id != peer_id);
         log::debug!("Removed peer: {}", peer_id);
     }
 
     #[func]
-    pub fn start(&mut self) {
+    fn start(&mut self) {
         sync_start(self);
     }
 
     #[func]
-    pub fn stop(&mut self) {
+    fn stop(&mut self) {
         sync_stop(self);
     }
 
+    #[func]
     fn _on_received_remote_start(&mut self) {
         on_received_remote_start(self);
     }
 
+    #[func]
     fn _on_received_remote_stop(&mut self) {
         on_received_remote_stop(self);
     }
 
     #[func]
-    pub fn _attach_network_adapter(&mut self, network_adapter: Gd<GR3DNetworkAdapter>) {
+    fn _attach_network_adapter(&mut self, network_adapter: Gd<GR3DNetworkAdapter>) {
         attach_network_adapter(self, network_adapter);
     }
 
     #[func]
-    pub fn _detach_network_adapter(&mut self, network_adapter: Gd<GR3DNetworkAdapter>) {
+    fn _detach_network_adapter(&mut self, network_adapter: Gd<GR3DNetworkAdapter>) {
         detach_network_adapter(self, network_adapter);
     }
 
     #[func]
-    pub fn _on_ping_timer_timeout(&mut self) {
+    fn _on_ping_timer_timeout(&mut self) {
         ping_all_peers(self);
     }
 
@@ -167,13 +158,14 @@ impl GR3DNet {
     }
 
     #[func]
-    fn _on_received_tick_data(&mut self, sender_peer_id: i64, data: PackedByteArray) {
-        godot_print!("Received tick data from peer: {}", sender_peer_id); // UP TO - actually do something with update message
+    /// Consume a remote action and record it against the peer
+    fn _on_received_tick_data(&mut self, sender_peer_id: i64, ser_message: PackedByteArray) {
+        ingest_peer_message(self, sender_peer_id, ser_message);
     }
 
     #[func]
     /// Consume a local action and apply it to the world immediately
-    pub fn _ingest_local_action(&mut self, node: Gd<Node>, operation: Operation, data: Dictionary) {
+    fn _ingest_local_action(&mut self, node: Gd<Node>, operation: Operation, data: Dictionary) {
         ingest_local_action(self, node, operation, data);
     }
 
@@ -188,24 +180,30 @@ impl GR3DNet {
             peer_dict.set("time_delta", peer.time_delta);
             peer_dict.set(
                 "last_remote_action_tick_received",
-                peer.last_remote_action_tick_received,
+                peer.last_remote_action_tick_received as i64,
             );
             peer_dict.set(
                 "next_local_action_tick_requested",
-                peer.next_local_action_tick_requested,
+                peer.next_local_action_tick_requested as i64,
             );
             peer_dict.set(
                 "last_remote_hash_tick_received",
-                peer.last_remote_hash_tick_received,
+                peer.last_remote_hash_tick_received as i64,
             );
             peer_dict.set(
                 "next_local_hash_tick_requested",
-                peer.next_local_hash_tick_requested,
+                peer.next_local_hash_tick_requested as i64,
             );
             peer_dict.set("remote_lag", peer.remote_lag);
             peer_dict.set("local_lag", peer.local_lag);
             peer_dict.set("calculated_advantage", peer.calculated_advantage);
             peer_dict.set("advantage_list", peer.advantage_list.to_variant());
+            peer_dict.set(
+                "ticks_with_actions",
+                peer.actions.iter().filter(|(_, v)| !v.is_empty()).count() as i64,
+            );
+            peer_dict.set("action_buffer_length", peer.actions.len() as i64);
+            peer_dict.set("state_hash_buffer_length", peer.state_hashes.len() as i64);
             peer_data.push(&peer_dict);
         }
         peer_data
@@ -219,7 +217,7 @@ impl GR3DNet {
         dict.set("started", self.started);
         dict.set("host_starting", self.host_starting);
         dict.set("peers", self.peers.len() as i64);
-        dict.set("local_actions", self.local_actions.len() as i64);
+        dict.set("local_actions", self.world_buffer.local_buffer.len() as i64);
         dict
     }
 }

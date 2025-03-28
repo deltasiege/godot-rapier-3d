@@ -20,27 +20,38 @@ pub struct DeserializedAction {
 }
 
 /// Serialize the given actions vector into byte vector
-pub fn serialize_actions(actions: &Vec<Action>) -> Result<Vec<u8>, bincode::error::EncodeError> {
+pub fn serialize_actions(actions: &Vec<Action>) -> Option<Vec<u8>> {
+    if actions.is_empty() {
+        return None;
+    }
+
     let actions: Vec<DeserializedAction> = actions
         .iter()
         .map(|action| DeserializedAction::from(action))
         .collect();
-    encode_to_vec(actions, standard())
+    match encode_to_vec(actions, standard()) {
+        Ok(serialized) => Some(serialized),
+        Err(e) => {
+            log::error!("Failed to serialize actions: {:?}", e);
+            None
+        }
+    }
 }
 
-pub fn deserialize_actions(
-    serialized: Vec<u8>,
-    scene_root: &Gd<Node>,
-) -> Result<Vec<Action>, bincode::error::DecodeError> {
+pub fn deserialize_actions(serialized: Vec<u8>, scene_root: &Gd<Node>) -> Option<Vec<Action>> {
     let de: Vec<DeserializedAction> = match decode_from_slice(&serialized, standard()) {
         Ok(de) => de.0,
-        Err(e) => return Err(e),
+        Err(e) => {
+            log::error!("Failed to decode actions: {:?}", e);
+            return None;
+        }
     };
 
-    Ok(de
-        .iter()
-        .filter_map(|de_action| Action::deserialize(de_action, scene_root))
-        .collect())
+    Some(
+        de.iter()
+            .filter_map(|de_action| Action::deserialize(de_action, scene_root))
+            .collect(),
+    )
 }
 
 impl Action {

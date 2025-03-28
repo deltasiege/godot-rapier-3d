@@ -122,26 +122,34 @@ impl GR3DNetworkAdapter {
     }
 }
 
-pub fn attach_network_adapter(sync: &mut GR3DNet, mut network_adapter: Gd<GR3DNetworkAdapter>) {
+pub fn attach_network_adapter(net: &mut GR3DNet, mut network_adapter: Gd<GR3DNetworkAdapter>) {
     log::debug!("Attaching network adapter: {:?}", network_adapter);
     network_adapter.bind().on_attached();
-    let ping_cb = sync.to_gd().callable("_on_received_ping");
-    let ping_back_cb = sync.to_gd().callable("_on_received_ping_back");
-    let tick_data_cb = sync.to_gd().callable("_on_received_tick_data");
+    let ping_cb = net.to_gd().callable("_on_received_ping");
+    let ping_back_cb = net.to_gd().callable("_on_received_ping_back");
+    let tick_data_cb = net.to_gd().callable("_on_received_tick_data");
+    let rem_start_cb = net.to_gd().callable("_on_received_remote_start");
+    let rem_stop_cb = net.to_gd().callable("_on_received_remote_stop");
     network_adapter.connect("received_ping", &ping_cb);
     network_adapter.connect("received_ping_back", &ping_back_cb);
     network_adapter.connect("received_tick_data", &tick_data_cb);
-    sync.network_adapter = Some(network_adapter);
+    network_adapter.connect("received_remote_start", &rem_start_cb);
+    network_adapter.connect("received_remote_stop", &rem_stop_cb);
+    net.network_adapter = Some(network_adapter);
 }
 
-pub fn detach_network_adapter(sync: &mut GR3DNet, mut network_adapter: Gd<GR3DNetworkAdapter>) {
+pub fn detach_network_adapter(net: &mut GR3DNet, mut network_adapter: Gd<GR3DNetworkAdapter>) {
     log::debug!("Detaching network adapter: {:?}", network_adapter);
     network_adapter.bind().on_detached();
-    let ping_cb = sync.to_gd().callable("_on_received_ping");
-    let ping_back_cb = sync.to_gd().callable("_on_received_ping_back");
-    let tick_data_cb = sync.to_gd().callable("_on_received_tick_data");
+    let ping_cb = net.to_gd().callable("_on_received_ping");
+    let ping_back_cb = net.to_gd().callable("_on_received_ping_back");
+    let tick_data_cb = net.to_gd().callable("_on_received_tick_data");
+    let rem_start_cb = net.to_gd().callable("_on_received_remote_start");
+    let rem_stop_cb = net.to_gd().callable("_on_received_remote_stop");
     network_adapter.disconnect("received_ping", &ping_cb);
     network_adapter.disconnect("received_ping_back", &ping_back_cb);
     network_adapter.disconnect("received_tick_data", &tick_data_cb);
-    sync.network_adapter = None;
+    network_adapter.disconnect("received_remote_start", &rem_start_cb);
+    network_adapter.disconnect("received_remote_stop", &rem_stop_cb);
+    net.network_adapter = None;
 }

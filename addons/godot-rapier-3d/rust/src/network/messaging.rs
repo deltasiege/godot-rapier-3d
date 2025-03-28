@@ -7,7 +7,7 @@ use rapier3d::parry::utils::hashmap::HashMap;
 use serde::{Deserialize, Serialize};
 
 use super::{GR3DNetworkAdapter, Peer};
-use crate::{interface::GR3DNet, World};
+use crate::interface::GR3DNet;
 
 // TODO need serialized buffer of all timestep -> local actions - should go in world buffer
 // and separate HashMap of all timestep -> local state hashes - should go in world buffer
@@ -15,22 +15,18 @@ use crate::{interface::GR3DNet, World};
 /// Sent over the network to all peers
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UpdateMessage {
-    pub tick: u64,        // The physics timestep that the attached data corresponds to
-    pub actions: Vec<u8>, // All actions known to the sending peer for this tick
-    pub state_hashes: HashMap<u64, u64>, // Tick -> state hash. All state hashes beyond the one that receiving peer has asked for
-    pub next_action_tick_requested: u64, // The next action tick that the sending peer wants from the receiving peer
-    pub next_hash_tick_requested: u64, // The next hash tick that the sending peer wants from the receiving peer
+    pub tick: usize, // The physics timestep that the attached data corresponds to
+    pub actions: HashMap<usize, Vec<u8>>, // All actions known to the sending peer for this tick
+    pub state_hashes: HashMap<usize, u64>, // Tick -> state hash. All state hashes beyond the one that receiving peer has asked for
+    pub next_action_tick_requested: usize, // The next action tick that the sending peer wants from the receiving peer
+    pub next_hash_tick_requested: usize, // The next hash tick that the sending peer wants from the receiving peer
 }
 
-pub fn send_local_actions_to_all_peers(
-    peers: &Vec<Peer>,
-    sync: &GR3DNet,
-    network_adapter: &Gd<GR3DNetworkAdapter>,
-) {
-    for peer in peers {
+pub fn send_local_actions_to_all_peers(net: &GR3DNet, adapter: &Gd<GR3DNetworkAdapter>) {
+    for peer in &net.peers {
         let message = match create_update_message_for_peer(
             peer,
-            sync,
+            net,
             peer.next_local_action_tick_requested,
             peer.next_local_hash_tick_requested,
         ) {
@@ -38,51 +34,40 @@ pub fn send_local_actions_to_all_peers(
             None => continue,
         };
         let data = PackedByteArray::from(message.as_slice());
-        network_adapter.bind().send_tick_data(peer.peer_id, data);
+        adapter.bind().send_tick_data(peer.peer_id, data);
     }
-}
-
-pub fn record_peer_tick_data(
-    sync: &mut GR3DNet,
-    sender_peer_id: i64,
-    ser_message: PackedByteArray,
-) {
-    let message: UpdateMessage =
-        match decode_from_slice(ser_message.to_vec().as_slice(), standard()) {
-            Ok(message) => message.0,
-            Err(e) => {
-                log::error!("Failed to deserialize update message. Error: {}", e);
-                return;
-            }
-        };
-
-    let peer = match sync.peers.iter_mut().find(|p| p.peer_id == sender_peer_id) {
-        Some(peer) => peer,
-        None => {
-            log::error!("Received tick data from unknown peer {}", sender_peer_id);
-            return;
-        }
-    };
-
-    peer.next_local_action_tick_requested = message.next_action_tick_requested;
-    peer.next_local_hash_tick_requested = message.next_hash_tick_requested;
-    peer.last_remote_action_tick_received = message.tick;
-    peer.last_remote_hash_tick_received = message.tick;
 }
 
 fn create_update_message_for_peer(
     peer: &Peer,
-    sync: &GR3DNet,
-    next_action_tick_requested: u64,
-    next_hash_tick_requested: u64,
+    net: &GR3DNet,
+    next_action_tick_requested: usize,
+    next_hash_tick_requested: usize,
 ) -> Option<Vec<u8>> {
-    let bufferstep = sync.world_buffer.get_frame(sync.tick)?;
-    let actions = bufferstep.ser_actions.clone()?;
+    let current_tick = net.tick;
+
+    // Get all actions that are after the next tick that the peer has requested
+    let mut actions_since_requested = HashMap::default();
+    for tick in peer.next_local_action_tick_requested..current_tick {
+        if let Some(frame) = net.world_buffer.local_buffer.get(&tick) {
+            if let Some(ser_actions) = &frame.ser_actions {
+                actions_since_requested.insert(tick, ser_actions.clone());
+            }
+        }
+    }
+
+    // Get all state hashes that are after the next tick that the peer has requested
+    let mut hashes_since_requested = HashMap::default();
+    for tick in peer.next_local_hash_tick_requested..current_tick {
+        if let Some(hash) = net.world_buffer.get_physics_state_hash(tick) {
+            hashes_since_requested.insert(tick, hash);
+        }
+    }
 
     let message = UpdateMessage {
-        tick: sync.tick as u64,
-        actions,
-        state_hashes: HashMap::default(), //get_state_hashes_for_peer(peer, world),
+        tick: net.tick,
+        actions: actions_since_requested,
+        state_hashes: hashes_since_requested,
         next_action_tick_requested,
         next_hash_tick_requested,
     };
@@ -96,37 +81,12 @@ fn create_update_message_for_peer(
     }
 }
 
-// only give action complete state hashes?
-// fn get_state_hashes_for_peer(peer: &Peer, world: &World) -> HashMap<u64, u64> {
-//     let mut state_hashes = HashMap::default();
-//     let requested_tick = peer.next_local_hash_tick_requested;
-//     let mut idx = requested_tick;
-//     if idx >= (world.state.timestep_id - 1) as u64 {
-//         // TODO only go up to synchronized tick, not latest world tick
-//         log::error!("Requested state hash tick is beyond current tick");
-//         return state_hashes;
-//     }
-//     while idx < (world.state.timestep_id - 1) as u64 {
-//         match world.buffer.get_state_hash(idx as usize) {
-//             Some(hash) => {
-//                 state_hashes.insert(idx, hash);
-//             }
-//             None => {}
-//         };
-//         idx += 1;
-//     }
-//     state_hashes
-// }
-
-// TODO unneeded?
-// Returns the earliest BufferFrame that has a calculated physics state
-// fn get_earliest_physics_step(buffer: &WorldBuffer) -> u64 {
-//     let mut earliest = u64::MAX;
-//     for (tick, step) in buffer.buffer.iter() {
-//         if step.physics_state.is_some() {
-//             earliest = *tick as u64;
-//             break;
-//         }
-//     }
-//     earliest
-// }
+pub fn deserialize_message_from_peer(ser_message: PackedByteArray) -> Option<UpdateMessage> {
+    match decode_from_slice(ser_message.to_vec().as_slice(), standard()) {
+        Ok(message) => Some(message.0),
+        Err(e) => {
+            log::error!("Failed to deserialize update message. Error: {}", e);
+            None
+        }
+    }
+}

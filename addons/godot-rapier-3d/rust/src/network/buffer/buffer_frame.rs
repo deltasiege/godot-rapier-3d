@@ -19,17 +19,7 @@ pub struct BufferFrame {
 impl BufferFrame {
     pub fn new(tick: usize, physics_state: Option<Vec<u8>>, actions: Vec<Action>) -> Self {
         let nodes = extract_node_entries_from_actions(&actions);
-        let ser_actions = match serialize_actions(&actions) {
-            Ok(actions) => Some(actions),
-            Err(e) => {
-                log::error!(
-                    "Actions could not be serialized when creating BufferFrame at {} Error: {:?}",
-                    tick,
-                    e
-                );
-                None
-            }
-        };
+        let ser_actions = serialize_actions(&actions);
         let actions_hash = ser_actions.as_ref().map(|actions| get_hash(actions));
         let physics_hash = physics_state.as_ref().map(|state| get_hash(state));
         let actions_map = extract_action_entries_from_actions(actions);
@@ -43,6 +33,11 @@ impl BufferFrame {
             actions_hash,
             nodes,
         }
+    }
+
+    pub fn reserialize_actions(&mut self) {
+        let actions: Vec<Action> = self.actions.values().flatten().cloned().collect();
+        self.ser_actions = serialize_actions(&actions);
     }
 }
 

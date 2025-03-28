@@ -1,20 +1,19 @@
-use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
 use super::buffer_frame::BufferFrame;
-use crate::{actions::Operation, interface::GR3DNet, nodes::*, world::*, Action};
+use crate::{actions::action::insert_action_if_allowed, world::*, Action};
 
 pub struct WorldBuffer {
-    pub buffer: HashMap<usize, BufferFrame>, // tick -> BufferFrame
-    pub local_actions: HashMap<usize, Vec<Action>>, // tick -> Vec<Action>. Locally created actions
-    pub max_len: usize,                      // Maximum number of frames to keep in the buffer
+    pub buffer: HashMap<usize, BufferFrame>, // tick -> BufferFrame. Contains all combined actions (local + all peers)
+    pub local_buffer: HashMap<usize, BufferFrame>, // tick -> BufferFrame. Contains ONLY locally created actions
+    pub max_len: usize,                            // Maximum number of frames to keep in the buffer
 }
 
 impl WorldBuffer {
     pub fn new(max_len: usize) -> Self {
         Self {
             buffer: HashMap::default(),
-            local_actions: HashMap::default(),
+            local_buffer: HashMap::default(),
             max_len,
         }
     }
@@ -24,40 +23,14 @@ impl WorldBuffer {
         self.buffer.get(&tick)
     }
 
-    /// Returns mutable ref to buffer frame at the given tick
-    pub fn get_frame_mut(&mut self, tick: usize) -> Option<&mut BufferFrame> {
-        self.buffer.get_mut(&tick)
-    }
-
     /// Adds an action to the buffer at the given tick
     /// Creates a new BufferFrame if one does not exist
     pub fn insert_action(&mut self, tick: usize, action: Action) {
-        if let Some(frame) = self.buffer.get_mut(&tick) {
-            let existing_actions = frame
-                .actions
-                .entry(action.cuid.to_string())
-                .or_insert(Vec::new());
-            let already_has_op = existing_actions
-                .iter()
-                .any(|a| a.operation == action.operation);
-            if !already_has_op {
-                existing_actions.push(action);
-                self.local_actions.insert(tick, existing_actions.clone());
-            } else {
-                // TODO merge certain operations like move character or apply forces to RB,
-                // should be allowed to apply multiple of them per tick
-                log::warn!(
-                    "Not inserting action {:?} at tick {} because a matching action already exists there",
-                    action,
-                    tick
-                );
-            }
-        } else {
-            self.local_actions.insert(tick, vec![action.clone()]);
-            let frame = BufferFrame::new(tick, None, vec![action]);
-            self.buffer.insert(tick, frame);
-        }
+        let combined_buff = &mut self.buffer;
+        _insert_action_into_buffer(tick, action.clone(), combined_buff);
 
+        let local_buff = &mut self.local_buffer;
+        _insert_action_into_buffer(tick, action, local_buff);
         self.prune_buffers();
     }
 
@@ -90,8 +63,8 @@ impl WorldBuffer {
             remove_oldest(&mut self.buffer);
         }
 
-        while self.local_actions.len() > self.max_len {
-            remove_oldest(&mut self.local_actions);
+        while self.local_buffer.len() > self.max_len {
+            remove_oldest(&mut self.local_buffer);
         }
     }
 
@@ -120,7 +93,7 @@ impl WorldBuffer {
         }
     }
 
-    /// Returns the actions in the buffer at the given tick
+    /// Returns the actions in the combined buffer at the given tick
     pub fn get_actions(&self, tick: usize) -> Option<Vec<Action>> {
         let result: Option<Vec<Action>> = self
             .buffer
@@ -138,58 +111,21 @@ impl WorldBuffer {
         }
     }
 
-    /// Returns the physics state at the given tick
+    /// Returns the physics state in the combined buffer at the given tick
     pub fn get_physics_state(&self, tick: usize) -> Option<Vec<u8>> {
         self.buffer
             .get(&tick)
             .and_then(|frame| frame.physics_state.clone())
     }
 
-    /// Returns the hash of the physics state in the buffer at the given tick
+    /// Returns the hash of the physics state in the combined buffer at the given tick
     pub fn get_physics_state_hash(&self, tick: usize) -> Option<u64> {
         self.buffer.get(&tick).and_then(|frame| frame.physics_hash)
     }
 }
 
-/// Constructs a new action and then adds it to the local buffer at the current tick
-pub fn ingest_local_action(
-    net: &mut GR3DNet,
-    node: Gd<Node>,
-    operation: Operation,
-    data: Dictionary,
-) {
-    if let Some((cuid, handle)) = extract_ids(node.clone()) {
-        let action = Action::new(cuid, handle, node, operation, data);
-        net.world_buffer.insert_action(net.tick, action);
-    }
-}
-
-fn extract_ids(node: Gd<Node>) -> Option<(GString, Option<(u32, u32)>)> {
-    match node.get_class().to_string().as_str() {
-        "RapierArea3D" => Some(get_ids(node.cast::<RapierArea3D>())),
-        "RapierCollisionShape3D" => Some(get_ids(node.cast::<RapierCollisionShape3D>())),
-        "RapierKinematicCharacter3D" => Some(get_ids(node.cast::<RapierKinematicCharacter3D>())),
-        "RapierPIDCharacter3D" => Some(get_ids(node.cast::<RapierPIDCharacter3D>())),
-        "RapierRigidBody3D" => Some(get_ids(node.cast::<RapierRigidBody3D>())),
-        "RapierStaticBody3D" => Some(get_ids(node.cast::<RapierStaticBody3D>())),
-        _ => {
-            log::error!(
-                "Node class not recognized: {}",
-                node.get_class().to_string()
-            );
-            None
-        }
-    }
-}
-
-fn get_ids(node: Gd<impl IRapierObject>) -> (GString, Option<(u32, u32)>) {
-    let cuid = node.bind().get_cuid();
-    let handle = node.bind().get_handle_raw();
-    (cuid, handle)
-}
-
 /// Remove the smallest key from the given hashmap
-fn remove_oldest<T>(map: &mut HashMap<usize, T>) {
+pub fn remove_oldest<T>(map: &mut HashMap<usize, T>) {
     let earliest_key = match map.keys().min() {
         Some(oldest) => *oldest,
         None => {
@@ -200,4 +136,23 @@ fn remove_oldest<T>(map: &mut HashMap<usize, T>) {
     };
 
     map.swap_remove(&earliest_key);
+}
+
+fn _insert_action_into_buffer(
+    tick: usize,
+    action: Action,
+    buffer: &mut HashMap<usize, BufferFrame>,
+) {
+    if let Some(frame) = buffer.get_mut(&tick) {
+        let cuid = action.cuid.to_string();
+        insert_action_if_allowed(action, frame.actions.entry(cuid));
+    } else {
+        let frame = BufferFrame::new(tick, None, vec![action]);
+        buffer.insert(tick, frame);
+    }
+
+    let after = buffer
+        .get_mut(&tick)
+        .expect("Couldn't retrieve frame for serialization after _insert_action_into_buffer");
+    after.reserialize_actions();
 }

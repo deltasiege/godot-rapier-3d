@@ -4,9 +4,9 @@ use crate::{
 };
 use godot::prelude::*;
 
-pub fn ping_all_peers(sync: &GR3DNet) {
-    let peers = &sync.peers;
-    let adapter = sync
+pub fn ping_all_peers(net: &GR3DNet) {
+    let peers = &net.peers;
+    let adapter = net
         .network_adapter
         .as_ref()
         .expect("Network adapter not attached")
@@ -28,8 +28,8 @@ pub fn ping_all_peers(sync: &GR3DNet) {
     }
 }
 
-pub fn return_ping(peer_id: i64, origin_time: GString, sync: &GR3DNet) {
-    let adapter = sync
+pub fn return_ping(peer_id: i64, origin_time: GString, net: &GR3DNet) {
+    let adapter = net
         .network_adapter
         .as_ref()
         .expect("Network adapter not attached")
@@ -44,10 +44,10 @@ pub fn return_ping(peer_id: i64, origin_time: GString, sync: &GR3DNet) {
     adapter.send_ping_back(peer_id, origin_time, local_time);
 }
 
-pub fn record_rtt(sync: &mut GR3DNet, peer_id: i64, local_time: u128, remote_time: u128) {
+pub fn record_rtt(net: &mut GR3DNet, peer_id: i64, local_time: u128, remote_time: u128) {
     let system_time = get_system_time_ms();
 
-    let peer = sync
+    let peer = net
         .peers
         .iter_mut()
         .find(|peer| peer.peer_id == peer_id)
@@ -60,12 +60,12 @@ pub fn record_rtt(sync: &mut GR3DNet, peer_id: i64, local_time: u128, remote_tim
     let lf = local_time as f64;
     let rtt = peer.rtt as f64;
     peer.time_delta = rf - lf - (rtt / 2.0);
-    sync.base_mut()
+    net.base_mut()
         .emit_signal("peer_pinged_back", &[Variant::from(peer_id)]);
 }
 
-pub fn record_all_advantages(sync: &mut GR3DNet, force_recalculate: bool) {
-    for peer in &mut sync.peers {
-        peer.record_advantage(sync.tick as u64, force_recalculate);
+pub fn record_all_advantages(net: &mut GR3DNet, force_recalculate: bool) {
+    for peer in &mut net.peers {
+        peer.record_advantage(net.tick, force_recalculate);
     }
 }

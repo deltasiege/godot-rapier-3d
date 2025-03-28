@@ -1,6 +1,5 @@
 use godot::{classes::Engine, prelude::*};
 
-use super::GR3DNetworkAdapter;
 use crate::interface::GR3DNet;
 
 pub fn sync_start(sync: &mut GR3DNet) {
@@ -50,37 +49,37 @@ pub fn sync_stop(sync: &mut GR3DNet) {
     }
 }
 
-pub fn on_received_remote_start(sync: &mut GR3DNet) {
+pub fn on_received_remote_start(net: &mut GR3DNet) {
     // _reset()
-    sync.tick_interval = 1.0 / Engine::singleton().get_physics_ticks_per_second() as f64; // TODO set physics engine integration parameters to match this
-    sync.started = true;
-    sync.network_adapter
+    net.tick_interval = 1.0 / Engine::singleton().get_physics_ticks_per_second() as f64; // TODO set physics engine integration parameters to match this
+    net.started = true;
+    net.network_adapter
         .as_ref()
         .expect("Network adapter not attached")
         .bind()
         .on_sync_start();
     // _spawn_manager.reset()
-    sync.base_mut().emit_signal("sync_started", &[]);
+    net.base_mut().emit_signal("sync_started", &[]);
 }
 
-pub fn on_received_remote_stop(sync: &mut GR3DNet) {
-    if !(sync.started || sync.host_starting) {
+pub fn on_received_remote_stop(net: &mut GR3DNet) {
+    if !(net.started || net.host_starting) {
         return;
     }
 
-    sync.started = false;
-    sync.host_starting = false;
+    net.started = false;
+    net.host_starting = false;
 
-    sync.peers.iter_mut().for_each(|peer| {
+    net.peers.iter_mut().for_each(|peer| {
         peer.clear();
     });
 
     // _reset()
-    sync.network_adapter
+    net.network_adapter
         .as_ref()
         .expect("Network adapter not attached")
         .bind()
         .on_sync_stop();
     // _spawn_manager.reset()
-    sync.base_mut().emit_signal("sync_stopped", &[]);
+    net.base_mut().emit_signal("sync_stopped", &[]);
 }

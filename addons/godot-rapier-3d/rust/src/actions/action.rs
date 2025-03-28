@@ -1,5 +1,6 @@
 use bincode::{Decode, Encode};
 use godot::prelude::*;
+use rapier3d::parry::utils::hashmap::Entry;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 
@@ -56,4 +57,29 @@ impl Action {
             data,
         }
     }
+}
+
+/// Inserts an action into the given entry if it does not already exist
+/// Returns the resulting Vec<Action> if the action was inserted
+pub fn insert_action_if_allowed<T>(
+    action: Action,
+    entry: Entry<T, Vec<Action>>,
+) -> Option<Vec<Action>> {
+    let existing_actions = entry.or_insert(Vec::new());
+    let already_has_op = existing_actions
+        .iter()
+        .any(|a| a.operation == action.operation);
+    if !already_has_op {
+        existing_actions.push(action);
+        return Some(existing_actions.clone());
+    } else {
+        log::warn!(
+            "Not inserting action {:?} because a matching action already exists",
+            action
+        );
+        return None;
+    }
+
+    // TODO merge certain operations like move character or apply forces to RB,
+    // should be allowed to apply multiple of them per tick
 }

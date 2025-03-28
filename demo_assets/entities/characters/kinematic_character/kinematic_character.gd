@@ -3,9 +3,9 @@ extends RapierKinematicCharacter3D
 @export var speed = 10
 @export var accel = 2
 @export var decel = 1
-@export var gravity = 520
-@export var jump_gravity = 60
-@export var jump_velocity = 45
+@export var gravity = 0 # 520
+@export var jump_gravity = 0 #60
+@export var jump_velocity = 0 # 45
 @export var coyote_time_ms = 250 ## How many milliseconds late after falling off something the player can press jump and still get a jump
 @export var lookat_pivots: Array[Node3D]
 
