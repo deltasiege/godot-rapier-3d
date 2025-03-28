@@ -11,5 +11,5 @@ pub use buffer::buffer::*;
 pub use consume::*;
 pub use lifecycle::*;
 pub use messaging::*;
-pub use peer::Peer;
+pub use peer::*;
 pub use ping::*;

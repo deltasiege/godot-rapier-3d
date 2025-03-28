@@ -18,11 +18,6 @@ impl WorldBuffer {
         }
     }
 
-    /// Returns the buffer frame at the given tick
-    pub fn get_frame(&self, tick: usize) -> Option<&BufferFrame> {
-        self.buffer.get(&tick)
-    }
-
     /// Adds an action to the buffer at the given tick
     /// Creates a new BufferFrame if one does not exist
     pub fn insert_action(&mut self, tick: usize, action: Action) {

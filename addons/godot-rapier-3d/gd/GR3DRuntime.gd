@@ -3,7 +3,7 @@ extends Node
 
 ## Godot Rapier 3D game runtime functionality goes here
 
-@export var autoplay = true
+var autoplay = false
 var playing: bool = false
 var paused: bool = false
 
@@ -17,6 +17,7 @@ func _ready():
 	if Engine.is_editor_hint(): return
 	_add_child_modules()
 	if autoplay: play()
+	else: GR3DNet.connect("sync_started", play)
 
 func _exit_tree():
 	DrawLine.queue_free()

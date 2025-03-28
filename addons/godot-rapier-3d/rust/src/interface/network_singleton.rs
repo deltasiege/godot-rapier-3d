@@ -1,4 +1,5 @@
 use godot::{classes::Engine, prelude::*};
+use rapier3d::parry::utils::{hashmap::HashMap, hashset::HashSet};
 
 use crate::{actions::Operation, config::MAX_BUFFER_LEN, network::*};
 
@@ -8,11 +9,18 @@ use crate::{actions::Operation, config::MAX_BUFFER_LEN, network::*};
 pub struct GR3DNet {
     pub tick: usize, // Current tick - updated every physics frame - should match World's timestep
     pub tick_interval: f64, // Time between physics ticks in seconds
-    pub synchronized_tick: u64, // The latest tick that has received all peer actions and matching state hashes
     pub started: bool,
     pub host_starting: bool,
     pub peers: Vec<Peer>, // List of connected peers
     pub world_buffer: WorldBuffer,
+
+    // Sync
+    pub rollback_flags: Vec<usize>, // Tick -> rollback flag. Used to flag ticks that need to be rolled back to and resimulated. Checked once per physics frame
+    pub action_complete_peers: HashMap<usize, HashSet<i64>>, // Tick -> peer_ids. List of peers that have sent actions for this tick. Used to calculate the action_complete_tick
+    pub action_complete_tick: usize, // The latest tick that has received all peer actions
+    pub physics_hash_complete_peers: HashMap<usize, HashMap<i64, u64>>, // Tick -> (peer_id -> hash). List of peer hashes that have been sent for the given tick. Used to calculate the physics_hash_complete_tick
+    pub physics_hash_complete_tick: usize, // The latest tick that has received all peer state hashes and all peer state hashes are equal
+    pub synchronized_tick: usize, // The latest tick that is action complete and physics hash complete for all peers
 
     #[export]
     pub network_adapter: Option<Gd<GR3DNetworkAdapter>>,
@@ -25,11 +33,16 @@ impl IObject for GR3DNet {
         Self {
             tick: 0,
             tick_interval: 0.0,
-            synchronized_tick: 0,
             started: false,
             host_starting: false,
             peers: Vec::new(),
             world_buffer: WorldBuffer::new(MAX_BUFFER_LEN),
+            rollback_flags: Vec::new(),
+            action_complete_peers: HashMap::default(),
+            action_complete_tick: 0,
+            physics_hash_complete_peers: HashMap::default(),
+            physics_hash_complete_tick: 0,
+            synchronized_tick: 0,
             network_adapter: None,
             base,
         }
@@ -80,19 +93,18 @@ impl GR3DNet {
         }
 
         record_all_advantages(self, false);
-
-        let network_adapter = match &self.network_adapter {
-            Some(adapter) => adapter,
-            None => {
-                log::error!("Network adapter not attached");
-                return;
-            }
-        };
-
-        send_local_actions_to_all_peers(self, network_adapter);
+        send_local_actions_to_all_peers(self);
 
         for peer in &mut self.peers {
             peer.prune_buffers();
+        }
+
+        while self.action_complete_peers.len() > MAX_BUFFER_LEN {
+            remove_oldest(&mut self.action_complete_peers);
+        }
+
+        while self.physics_hash_complete_peers.len() > MAX_BUFFER_LEN {
+            remove_oldest(&mut self.physics_hash_complete_peers);
         }
     }
 
@@ -171,49 +183,14 @@ impl GR3DNet {
 
     #[func]
     fn _get_all_peer_data(&self) -> Array<Dictionary> {
-        let mut peer_data = Array::new();
-        for peer in &self.peers {
-            let mut peer_dict = Dictionary::new();
-            peer_dict.set("peer_id", peer.peer_id);
-            peer_dict.set("rtt", peer.rtt as i64);
-            peer_dict.set("last_ping_received", peer.last_ping_received as i64);
-            peer_dict.set("time_delta", peer.time_delta);
-            peer_dict.set(
-                "last_remote_action_tick_received",
-                peer.last_remote_action_tick_received as i64,
-            );
-            peer_dict.set(
-                "next_local_action_tick_requested",
-                peer.next_local_action_tick_requested as i64,
-            );
-            peer_dict.set(
-                "last_remote_hash_tick_received",
-                peer.last_remote_hash_tick_received as i64,
-            );
-            peer_dict.set(
-                "next_local_hash_tick_requested",
-                peer.next_local_hash_tick_requested as i64,
-            );
-            peer_dict.set("remote_lag", peer.remote_lag);
-            peer_dict.set("local_lag", peer.local_lag);
-            peer_dict.set("calculated_advantage", peer.calculated_advantage);
-            peer_dict.set("advantage_list", peer.advantage_list.to_variant());
-            peer_dict.set(
-                "ticks_with_actions",
-                peer.actions.iter().filter(|(_, v)| !v.is_empty()).count() as i64,
-            );
-            peer_dict.set("action_buffer_length", peer.actions.len() as i64);
-            peer_dict.set("state_hash_buffer_length", peer.state_hashes.len() as i64);
-            peer_data.push(&peer_dict);
-        }
-        peer_data
+        get_peer_debug_data(self)
     }
 
     #[func]
     fn _get_debug_data(&self) -> Dictionary {
         let mut dict = Dictionary::new();
         dict.set("tick", self.tick as i64);
-        dict.set("synchronized_tick", self.synchronized_tick as i64);
+        dict.set("action_complete_tick", self.action_complete_tick as i64);
         dict.set("started", self.started);
         dict.set("host_starting", self.host_starting);
         dict.set("peers", self.peers.len() as i64);

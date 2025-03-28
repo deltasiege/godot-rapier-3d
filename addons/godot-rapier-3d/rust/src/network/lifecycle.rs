@@ -1,6 +1,6 @@
 use godot::{classes::Engine, prelude::*};
 
-use crate::interface::GR3DNet;
+use crate::interface::{get_runtime, get_singleton, GR3DNet};
 
 pub fn sync_start(sync: &mut GR3DNet) {
     match &sync.network_adapter {
@@ -50,7 +50,7 @@ pub fn sync_stop(sync: &mut GR3DNet) {
 }
 
 pub fn on_received_remote_start(net: &mut GR3DNet) {
-    // _reset()
+    reset_world();
     net.tick_interval = 1.0 / Engine::singleton().get_physics_ticks_per_second() as f64; // TODO set physics engine integration parameters to match this
     net.started = true;
     net.network_adapter
@@ -74,7 +74,6 @@ pub fn on_received_remote_stop(net: &mut GR3DNet) {
         peer.clear();
     });
 
-    // _reset()
     net.network_adapter
         .as_ref()
         .expect("Network adapter not attached")
@@ -82,4 +81,11 @@ pub fn on_received_remote_stop(net: &mut GR3DNet) {
         .on_sync_stop();
     // _spawn_manager.reset()
     net.base_mut().emit_signal("sync_stopped", &[]);
+}
+
+/// Resets physics engine state
+pub fn reset_world() {
+    if let Some(mut singleton) = get_singleton() {
+        singleton.bind_mut().reset();
+    }
 }

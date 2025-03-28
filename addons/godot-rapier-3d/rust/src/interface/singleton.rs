@@ -33,6 +33,10 @@ impl IObject for GR3D {
 
 #[godot_api]
 impl GR3D {
+    pub fn reset(&mut self) {
+        self.world = World::new_empty();
+    }
+
     #[func]
     /// Advance the simulation by the given number of steps
     pub fn step(&mut self, count: i64) {
