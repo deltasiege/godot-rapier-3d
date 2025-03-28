@@ -19,8 +19,8 @@ pub struct GR3DNet {
     pub action_complete_peers: HashMap<usize, HashSet<i64>>, // Tick -> peer_ids. List of peers that have sent actions for this tick. Used to calculate the action_complete_tick
     pub action_complete_tick: usize, // The latest tick that has received all peer actions
     pub physics_hash_complete_peers: HashMap<usize, HashMap<i64, u64>>, // Tick -> (peer_id -> hash). List of peer hashes that have been sent for the given tick. Used to calculate the physics_hash_complete_tick
-    pub physics_hash_complete_tick: usize, // The latest tick that has received all peer state hashes and all peer state hashes are equal
-    pub synchronized_tick: usize, // The latest tick that is action complete and physics hash complete for all peers
+    pub physics_hash_complete_tick: usize, // The latest tick that has received all peer state hashes
+    pub synchronized_tick: usize, // The latest tick that is action complete and physics hashes are complete and equal for all peers
 
     #[export]
     pub network_adapter: Option<Gd<GR3DNetworkAdapter>>,
@@ -171,8 +171,13 @@ impl GR3DNet {
 
     #[func]
     /// Consume a remote action and record it against the peer
-    fn _on_received_tick_data(&mut self, sender_peer_id: i64, ser_message: PackedByteArray) {
-        ingest_peer_message(self, sender_peer_id, ser_message);
+    fn _on_received_tick_data(
+        &mut self,
+        sender_peer_id: i64,
+        ser_message: PackedByteArray,
+        scene_root: Gd<Node>,
+    ) {
+        ingest_peer_message(self, sender_peer_id, ser_message, scene_root);
     }
 
     #[func]

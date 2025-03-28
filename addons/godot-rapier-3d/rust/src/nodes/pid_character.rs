@@ -17,6 +17,7 @@ pub struct RapierPIDCharacter3D {
     pub handle: Array<u32>,
 
     // TODO why aren't descriptions working? https://github.com/godot-rust/gdext/issues/1059
+    // answer: because you have to add doc comment to top of struct
     #[export]
     /// The Proportional gain applied to the instantaneous linear position errors.
     /// This is usually set to a multiple of the inverse of simulation step time

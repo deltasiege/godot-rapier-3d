@@ -45,4 +45,4 @@ func _get_unique_id() -> int:
 # so, we're trying to keep it short.
 @rpc("any_peer", "unreliable")
 func _rtd(data: PackedByteArray) -> void:
-	received_tick_data.emit(multiplayer.get_remote_sender_id(), data)
+	received_tick_data.emit(multiplayer.get_remote_sender_id(), data, get_tree().root)

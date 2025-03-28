@@ -66,7 +66,7 @@ impl LookupTable {
         }
     }
 
-    // TODO - if nodes are reparented, the node path will be invalid
+    // TODO - if nodes are reparented at runtime, the node path will be invalid
     // Need to update lookup table whenever the node is reparented
     pub fn get_node_from_handle(
         &self,

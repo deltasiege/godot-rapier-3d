@@ -6,7 +6,12 @@ use crate::nodes::*;
 use crate::{actions::Operation, interface::GR3DNet, Action};
 
 /// Deserializes a remote peer update message and records relevant data against the peer
-pub fn ingest_peer_message(net: &mut GR3DNet, sender_peer_id: i64, ser_message: PackedByteArray) {
+pub fn ingest_peer_message(
+    net: &mut GR3DNet,
+    sender_peer_id: i64,
+    ser_message: PackedByteArray,
+    scene_root: Gd<Node>,
+) {
     let num_peers = net.peers.len();
     let peer = match net.peers.iter_mut().find(|p| p.peer_id == sender_peer_id) {
         Some(peer) => peer,
@@ -50,6 +55,8 @@ pub fn ingest_peer_message(net: &mut GR3DNet, sender_peer_id: i64, ser_message: 
                 net.rollback_flags.push(tick); // Prediction missed, actions in the buffer did not match the actions in the message
             }
 
+            net.world_buffer
+                .insert_serialized_actions(tick, &actions, &scene_root);
             peer.actions.insert(tick, actions);
         }
 
@@ -140,6 +147,10 @@ pub fn ingest_peer_message(net: &mut GR3DNet, sender_peer_id: i64, ser_message: 
                     net.physics_hash_complete_tick,
                     mismatches
                 ); // TODO kill the game because of fatal error
+            } else {
+                if net.action_complete_tick >= net.physics_hash_complete_tick {
+                    net.synchronized_tick = net.physics_hash_complete_tick;
+                }
             }
         }
     }

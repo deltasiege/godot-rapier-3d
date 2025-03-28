@@ -1,7 +1,13 @@
+use bincode::{config::standard, serde::decode_from_slice};
+use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
 use super::buffer_frame::BufferFrame;
-use crate::{actions::action::insert_action_if_allowed, world::*, Action};
+use crate::{
+    actions::{action::insert_action_if_allowed, serde::deserialize_actions},
+    world::*,
+    Action,
+};
 
 pub struct WorldBuffer {
     pub buffer: HashMap<usize, BufferFrame>, // tick -> BufferFrame. Contains all combined actions (local + all peers)
@@ -23,9 +29,34 @@ impl WorldBuffer {
     pub fn insert_action(&mut self, tick: usize, action: Action) {
         let combined_buff = &mut self.buffer;
         _insert_action_into_buffer(tick, action.clone(), combined_buff);
+        _reserialize_actions_in_buffer(combined_buff, tick);
 
         let local_buff = &mut self.local_buffer;
         _insert_action_into_buffer(tick, action, local_buff);
+        _reserialize_actions_in_buffer(local_buff, tick);
+
+        self.prune_buffers();
+    }
+
+    /// Adds given serialized actions to the buffer at the given tick
+    /// Creates a new BufferFrame if one does not exist
+    pub fn insert_serialized_actions(
+        &mut self,
+        tick: usize,
+        actions: &Vec<u8>,
+        scene_root: &Gd<Node>,
+    ) {
+        let combined_buff = &mut self.buffer;
+        _insert_serialized_actions_into_buffer(tick, actions, scene_root, combined_buff);
+        self.prune_buffers();
+    }
+
+    fn insert_serialized_action(&mut self, tick: usize, actions: &Vec<u8>, scene_root: &Gd<Node>) {
+        let combined_buff = &mut self.buffer;
+        _insert_serialized_actions_into_buffer(tick, actions, scene_root, combined_buff);
+
+        let local_buff = &mut self.local_buffer;
+        _insert_serialized_actions_into_buffer(tick, actions, scene_root, local_buff);
         self.prune_buffers();
     }
 
@@ -145,9 +176,30 @@ fn _insert_action_into_buffer(
         let frame = BufferFrame::new(tick, None, vec![action]);
         buffer.insert(tick, frame);
     }
+}
 
-    let after = buffer
-        .get_mut(&tick)
-        .expect("Couldn't retrieve frame for serialization after _insert_action_into_buffer");
-    after.reserialize_actions();
+fn _reserialize_actions_in_buffer(buffer: &mut HashMap<usize, BufferFrame>, tick: usize) {
+    if let Some(frame) = buffer.get_mut(&tick) {
+        frame.reserialize_actions();
+    } else {
+        log::error!(
+            "Failed to reserialize actions in buffer. Tick {} not found",
+            tick
+        );
+    }
+}
+
+fn _insert_serialized_actions_into_buffer(
+    tick: usize,
+    actions: &Vec<u8>,
+    scene_root: &Gd<Node>,
+    buffer: &mut HashMap<usize, BufferFrame>,
+) {
+    if let Some(deserialized) = deserialize_actions(actions.clone(), &scene_root) {
+        for action in deserialized {
+            _insert_action_into_buffer(tick, action, buffer);
+        }
+
+        _reserialize_actions_in_buffer(buffer, tick);
+    };
 }

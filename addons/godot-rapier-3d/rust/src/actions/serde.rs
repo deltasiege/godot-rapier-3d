@@ -42,7 +42,7 @@ pub fn deserialize_actions(serialized: Vec<u8>, scene_root: &Gd<Node>) -> Option
     let de: Vec<DeserializedAction> = match decode_from_slice(&serialized, standard()) {
         Ok(de) => de.0,
         Err(e) => {
-            log::error!("Failed to decode actions: {:?}", e);
+            log::error!("Failed to deserialize actions: {:?}", e);
             return None;
         }
     };
