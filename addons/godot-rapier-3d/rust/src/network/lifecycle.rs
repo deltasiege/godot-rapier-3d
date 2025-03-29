@@ -60,8 +60,6 @@ pub fn on_received_remote_start(net: &mut GR3DNet) {
     if let Some(adapter) = net.network_adapter.as_ref() {
         net.peer_id = Some(adapter.bind().get_unique_id());
 
-        crate::utils::init_logger(crate::utils::LogLevel::Debug, net.peer_id);
-
         adapter.bind().on_sync_start();
     } else {
         log::error!("Network adapter not attached");

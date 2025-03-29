@@ -3,31 +3,19 @@ use std::io::Write;
 use godot::{classes::Os, prelude::*};
 use log::{Level, LevelFilter, Metadata, Record};
 
-pub fn init_logger(log_level: LogLevel, peer_id: Option<i64>) {
-    let logger = match peer_id {
-        Some(peer_id) => {
-            let user_data_dir = Os::get_user_data_dir(&Os::singleton()).to_string();
-            let log_dir = format!("{}/godot-rapier-3d/logs/{}/", user_data_dir, peer_id);
-            let log_file = format!("{}log.txt", log_dir);
-
-            GR3DLogger {
-                peer_id: Some(peer_id),
-                user_data_dir,
-                log_dir,
-                log_file,
-            }
-        }
-        None => GR3DLogger {
-            peer_id: None,
-            user_data_dir: "".to_string(),
-            log_dir: "".to_string(),
-            log_file: "".to_string(),
-        },
+pub fn init_logger(log_level: LogLevel) {
+    let logger = GR3DLogger {
+        peer_id: None,
+        user_data_dir: "".to_string(),
+        log_dir: "".to_string(),
+        log_file: "".to_string(),
     };
 
-    logger.create_log_dir();
     log::set_max_level(LevelFilter::from(log_level));
-    if let Err(e) = log::set_boxed_logger(Box::new(logger)) {
+
+    let boxed = Box::new(logger);
+
+    if let Err(e) = log::set_boxed_logger(boxed) {
         godot_error!("Failed to set logger: {}", e);
     }
 }
@@ -44,6 +32,15 @@ pub struct GR3DLogger {
 }
 
 impl GR3DLogger {
+    fn set_peer_id(&mut self, peer_id: i64) {
+        self.peer_id = Some(peer_id);
+        self.user_data_dir = Os::get_user_data_dir(&Os::singleton()).to_string();
+        self.log_dir = format!("{}/godot-rapier-3d/logs/{}/", self.user_data_dir, peer_id);
+        self.log_file = format!("{}log.txt", self.log_dir);
+
+        self.create_log_dir();
+    }
+
     fn create_log_dir(&self) {
         if self.log_dir.is_empty() {
             return;
