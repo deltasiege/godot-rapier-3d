@@ -7,6 +7,7 @@ use crate::{actions::Operation, config::MAX_BUFFER_LEN, network::*};
 #[derive(GodotClass)]
 #[class(base = Object)]
 pub struct GR3DNet {
+    pub peer_id: Option<i64>, // Unique ID for this peer
     pub tick: usize, // Current tick - updated every physics frame - should match World's timestep
     pub tick_interval: f64, // Time between physics ticks in seconds
     pub started: bool,
@@ -31,6 +32,7 @@ pub struct GR3DNet {
 impl IObject for GR3DNet {
     fn init(base: Base<Object>) -> Self {
         Self {
+            peer_id: None,
             tick: 0,
             tick_interval: 0.0,
             started: false,

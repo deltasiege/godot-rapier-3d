@@ -1,17 +1,80 @@
-use godot::prelude::*;
+use std::io::Write;
+
+use godot::{classes::Os, prelude::*};
 use log::{Level, LevelFilter, Metadata, Record};
 
-pub fn init_logger() {
-    let logger = GR3DLogger {};
-    log::set_max_level(LevelFilter::from(LogLevel::default()));
-    log::set_boxed_logger(Box::new(logger)).unwrap();
+pub fn init_logger(log_level: LogLevel, peer_id: Option<i64>) {
+    let logger = match peer_id {
+        Some(peer_id) => {
+            let user_data_dir = Os::get_user_data_dir(&Os::singleton()).to_string();
+            let log_dir = format!("{}/godot-rapier-3d/logs/{}/", user_data_dir, peer_id);
+            let log_file = format!("{}log.txt", log_dir);
+
+            GR3DLogger {
+                peer_id: Some(peer_id),
+                user_data_dir,
+                log_dir,
+                log_file,
+            }
+        }
+        None => GR3DLogger {
+            peer_id: None,
+            user_data_dir: "".to_string(),
+            log_dir: "".to_string(),
+            log_file: "".to_string(),
+        },
+    };
+
+    logger.create_log_dir();
+    log::set_max_level(LevelFilter::from(log_level));
+    if let Err(e) = log::set_boxed_logger(Box::new(logger)) {
+        godot_error!("Failed to set logger: {}", e);
+    }
 }
 
 pub fn set_log_level(log_level: LogLevel) {
     log::set_max_level(LevelFilter::from(log_level));
 }
 
-pub struct GR3DLogger {}
+pub struct GR3DLogger {
+    peer_id: Option<i64>,
+    user_data_dir: String,
+    log_dir: String,
+    log_file: String,
+}
+
+impl GR3DLogger {
+    fn create_log_dir(&self) {
+        if self.log_dir.is_empty() {
+            return;
+        }
+
+        if let Err(e) = std::fs::create_dir_all(&self.log_dir) {
+            godot_error!("Failed to create log directory: {}", e);
+        }
+    }
+
+    fn log_to_user_data_file(&self, record: &Record) {
+        if self.log_file.is_empty() {
+            return;
+        }
+
+        let mut file = match std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.log_file)
+        {
+            Ok(file) => file,
+            Err(e) => {
+                godot_error!("Failed to open log file: {}", e);
+                return;
+            }
+        };
+
+        file.write(format!("[GR3D][{}]: {}\n", record.level(), record.args()).as_bytes())
+            .unwrap();
+    }
+}
 
 impl log::Log for GR3DLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
@@ -26,6 +89,8 @@ impl log::Log for GR3DLogger {
                 _ => godot_print!("[GR3D][{}]: {}", record.level(), record.args()),
             }
         }
+
+        self.log_to_user_data_file(record);
     }
 
     fn flush(&self) {}

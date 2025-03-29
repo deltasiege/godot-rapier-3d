@@ -1,7 +1,7 @@
 use super::debugger::GR3DDebugger;
 use super::get_net_singleton;
 use crate::nodes::{generate_cuid, IRapierObject};
-use crate::utils::{extract_from_dict, init_logger, set_log_level};
+use crate::utils::extract_from_dict;
 use crate::world::{restore_snapshot, unpack_snapshot};
 use crate::{Action, World};
 use godot::classes::{Engine, IObject, Object};
@@ -170,9 +170,6 @@ impl GR3D {
 pub const NAME: &str = "GR3D";
 
 pub fn register() {
-    init_logger();
-    set_log_level(crate::utils::LogLevel::Debug);
-
     Engine::singleton().register_singleton(NAME, &GR3D::new_alloc());
 }
 

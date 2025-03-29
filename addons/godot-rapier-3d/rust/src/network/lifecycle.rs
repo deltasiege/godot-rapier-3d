@@ -1,6 +1,9 @@
 use godot::{classes::Engine, prelude::*};
 
-use crate::interface::{get_runtime, get_singleton, GR3DNet};
+use crate::{
+    interface::{get_runtime, get_singleton, GR3DNet},
+    utils::GR3DLogger,
+};
 
 pub fn sync_start(sync: &mut GR3DNet) {
     match &sync.network_adapter {
@@ -53,11 +56,17 @@ pub fn on_received_remote_start(net: &mut GR3DNet) {
     reset_world();
     net.tick_interval = 1.0 / Engine::singleton().get_physics_ticks_per_second() as f64; // TODO set physics engine integration parameters to match this
     net.started = true;
-    net.network_adapter
-        .as_ref()
-        .expect("Network adapter not attached")
-        .bind()
-        .on_sync_start();
+
+    if let Some(adapter) = net.network_adapter.as_ref() {
+        net.peer_id = Some(adapter.bind().get_unique_id());
+
+        crate::utils::init_logger(crate::utils::LogLevel::Debug, net.peer_id);
+
+        adapter.bind().on_sync_start();
+    } else {
+        log::error!("Network adapter not attached");
+    }
+
     // _spawn_manager.reset()
     net.base_mut().emit_signal("sync_started", &[]);
 }
@@ -69,16 +78,17 @@ pub fn on_received_remote_stop(net: &mut GR3DNet) {
 
     net.started = false;
     net.host_starting = false;
+    net.peer_id = None;
 
     net.peers.iter_mut().for_each(|peer| {
         peer.clear();
     });
 
-    net.network_adapter
-        .as_ref()
-        .expect("Network adapter not attached")
-        .bind()
-        .on_sync_stop();
+    if let Some(adapter) = net.network_adapter.as_ref() {
+        adapter.bind().on_sync_stop();
+    } else {
+        log::error!("Network adapter not attached");
+    }
     // _spawn_manager.reset()
     net.base_mut().emit_signal("sync_stopped", &[]);
 }
