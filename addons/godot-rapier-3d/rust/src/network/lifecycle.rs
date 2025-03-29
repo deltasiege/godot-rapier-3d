@@ -1,9 +1,6 @@
 use godot::{classes::Engine, prelude::*};
 
-use crate::{
-    interface::{get_runtime, get_singleton, GR3DNet},
-    utils::GR3DLogger,
-};
+use crate::interface::{get_runtime, get_singleton, GR3DNet};
 
 pub fn sync_start(sync: &mut GR3DNet) {
     match &sync.network_adapter {
