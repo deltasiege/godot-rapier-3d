@@ -52,6 +52,7 @@ func _add_network_adapter():
 	var network_adapter = load(DEFAULT_NETWORK_ADAPTER_PATH).new()
 	add_child(network_adapter)
 	GR3DNet._attach_network_adapter(network_adapter)
+	GR3DNet.connect("sync_started", func(): GR3DLogger.receive_peer_id(network_adapter._get_unique_id()))
 
 func _draw_line(origin: Vector3, end: Vector3):
 	DrawLine.draw_line(origin, end, Color.WHITE)

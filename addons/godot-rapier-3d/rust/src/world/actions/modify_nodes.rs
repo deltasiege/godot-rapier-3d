@@ -84,7 +84,6 @@ fn teleport_rb(node: &Gd<impl IRapierObject>, physics: &mut PhysicsState, positi
     {
         let handle = RigidBodyHandle::from_raw_parts(raw_handle.0, raw_handle.1);
         let body = &mut physics.bodies[handle];
-        godot_print!("Teleporting {} to {:?}", node, position);
         body.set_next_kinematic_translation(vector_to_rapier(position));
     }
 }

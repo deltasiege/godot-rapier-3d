@@ -1,9 +1,8 @@
-use std::hash::{DefaultHasher, Hash, Hasher};
-
 use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
 use crate::actions::{serialize_actions, Action};
+use crate::utils::get_hash;
 
 /// Represents a single tick in the buffer
 pub struct BufferFrame {
@@ -38,14 +37,13 @@ impl BufferFrame {
     pub fn reserialize_actions(&mut self) {
         let actions: Vec<Action> = self.actions.values().flatten().cloned().collect();
         self.ser_actions = serialize_actions(&actions);
+        self.actions_hash = self.ser_actions.as_ref().map(|actions| get_hash(actions));
     }
-}
 
-/// Returns the hash of the given byte vector
-fn get_hash(physics_state: &Vec<u8>) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    physics_state.hash(&mut hasher);
-    hasher.finish()
+    pub fn insert_physics_state(&mut self, physics_state: Vec<u8>) {
+        self.physics_hash = Some(get_hash(&physics_state));
+        self.physics_state = Some(physics_state);
+    }
 }
 
 /// Maps Action Node Path -> Node

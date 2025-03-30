@@ -50,10 +50,13 @@ impl GR3D {
 
         for _ in 0..count {
             let tick = net.bind().tick;
-            net.bind_mut()
+            let actions = net
+                .bind_mut()
                 .world_buffer
                 .apply_actions_to_world(tick, &mut self.world.physics);
+            log::trace!("Applied actions for tick {}: {:?}", tick, actions);
 
+            log::trace!("Executing tick: {}", tick);
             let (resulting_state, next_tick) = self.world.step();
 
             net.bind_mut().tick = next_tick;

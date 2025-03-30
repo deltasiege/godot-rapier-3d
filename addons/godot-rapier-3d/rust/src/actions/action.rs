@@ -73,7 +73,7 @@ pub fn insert_action_if_allowed<T>(
         existing_actions.push(action);
         return Some(existing_actions.clone());
     } else {
-        log::warn!(
+        log::trace!(
             "Not inserting action {:?} because a matching action already exists",
             action
         );

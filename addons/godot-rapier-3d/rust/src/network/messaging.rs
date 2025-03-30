@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 use bincode::{
     config::standard,
@@ -61,9 +61,11 @@ pub fn send_local_actions_to_all_peers(net: &mut GR3DNet) {
             tick: net.tick,
             actions: actions_since_requested,
             state_hashes: hashes_since_requested,
-            next_action_tick_requested: peer.last_remote_action_tick_received + 1,
-            next_hash_tick_requested: peer.last_remote_hash_tick_received + 1,
+            next_action_tick_requested: peer.latest_contiguous_action_tick + 1,
+            next_hash_tick_requested: peer.latest_contiguous_state_hash_tick + 1,
         };
+
+        log::trace!("Sending update message to peer: {}", message);
 
         let ser_message = match encode_to_vec(message, standard()) {
             Ok(bytes) => bytes,
@@ -111,4 +113,18 @@ fn clamp_start_tick(requested: usize, current: usize) -> usize {
     let minimum_start = current.saturating_sub(MAX_BUFFER_LEN);
     let start_tick = std::cmp::max(minimum_start, requested + 1);
     std::cmp::min(start_tick, current)
+}
+
+impl Display for UpdateMessage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "UpdateMessage {{ tick: {}, actions: {}, state_hashes: {}, next_action_tick_requested: {}, next_hash_tick_requested: {} }}",
+            self.tick,
+            self.actions.len(),
+            self.state_hashes.len(),
+            self.next_action_tick_requested,
+            self.next_hash_tick_requested
+        )
+    }
 }

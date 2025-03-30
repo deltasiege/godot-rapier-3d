@@ -18,16 +18,17 @@ struct GodotRapier3D;
 unsafe impl ExtensionLibrary for GodotRapier3D {
     fn on_level_init(level: InitLevel) {
         if level == InitLevel::Scene {
-            utils::init_logger();
+            interface::register_logger();
             interface::register_singleton();
-            interface::register_sync();
+            interface::register_net();
         }
     }
 
     fn on_level_deinit(level: InitLevel) {
         if level == InitLevel::Scene {
+            interface::unregister_logger();
             interface::unregister_singleton();
-            interface::unregister_sync();
+            interface::unregister_net();
         }
     }
 }

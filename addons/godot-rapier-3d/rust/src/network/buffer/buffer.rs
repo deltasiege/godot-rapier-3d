@@ -1,13 +1,7 @@
-use bincode::{config::standard, serde::decode_from_slice};
-use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
 use super::buffer_frame::BufferFrame;
-use crate::{
-    actions::{action::insert_action_if_allowed, serde::deserialize_actions},
-    world::*,
-    Action,
-};
+use crate::{actions::action::insert_action_if_allowed, world::*, Action};
 
 pub struct WorldBuffer {
     pub buffer: HashMap<usize, BufferFrame>, // tick -> BufferFrame. Contains all combined actions (local + all peers)
@@ -38,34 +32,34 @@ impl WorldBuffer {
         self.prune_buffers();
     }
 
-    /// Adds given serialized actions to the buffer at the given tick
-    /// Creates a new BufferFrame if one does not exist
-    pub fn insert_serialized_actions(
-        &mut self,
-        tick: usize,
-        actions: &Vec<u8>,
-        scene_root: &Gd<Node>,
-    ) {
+    pub fn insert_actions(&mut self, tick: usize, actions: Vec<Action>) {
         let combined_buff = &mut self.buffer;
-        _insert_serialized_actions_into_buffer(tick, actions, scene_root, combined_buff);
-        self.prune_buffers();
-    }
-
-    fn insert_serialized_action(&mut self, tick: usize, actions: &Vec<u8>, scene_root: &Gd<Node>) {
-        let combined_buff = &mut self.buffer;
-        _insert_serialized_actions_into_buffer(tick, actions, scene_root, combined_buff);
+        for action in actions.clone() {
+            _insert_action_into_buffer(tick, action.clone(), combined_buff);
+        }
+        _reserialize_actions_in_buffer(combined_buff, tick);
 
         let local_buff = &mut self.local_buffer;
-        _insert_serialized_actions_into_buffer(tick, actions, scene_root, local_buff);
+        for action in actions {
+            _insert_action_into_buffer(tick, action, local_buff);
+        }
+        _reserialize_actions_in_buffer(local_buff, tick);
+
         self.prune_buffers();
     }
 
     /// Executes all actions in the buffer at the given tick
-    pub fn apply_actions_to_world(&mut self, tick: usize, physics: &mut PhysicsState) {
+    pub fn apply_actions_to_world(
+        &mut self,
+        tick: usize,
+        physics: &mut PhysicsState,
+    ) -> Vec<Action> {
+        let mut flattened: Vec<Action> = Vec::new();
         if let Some(frame) = self.buffer.get_mut(&tick) {
-            let mut flattened: Vec<Action> = frame.actions.values().flatten().cloned().collect();
+            flattened = frame.actions.values().flatten().cloned().collect();
             apply_actions_to_world(&mut flattened, physics);
         }
+        flattened
     }
 
     /// Called whenever the world is stepped.
@@ -73,7 +67,7 @@ impl WorldBuffer {
     pub fn on_world_stepped(&mut self, next_tick: usize, resulting_state: Option<Vec<u8>>) {
         if let Some(phx_state) = resulting_state {
             if let Some(existing) = self.buffer.get_mut(&next_tick) {
-                existing.physics_state = Some(phx_state);
+                existing.insert_physics_state(phx_state);
             } else {
                 let frame = BufferFrame::new(next_tick, Some(phx_state), Vec::new());
                 self.buffer.insert(frame.tick, frame);
@@ -187,19 +181,4 @@ fn _reserialize_actions_in_buffer(buffer: &mut HashMap<usize, BufferFrame>, tick
             tick
         );
     }
-}
-
-fn _insert_serialized_actions_into_buffer(
-    tick: usize,
-    actions: &Vec<u8>,
-    scene_root: &Gd<Node>,
-    buffer: &mut HashMap<usize, BufferFrame>,
-) {
-    if let Some(deserialized) = deserialize_actions(actions.clone(), &scene_root) {
-        for action in deserialized {
-            _insert_action_into_buffer(tick, action, buffer);
-        }
-
-        _reserialize_actions_in_buffer(buffer, tick);
-    };
 }

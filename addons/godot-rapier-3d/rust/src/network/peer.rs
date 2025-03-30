@@ -1,9 +1,12 @@
+use std::usize;
+
 use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
 use crate::{
     config::{MAX_BUFFER_LEN, TICKS_TO_CALCULATE_ADVANTAGE},
     interface::GR3DNet,
+    utils::get_hash,
 };
 
 use super::remove_oldest;
@@ -11,14 +14,15 @@ use super::remove_oldest;
 #[derive(Debug)]
 /// A peer is any connected network entity, e.g. player / spectator
 pub struct Peer {
-    pub peer_id: i64,                            // The unique identifier for this peer
-    pub is_spectator: bool,                      // Whether this peer is a spectator
-    pub rtt: u128,                               // Round trip time in milliseconds
+    pub peer_id: i64,                              // The unique identifier for this peer
+    pub is_spectator: bool,                        // Whether this peer is a spectator
+    pub rtt: u128,                                 // Round trip time in milliseconds
     pub last_ping_received: u128, // Unix millisecond timestamp of the last ping received
     pub time_delta: f64,          // The difference in time between this peer and us
-    pub last_remote_action_tick_received: usize, // The last action tick this peer has sent us
+    pub latest_remote_tick_received: usize, // The latest tick this peer has sent us
+    pub latest_remote_action_tick_received: usize, // The latest action tick this peer has sent us
+    pub latest_remote_hash_tick_received: usize, // The latest hash tick this peer has sent us
     pub next_local_action_tick_requested: usize, // The next action tick that this peer wants from us
-    pub last_remote_hash_tick_received: usize,   // The last hash tick this peer has sent us
     pub next_local_hash_tick_requested: usize,   // The next hash tick that this peer wants from us
     pub remote_lag: i64,                         // Number of frames this peer is predicting for us
     pub local_lag: i64,                          // Number of frames we are predicting for this peer
@@ -27,11 +31,17 @@ pub struct Peer {
 
     // Messages
     pub last_local_message_size: usize, // The size of the last message we sent to this peer
-    pub last_remote_message_size: usize, // The size of the last message we received from this peer
+    pub latest_remote_message_size: usize, // The size of the last message we received from this peer
 
     // Buffers
     pub actions: HashMap<usize, Vec<u8>>, // Tick -> serialized actions. All received remote actions of this peer
+    pub action_hashes: HashMap<usize, u64>, // Tick -> action hash. All received remote action hashes of this peer
     pub state_hashes: HashMap<usize, u64>, // Tick -> state hash. All received remote hashes of this peer
+
+    pub earliest_action_tick: usize, // The earliest tick that we have received actions for
+    pub earliest_state_hash_tick: usize, // The earliest tick that we have received a state hash for
+    pub latest_contiguous_action_tick: usize, // The latest tick that we have received actions for, without any holes in the buffer
+    pub latest_contiguous_state_hash_tick: usize, // The latest tick that we have received a state hash for, without any holes in the buffer
 }
 
 impl Peer {
@@ -42,23 +52,29 @@ impl Peer {
             rtt: 0,
             last_ping_received: 0,
             time_delta: 0.0,
-            last_remote_action_tick_received: 0,
+            latest_remote_tick_received: 0,
+            latest_remote_action_tick_received: 0,
             next_local_action_tick_requested: 1,
-            last_remote_hash_tick_received: 0,
+            latest_remote_hash_tick_received: 0,
             next_local_hash_tick_requested: 1,
             remote_lag: 0,
             local_lag: 0,
             calculated_advantage: 0.0,
             advantage_list: Vec::new(),
             last_local_message_size: 0,
-            last_remote_message_size: 0,
+            latest_remote_message_size: 0,
             actions: HashMap::default(),
+            action_hashes: HashMap::default(),
             state_hashes: HashMap::default(),
+            earliest_action_tick: usize::MAX,
+            earliest_state_hash_tick: usize::MAX,
+            latest_contiguous_action_tick: 0,
+            latest_contiguous_state_hash_tick: 0,
         }
     }
 
     pub fn record_advantage(&mut self, tick: usize, force_recalculate: bool) {
-        self.local_lag = (tick + 1) as i64 - (self.last_remote_action_tick_received) as i64;
+        self.local_lag = (tick + 1) as i64 - (self.latest_remote_action_tick_received) as i64;
         self.advantage_list.push((self.local_lag - self.remote_lag));
         if force_recalculate || (self.advantage_list.len() >= TICKS_TO_CALCULATE_ADVANTAGE as usize)
         {
@@ -68,12 +84,29 @@ impl Peer {
         }
     }
 
-    pub fn get_actions(&self, tick: usize) -> Option<&Vec<u8>> {
-        self.actions.get(&tick)
+    pub fn record_received_actions(&mut self, tick: usize, actions: Vec<u8>) {
+        self.action_hashes.insert(tick, get_hash(&actions));
+        self.actions.insert(tick, actions);
+        self.earliest_action_tick = self.get_earliest_action_tick();
+        self.latest_contiguous_action_tick = self.get_latest_contiguous_action_tick();
+        godot_print!(
+            "latest_contiguous_action_tick: {}, earliest_action_tick: {}",
+            self.latest_contiguous_action_tick,
+            self.earliest_action_tick
+        );
     }
 
-    pub fn get_state_hash(&self, tick: usize) -> Option<&u64> {
-        self.state_hashes.get(&tick)
+    pub fn remove_received_actions(&mut self, tick: usize) {
+        self.action_hashes.swap_remove(&tick);
+        self.actions.swap_remove(&tick);
+        self.earliest_action_tick = self.get_earliest_action_tick();
+        self.latest_contiguous_action_tick = self.get_latest_contiguous_action_tick();
+    }
+
+    pub fn record_received_state_hash(&mut self, tick: usize, hash: u64) {
+        self.state_hashes.insert(tick, hash);
+        self.earliest_state_hash_tick = self.get_earliest_state_hash_tick();
+        self.latest_contiguous_state_hash_tick = self.get_latest_contiguous_state_hash_tick();
     }
 
     pub fn prune_buffers(&mut self) {
@@ -95,13 +128,57 @@ impl Peer {
         self.rtt = 0;
         self.last_ping_received = 0;
         self.time_delta = 0.0;
-        self.last_remote_action_tick_received = 0;
+        self.latest_remote_action_tick_received = 0;
         self.next_local_action_tick_requested = 0;
-        self.last_remote_hash_tick_received = 0;
+        self.latest_remote_hash_tick_received = 0;
         self.next_local_hash_tick_requested = 0;
         self.remote_lag = 0;
         self.local_lag = 0;
         self.clear_advantage();
+    }
+
+    pub fn get_earliest_action_tick(&self) -> usize {
+        let mut tick = usize::MAX;
+        for i in self.actions.keys() {
+            if *i < tick {
+                tick = *i;
+            }
+        }
+        tick
+    }
+
+    pub fn get_earliest_state_hash_tick(&self) -> usize {
+        let mut tick = usize::MAX;
+        for i in self.state_hashes.keys() {
+            if *i < tick {
+                tick = *i;
+            }
+        }
+        tick
+    }
+
+    pub fn get_latest_contiguous_action_tick(&self) -> usize {
+        let mut tick = 0;
+        for i in self.earliest_action_tick.. {
+            if self.actions.contains_key(&i) {
+                tick = i;
+            } else {
+                break;
+            }
+        }
+        tick
+    }
+
+    pub fn get_latest_contiguous_state_hash_tick(&self) -> usize {
+        let mut tick = 0;
+        for i in self.earliest_state_hash_tick.. {
+            if self.state_hashes.contains_key(&i) {
+                tick = i;
+            } else {
+                break;
+            }
+        }
+        tick
     }
 }
 
@@ -114,16 +191,16 @@ pub fn get_peer_debug_data(net: &GR3DNet) -> Array<Dictionary> {
         peer_dict.set("last_ping_received", peer.last_ping_received as i64);
         peer_dict.set("time_delta", peer.time_delta);
         peer_dict.set(
-            "last_remote_action_tick_received",
-            peer.last_remote_action_tick_received as i64,
+            "latest_remote_action_tick_received",
+            peer.latest_remote_action_tick_received as i64,
         );
         peer_dict.set(
             "next_local_action_tick_requested",
             peer.next_local_action_tick_requested as i64,
         );
         peer_dict.set(
-            "last_remote_hash_tick_received",
-            peer.last_remote_hash_tick_received as i64,
+            "latest_remote_hash_tick_received",
+            peer.latest_remote_hash_tick_received as i64,
         );
         peer_dict.set(
             "next_local_hash_tick_requested",
@@ -142,8 +219,8 @@ pub fn get_peer_debug_data(net: &GR3DNet) -> Array<Dictionary> {
             peer.last_local_message_size as i64,
         );
         peer_dict.set(
-            "last_remote_message_size",
-            peer.last_remote_message_size as i64,
+            "latest_remote_message_size",
+            peer.latest_remote_message_size as i64,
         );
         peer_dict.set("action_buffer_length", peer.actions.len() as i64);
         peer_dict.set("state_hash_buffer_length", peer.state_hashes.len() as i64);

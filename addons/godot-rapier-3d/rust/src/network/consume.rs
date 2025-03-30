@@ -1,8 +1,10 @@
 use godot::prelude::*;
 
 use super::deserialize_message_from_peer;
+use crate::actions::serde::deserialize_actions;
 use crate::config::MAX_MESSAGE_SIZE;
 use crate::nodes::*;
+use crate::utils::get_hash;
 use crate::{actions::Operation, interface::GR3DNet, Action};
 
 /// Deserializes a remote peer update message and records relevant data against the peer
@@ -43,21 +45,50 @@ pub fn ingest_peer_message(
         and update the action complete tick if all peers have sent actions.
     */
     for (tick, actions) in message.actions {
+        let actions_hash = get_hash(&actions);
+
+        if peer.actions.contains_key(&tick) {
+            let existing_hash = peer.action_hashes.get(&tick);
+            if existing_hash == Some(&actions_hash) {
+                log::trace!("Skipping actions ({}) received from peer {} for tick {} because matching actions were already received for that tick", actions_hash, peer.peer_id, tick);
+                continue;
+            } else {
+                log::error!(
+                    "Received conflicting actions from peer {} for tick {}: {} vs {}",
+                    peer.peer_id,
+                    tick,
+                    existing_hash.unwrap_or(&0),
+                    actions_hash
+                );
+            }
+        };
+
         if actions.is_empty() {
             if peer.actions.contains_key(&tick) {
                 net.rollback_flags.push(tick); // Prediction missed, actions were present in the buffer but not in the message
+                log::trace!("Rollback flag raised for tick {} because actions were present in local buffer but not in message from peer {}", tick, peer.peer_id);
             }
 
-            peer.actions.swap_remove(&tick);
+            peer.remove_received_actions(tick);
         } else {
             let existing_actions = peer.actions.get(&tick).cloned().unwrap_or_default();
             if existing_actions != actions {
                 net.rollback_flags.push(tick); // Prediction missed, actions in the buffer did not match the actions in the message
+                log::trace!("Rollback flag raised for tick {} because actions in local buffer did not match message from peer {}", tick, peer.peer_id);
             }
 
-            net.world_buffer
-                .insert_serialized_actions(tick, &actions, &scene_root);
-            peer.actions.insert(tick, actions);
+            if let Some(de) = deserialize_actions(actions.clone(), &scene_root) {
+                log::trace!(
+                    "Inserting {} deserialized actions from peer {} into tick {}: {:?}",
+                    de.len(),
+                    peer.peer_id,
+                    tick,
+                    de
+                );
+
+                net.world_buffer.insert_actions(tick, de);
+            }
+            peer.record_received_actions(tick, actions);
         }
 
         if let Some(existing_peers) = net.action_complete_peers.get_mut(&tick) {
@@ -74,14 +105,20 @@ pub fn ingest_peer_message(
 
             if existing_peers.len() == num_peers {
                 net.action_complete_peers.swap_remove(&tick);
-                net.action_complete_tick = std::cmp::max(net.action_complete_tick, tick);
+                if tick > net.action_complete_tick {
+                    net.action_complete_tick = tick;
+                    log::trace!("Action complete tick updated to {}", tick);
+                }
             }
         } else {
             net.action_complete_peers
                 .insert(tick, vec![peer.peer_id].into_iter().collect());
 
             if num_peers == 1 {
-                net.action_complete_tick = std::cmp::max(net.action_complete_tick, tick);
+                if tick > net.action_complete_tick {
+                    net.action_complete_tick = tick;
+                    log::trace!("Action complete tick updated to {}", tick);
+                }
             }
         }
     }
@@ -96,19 +133,43 @@ pub fn ingest_peer_message(
         critical error if there are state mismatches.
     */
     for (tick, hash) in message.state_hashes {
-        peer.state_hashes.insert(tick, hash);
+        if peer.state_hashes.contains_key(&tick) {
+            let existing_hash = peer.state_hashes.get(&tick);
+            if existing_hash == Some(&hash) {
+                log::trace!("Skipping state hash ({}) received from peer {} for tick {} because a matching hash was already received for that tick", hash, peer.peer_id, tick);
+                continue;
+            } else {
+                log::error!(
+                    "Received conflicting state hashes from peer {} for tick {}: {} vs {}",
+                    peer.peer_id,
+                    tick,
+                    existing_hash.unwrap(),
+                    hash
+                ); // TODO fatal error? or overwrite
+            }
+        };
+
+        peer.record_received_state_hash(tick, hash);
+        log::trace!(
+            "Received state hash {} from peer {} for tick {}",
+            hash,
+            peer.peer_id,
+            tick
+        );
+
         let prev_hash_complete_tick = net.physics_hash_complete_tick.clone();
 
         if let Some(existing_map) = net.physics_hash_complete_peers.get_mut(&tick) {
             let old_hash = existing_map.insert(peer.peer_id, hash);
 
-            if old_hash.is_some() {
-                log::warn!(
-                    "Received duplicate state hash from peer {} for tick {}",
+            if old_hash.is_some() && old_hash != Some(hash) {
+                log::error!(
+                    "Received conflicting state hashes from peer {} for tick {}: {} and {}",
                     peer.peer_id,
-                    tick
+                    tick,
+                    old_hash.unwrap(),
+                    hash
                 );
-                // return; // TODO how to handle duplicate hashes?
             }
 
             if existing_map.len() == num_peers {
@@ -155,13 +216,20 @@ pub fn ingest_peer_message(
         }
     }
 
-    peer.next_local_action_tick_requested = message.next_action_tick_requested; // Record the next action tick the peer is expecting as specified in message
-    peer.next_local_hash_tick_requested = message.next_hash_tick_requested; // Record the next hash tick the peer is expecting as specified in message
-    peer.last_remote_action_tick_received = message.tick; // Record the tick the peer last sent actions for
-    peer.last_remote_hash_tick_received = message.tick; // Record the tick the peer last sent a state hash for
-    peer.remote_lag = (peer.last_remote_action_tick_received + 1) as i64
-        - peer.next_local_action_tick_requested as i64; // Calculate the lag between the peer's last action tick and the next action tick it expects
-    peer.last_remote_message_size = message_length; // Record the size of the message received from the peer
+    if peer.latest_remote_tick_received < message.tick {
+        peer.latest_remote_tick_received = message.tick; // Record the latest tick received from the peer
+        peer.latest_remote_action_tick_received = message.tick; // Record the tick the peer latest sent actions for
+        peer.latest_remote_hash_tick_received = message.tick; // Record the tick the peer latest sent a state hash for
+
+        // TODO need to check if the received arrays are contiguous - dont have missing slots
+
+        peer.next_local_action_tick_requested = message.next_action_tick_requested; // Record the next action tick the peer is expecting as specified in message
+        peer.next_local_hash_tick_requested = message.next_hash_tick_requested; // Record the next hash tick the peer is expecting as specified in message
+
+        peer.remote_lag = (peer.latest_remote_action_tick_received + 1) as i64
+            - peer.next_local_action_tick_requested as i64; // Calculate the lag between the peer's latest action tick and the next action tick it expects
+        peer.latest_remote_message_size = message_length; // Record the size of the message received from the peer
+    }
 }
 
 /// Constructs a new action and then adds it to the local world buffer at the current tick

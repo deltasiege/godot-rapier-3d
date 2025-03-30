@@ -8,13 +8,17 @@ use crate::nodes::IRapierObject;
 */
 
 #[derive(GodotClass)]
-#[class(tool, init, base = EditorPlugin)]
+#[class(tool, base = EditorPlugin)]
 pub struct GR3DEditor {
     base: Base<EditorPlugin>,
 }
 
 #[godot_api]
 impl IEditorPlugin for GR3DEditor {
+    fn init(base: Base<EditorPlugin>) -> Self {
+        Self { base }
+    }
+
     fn enter_tree(&mut self) {
         self.base_mut().call_deferred(
             "add_autoload_singleton",

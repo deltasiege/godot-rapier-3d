@@ -4,7 +4,7 @@ var cmd = preload("res://test_assets/tools/cmd.gd")
 const DEFAULT_DEMO = "multiplayer/multiplayer"
 
 func _ready():
-	print("[GR3D MAIN]")
+	print("[MAIN]")
 	var test_name = cmd.get_cmdline_args().get("test")
 	var path = _get_test_path(test_name) if test_name else _get_demo_path(DEFAULT_DEMO)
 	print("Loading: ", path)
