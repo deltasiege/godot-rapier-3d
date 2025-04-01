@@ -1,5 +1,5 @@
 use godot::{classes::Engine, prelude::*};
-use rapier3d::parry::utils::{hashmap::HashMap, hashset::HashSet};
+use rapier3d::parry::utils::hashmap::HashMap;
 
 use crate::{actions::Operation, config::MAX_BUFFER_LEN, network::*};
 
@@ -17,11 +17,11 @@ pub struct GR3DNet {
 
     // Sync
     pub rollback_flags: Vec<usize>, // Tick -> rollback flag. Used to flag ticks that need to be rolled back to and resimulated. Checked once per physics frame
-    pub action_complete_peers: HashMap<usize, HashSet<i64>>, // Tick -> peer_ids. List of peers that have sent actions for this tick. Used to calculate the action_complete_tick
-    pub action_complete_tick: usize, // The latest tick that has received all peer actions
-    pub physics_hash_complete_peers: HashMap<usize, HashMap<i64, u64>>, // Tick -> (peer_id -> hash). List of peer hashes that have been sent for the given tick. Used to calculate the physics_hash_complete_tick
-    pub physics_hash_complete_tick: usize, // The latest tick that has received all peer state hashes
-    pub synchronized_tick: usize, // The latest tick that is action complete and physics hashes are complete and equal for all peers
+    pub frame_complete_peers: HashMap<usize, HashMap<i64, u64>>, // Tick -> (peer_id -> hash). List of peers that have sent tick data for this tick. Used to calculate the frame_complete_tick
+    pub synchronized_tick: usize, // The latest tick that has received all peer frame data and all physics hashes match
+
+    // Nodes
+    pub node_cache: NodeCache,
 
     #[export]
     pub network_adapter: Option<Gd<GR3DNetworkAdapter>>,
@@ -40,11 +40,9 @@ impl IObject for GR3DNet {
             peers: Vec::new(),
             world_buffer: WorldBuffer::new(MAX_BUFFER_LEN),
             rollback_flags: Vec::new(),
-            action_complete_peers: HashMap::default(),
-            action_complete_tick: 0,
-            physics_hash_complete_peers: HashMap::default(),
-            physics_hash_complete_tick: 0,
+            frame_complete_peers: HashMap::default(),
             synchronized_tick: 0,
+            node_cache: NodeCache::new(),
             network_adapter: None,
             base,
         }
@@ -95,18 +93,14 @@ impl GR3DNet {
         }
 
         record_all_advantages(self, false);
-        send_local_actions_to_all_peers(self);
+        send_local_ticks_to_all_peers(self);
 
         for peer in &mut self.peers {
             peer.prune_buffers();
         }
 
-        while self.action_complete_peers.len() > MAX_BUFFER_LEN {
-            remove_oldest(&mut self.action_complete_peers);
-        }
-
-        while self.physics_hash_complete_peers.len() > MAX_BUFFER_LEN {
-            remove_oldest(&mut self.physics_hash_complete_peers);
+        while self.frame_complete_peers.len() > MAX_BUFFER_LEN {
+            remove_oldest(&mut self.frame_complete_peers);
         }
     }
 
@@ -197,7 +191,7 @@ impl GR3DNet {
     fn _get_debug_data(&self) -> Dictionary {
         let mut dict = Dictionary::new();
         dict.set("tick", self.tick as i64);
-        dict.set("action_complete_tick", self.action_complete_tick as i64);
+        dict.set("synchronized_tick", self.synchronized_tick as i64);
         dict.set("started", self.started);
         dict.set("host_starting", self.host_starting);
         dict.set("peers", self.peers.len() as i64);

@@ -18,32 +18,34 @@ impl WorldBuffer {
         }
     }
 
-    /// Adds an action to the buffer at the given tick
+    /// Inserts or updates a BufferFrame into both buffers at the tick specified in the frame
+    pub fn upsert_local_frame(&mut self, frame: BufferFrame) {
+        _upsert_frame_into_buffer(frame.clone(), &mut self.local_buffer);
+        _upsert_frame_into_buffer(frame, &mut self.buffer);
+    }
+
+    /// Inserts or updates given actions in both buffers at the given tick
     /// Creates a new BufferFrame if one does not exist
-    pub fn insert_action(&mut self, tick: usize, action: Action) {
+    pub fn upsert_local_actions(&mut self, tick: usize, actions: Vec<Action>) {
         let combined_buff = &mut self.buffer;
-        _insert_action_into_buffer(tick, action.clone(), combined_buff);
-        _reserialize_actions_in_buffer(combined_buff, tick);
+        for action in actions.clone() {
+            _upsert_action_into_buffer(tick, action.clone(), combined_buff);
+        }
 
         let local_buff = &mut self.local_buffer;
-        _insert_action_into_buffer(tick, action, local_buff);
-        _reserialize_actions_in_buffer(local_buff, tick);
+        for action in actions {
+            _upsert_action_into_buffer(tick, action, local_buff);
+        }
 
         self.prune_buffers();
     }
 
-    pub fn insert_actions(&mut self, tick: usize, actions: Vec<Action>) {
+    /// Inserts or updates given actions in the combined buffer at the given tick
+    pub fn upsert_remote_actions(&mut self, tick: usize, actions: Vec<Action>) {
         let combined_buff = &mut self.buffer;
         for action in actions.clone() {
-            _insert_action_into_buffer(tick, action.clone(), combined_buff);
+            _upsert_action_into_buffer(tick, action.clone(), combined_buff);
         }
-        _reserialize_actions_in_buffer(combined_buff, tick);
-
-        let local_buff = &mut self.local_buffer;
-        for action in actions {
-            _insert_action_into_buffer(tick, action, local_buff);
-        }
-        _reserialize_actions_in_buffer(local_buff, tick);
 
         self.prune_buffers();
     }
@@ -60,21 +62,6 @@ impl WorldBuffer {
             apply_actions_to_world(&mut flattened, physics);
         }
         flattened
-    }
-
-    /// Called whenever the world is stepped.
-    /// Adds the next tick's BufferFrame with empty actions list.
-    pub fn on_world_stepped(&mut self, next_tick: usize, resulting_state: Option<Vec<u8>>) {
-        if let Some(phx_state) = resulting_state {
-            if let Some(existing) = self.buffer.get_mut(&next_tick) {
-                existing.insert_physics_state(phx_state);
-            } else {
-                let frame = BufferFrame::new(next_tick, Some(phx_state), Vec::new());
-                self.buffer.insert(frame.tick, frame);
-            }
-        }
-
-        self.prune_buffers();
     }
 
     /// Remove oldest entries from buffers if they exceed the max length
@@ -158,7 +145,7 @@ pub fn remove_oldest<T>(map: &mut HashMap<usize, T>) {
     map.swap_remove(&earliest_key);
 }
 
-fn _insert_action_into_buffer(
+fn _upsert_action_into_buffer(
     tick: usize,
     action: Action,
     buffer: &mut HashMap<usize, BufferFrame>,
@@ -172,13 +159,27 @@ fn _insert_action_into_buffer(
     }
 }
 
-fn _reserialize_actions_in_buffer(buffer: &mut HashMap<usize, BufferFrame>, tick: usize) {
-    if let Some(frame) = buffer.get_mut(&tick) {
-        frame.reserialize_actions();
+fn _upsert_frame_into_buffer(frame: BufferFrame, buffer: &mut HashMap<usize, BufferFrame>) {
+    if let Some(existing) = buffer.get_mut(&frame.tick) {
+        // Overwrite physics state only if existing is empty
+        if frame.physics_state.is_some() {
+            if existing.physics_state.is_none() {
+                existing.set_physics_state(frame.physics_state.clone().unwrap());
+            } else {
+                log::warn!(
+                    "Physics state already exists for tick {}. Not overwriting",
+                    frame.tick
+                );
+            }
+        }
+
+        // Insert actions into existing frame
+        let flattened_actions: Vec<Action> = frame.actions.values().flatten().cloned().collect();
+        for action in flattened_actions {
+            let cuid = action.cuid.to_string();
+            insert_action_if_allowed(action, existing.actions.entry(cuid));
+        }
     } else {
-        log::error!(
-            "Failed to reserialize actions in buffer. Tick {} not found",
-            tick
-        );
-    }
+        buffer.insert(frame.tick, frame);
+    };
 }

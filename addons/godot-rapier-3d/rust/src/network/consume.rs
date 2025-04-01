@@ -1,4 +1,5 @@
 use godot::prelude::*;
+use rapier3d::parry::utils::hashmap::HashMap;
 
 use super::deserialize_message_from_peer;
 use crate::actions::serde::deserialize_actions;
@@ -28,14 +29,17 @@ pub fn ingest_peer_message(
         None => return,
     };
 
-    if message_length > MAX_MESSAGE_SIZE {
-        log::warn!(
-            "Received a message from peer {} that is too big ({} bytes): {:?}",
-            peer.peer_id,
-            message_length,
-            message,
-        );
-    }
+    log::log!(
+        if message_length > MAX_MESSAGE_SIZE {
+            log::Level::Warn
+        } else {
+            log::Level::Trace
+        },
+        "Received message from peer {} of size {}: {}",
+        peer.peer_id,
+        message_length,
+        message
+    );
 
     /*
         Overwrite actions in the peer's buffer with actions in the message
@@ -44,40 +48,64 @@ pub fn ingest_peer_message(
         Record the peer as having sent actions on the given tick
         and update the action complete tick if all peers have sent actions.
     */
-    for (tick, actions) in message.actions {
-        let actions_hash = get_hash(&actions);
+    for frame in message.frames {
+        let tick = frame.tick;
+        let deserialized_actions =
+            deserialize_actions(frame.ser_actions.clone(), &scene_root, &net.node_cache);
+        let actions_hash = get_hash(&frame.ser_actions);
+        let mut physics_hash = None;
 
-        if peer.actions.contains_key(&tick) {
-            let existing_hash = peer.action_hashes.get(&tick);
-            if existing_hash == Some(&actions_hash) {
-                log::trace!("Skipping actions ({}) received from peer {} for tick {} because matching actions were already received for that tick", actions_hash, peer.peer_id, tick);
-                continue;
-            } else {
+        if let Some(existing_frame) = peer.received_remote_ticks.get_mut(&tick) {
+            log::trace!(
+                "Received extra frame from peer {} for tick {}: {}",
+                peer.peer_id,
+                tick,
+                frame
+            );
+
+            // Peer already gave us a frame for this tick, check if everything matches
+            let existing_actions_hash = get_hash(&existing_frame.ser_actions);
+            if existing_actions_hash != actions_hash {
                 log::error!(
                     "Received conflicting actions from peer {} for tick {}: {} vs {}",
                     peer.peer_id,
                     tick,
-                    existing_hash.unwrap_or(&0),
+                    existing_actions_hash,
                     actions_hash
                 );
-            }
-        };
-
-        if actions.is_empty() {
-            if peer.actions.contains_key(&tick) {
-                net.rollback_flags.push(tick); // Prediction missed, actions were present in the buffer but not in the message
-                log::trace!("Rollback flag raised for tick {} because actions were present in local buffer but not in message from peer {}", tick, peer.peer_id);
+                net.rollback_flags.push(tick); // Prediction missed, actions in the buffer didn't match the actions in the message
+                existing_frame.ser_actions = frame.ser_actions; // Overwrite the existing actions with the message actions
             }
 
-            peer.remove_received_actions(tick);
+            if existing_frame.state_hash != frame.state_hash {
+                log::error!(
+                    "Received conflicting state hash from peer {} for tick {}: {} vs {}",
+                    peer.peer_id,
+                    tick,
+                    existing_frame.state_hash.unwrap_or(0),
+                    frame.state_hash.unwrap_or(0)
+                );
+
+                net.rollback_flags.push(tick); // Prediction missed, state hash in the buffer didn't match the state hash in the message
+                existing_frame.state_hash = frame.state_hash; // Overwrite the existing state hash with the message state hash
+                physics_hash = match frame.state_hash {
+                    Some(hash) => Some(hash),
+                    None => existing_frame.state_hash,
+                }
+            }
         } else {
-            let existing_actions = peer.actions.get(&tick).cloned().unwrap_or_default();
-            if existing_actions != actions {
-                net.rollback_flags.push(tick); // Prediction missed, actions in the buffer did not match the actions in the message
-                log::trace!("Rollback flag raised for tick {} because actions in local buffer did not match message from peer {}", tick, peer.peer_id);
-            }
+            log::trace!(
+                "Received new frame from peer {} for tick {}: {}",
+                peer.peer_id,
+                tick,
+                frame
+            );
+            peer.received_remote_ticks.insert(tick, frame);
+        }
 
-            if let Some(de) = deserialize_actions(actions.clone(), &scene_root) {
+        // If we need to rollback as a result of the peer's message, deserialize and insert the actions into the combined world_buffer
+        if net.rollback_flags.get(tick).is_some() {
+            if let Some(de) = deserialized_actions {
                 log::trace!(
                     "Inserting {} deserialized actions from peer {} into tick {}: {:?}",
                     de.len(),
@@ -86,150 +114,63 @@ pub fn ingest_peer_message(
                     de
                 );
 
-                net.world_buffer.insert_actions(tick, de);
-            }
-            peer.record_received_actions(tick, actions);
+                net.world_buffer.upsert_remote_actions(tick, de);
+            };
         }
 
-        if let Some(existing_peers) = net.action_complete_peers.get_mut(&tick) {
-            let peer_is_absent = existing_peers.insert(peer.peer_id);
-
-            if !peer_is_absent {
-                log::warn!(
-                    "Received duplicate actions from peer {} for tick {}",
-                    peer.peer_id,
-                    tick
-                );
-                // return; // TODO how to handle duplicate actions?
+        if physics_hash.is_some() {
+            // Record this peer as frame complete
+            if !net.frame_complete_peers.contains_key(&tick) {
+                net.frame_complete_peers.insert(tick, HashMap::default());
             }
+            if let Some(completed_peers) = net.frame_complete_peers.get_mut(&tick) {
+                completed_peers.insert(peer.peer_id, physics_hash.unwrap());
 
-            if existing_peers.len() == num_peers {
-                net.action_complete_peers.swap_remove(&tick);
-                if tick > net.action_complete_tick {
-                    net.action_complete_tick = tick;
-                    log::trace!("Action complete tick updated to {}", tick);
-                }
-            }
-        } else {
-            net.action_complete_peers
-                .insert(tick, vec![peer.peer_id].into_iter().collect());
+                if completed_peers.len() == num_peers {
+                    // All peers have sent us a frame for this tick
+                    // Confirm all physics hashes match
+                    net.frame_complete_peers.swap_remove(&tick);
+                    if tick > net.synchronized_tick {
+                        let mut mismatches = Vec::new();
+                        let map = net
+                            .frame_complete_peers
+                            .get(&tick)
+                            .expect("Failed to get frame_complete_peers");
 
-            if num_peers == 1 {
-                if tick > net.action_complete_tick {
-                    net.action_complete_tick = tick;
-                    log::trace!("Action complete tick updated to {}", tick);
-                }
-            }
-        }
-    }
+                        let hashes = map.values().cloned().collect::<Vec<_>>();
+                        for (peer_id, hash) in map.iter() {
+                            if hashes.iter().any(|h| h != hash) {
+                                mismatches.push(*peer_id);
+                            }
+                        }
 
-    /*
-        Overwrite state hashes in the peer's buffer with hashes in the message
-
-        Then, record the peer as having sent state hashes on the given ticks
-        and update the physics_state_hash_complete tick if all peers have sent hashes for that tick.
-
-        If the physics_state_hash_complete was updated, also check for synchronization and throw a
-        critical error if there are state mismatches.
-    */
-    for (tick, hash) in message.state_hashes {
-        if peer.state_hashes.contains_key(&tick) {
-            let existing_hash = peer.state_hashes.get(&tick);
-            if existing_hash == Some(&hash) {
-                log::trace!("Skipping state hash ({}) received from peer {} for tick {} because a matching hash was already received for that tick", hash, peer.peer_id, tick);
-                continue;
-            } else {
-                log::error!(
-                    "Received conflicting state hashes from peer {} for tick {}: {} vs {}",
-                    peer.peer_id,
-                    tick,
-                    existing_hash.unwrap(),
-                    hash
-                ); // TODO fatal error? or overwrite
-            }
-        };
-
-        peer.record_received_state_hash(tick, hash);
-        log::trace!(
-            "Received state hash {} from peer {} for tick {}",
-            hash,
-            peer.peer_id,
-            tick
-        );
-
-        let prev_hash_complete_tick = net.physics_hash_complete_tick.clone();
-
-        if let Some(existing_map) = net.physics_hash_complete_peers.get_mut(&tick) {
-            let old_hash = existing_map.insert(peer.peer_id, hash);
-
-            if old_hash.is_some() && old_hash != Some(hash) {
-                log::error!(
-                    "Received conflicting state hashes from peer {} for tick {}: {} and {}",
-                    peer.peer_id,
-                    tick,
-                    old_hash.unwrap(),
-                    hash
-                );
-            }
-
-            if existing_map.len() == num_peers {
-                net.physics_hash_complete_peers.swap_remove(&tick);
-                net.physics_hash_complete_tick =
-                    std::cmp::max(net.physics_hash_complete_tick, tick);
-            }
-        } else {
-            net.physics_hash_complete_peers
-                .insert(tick, std::iter::once((peer.peer_id, hash)).collect());
-
-            if num_peers == 1 {
-                net.physics_hash_complete_tick =
-                    std::cmp::max(net.physics_hash_complete_tick, tick);
-            }
-        }
-
-        // If the physics state hash was updated, check for hash mismatches
-        if prev_hash_complete_tick != net.physics_hash_complete_tick {
-            let mut mismatches = Vec::new();
-            let map = net
-                .physics_hash_complete_peers
-                .get(&net.physics_hash_complete_tick)
-                .expect("Failed to get physics hash complete peers after update");
-
-            let hashes = map.values().cloned().collect::<Vec<_>>();
-            for (peer_id, hash) in map.iter() {
-                if hashes.iter().any(|h| h != hash) {
-                    mismatches.push(*peer_id);
-                }
-            }
-
-            if !mismatches.is_empty() {
-                log::error!(
-                    "State mismatch detected at tick {} between peers {:?}",
-                    net.physics_hash_complete_tick,
-                    mismatches
-                ); // TODO kill the game because of fatal error
-            } else {
-                if net.action_complete_tick >= net.physics_hash_complete_tick {
-                    net.synchronized_tick = net.physics_hash_complete_tick;
+                        if !mismatches.is_empty() {
+                            log::error!(
+                                "State mismatch detected at tick {} between peers {:?}",
+                                tick,
+                                mismatches
+                            ); // TODO kill the game because of fatal error
+                        } else {
+                            net.synchronized_tick = tick;
+                            log::trace!("Synchronized tick updated to {}", tick);
+                        }
+                    }
                 }
             }
         }
     }
 
-    if peer.latest_remote_tick_received < message.tick {
-        peer.latest_remote_tick_received = message.tick; // Record the latest tick received from the peer
-        peer.latest_remote_action_tick_received = message.tick; // Record the tick the peer latest sent actions for
-        peer.latest_remote_hash_tick_received = message.tick; // Record the tick the peer latest sent a state hash for
+    peer.latest_remote_tick_received =
+        std::cmp::max(peer.latest_remote_tick_received, message.tick);
+    peer.latest_local_tick_requested = std::cmp::max(
+        peer.latest_local_tick_requested,
+        message.requested_ticks.iter().max().cloned().unwrap_or(0),
+    );
+    peer.requested_local_ticks = message.requested_ticks;
 
-        // TODO need to check if the received arrays are contiguous - dont have missing slots
-
-        peer.next_local_action_tick_requested = message.next_action_tick_requested; // Record the next action tick the peer is expecting as specified in message
-        peer.next_local_hash_tick_requested = message.next_hash_tick_requested; // Record the next hash tick the peer is expecting as specified in message
-
-        peer.remote_lag = (peer.latest_remote_action_tick_received + 1) as i64
-            - peer.next_local_action_tick_requested as i64; // Calculate the lag between the peer's latest action tick and the next action tick it expects
-        peer.latest_remote_message_size = message_length; // Record the size of the message received from the peer
-    }
+    // Calculate the lag between the peer's latest action tick and the next action tick it expects
+    peer.remote_lag =
+        (peer.latest_remote_tick_received + 1) as i64 - peer.latest_local_tick_requested as i64;
 }
 
 /// Constructs a new action and then adds it to the local world buffer at the current tick
@@ -241,7 +182,8 @@ pub fn ingest_local_action(
 ) {
     if let Some((cuid, handle)) = extract_ids(node.clone()) {
         let action = Action::new(cuid, handle, node, operation, data);
-        net.world_buffer.insert_action(net.tick, action);
+        net.world_buffer
+            .upsert_local_actions(net.tick, vec![action]);
     }
 }
 

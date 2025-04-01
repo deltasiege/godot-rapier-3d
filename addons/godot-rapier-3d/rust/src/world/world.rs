@@ -1,3 +1,5 @@
+use crate::utils::get_hash;
+
 use super::state::{pack_snapshot, PhysicsState};
 use rapier3d::dynamics::IntegrationParameters;
 
@@ -59,6 +61,11 @@ impl World {
     /// Advance the simulation by one step
     /// Return the resulting snapshot and the next tick idx
     pub fn step(&mut self) -> (Option<Vec<u8>>, usize) {
+        log::trace!(
+            "Stepping local world at timestep: {}",
+            self.state.timestep_id
+        );
+
         self.physics.pipeline.step(
             &self.physics.gravity,
             &self.physics.integration_parameters,

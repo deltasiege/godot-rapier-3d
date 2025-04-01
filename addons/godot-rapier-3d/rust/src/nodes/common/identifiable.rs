@@ -57,5 +57,5 @@ impl_identifiable!(RapierStaticBody3D);
 impl_identifiable!(RapierPIDCharacter3D);
 
 pub fn generate_cuid() -> GString {
-    cuid2::create_id().into()
+    cuid2::slug().into() // 10 characters
 }

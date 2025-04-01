@@ -28,7 +28,7 @@ pub fn corrective_rollback(
             _ => {
                 if let Some(actions_to_add) = actions_to_add {
                     for action in actions_to_add {
-                        self.buffer.insert_action(action, timestep_id);
+                        self.buffer.insert_actions(vec![action], timestep_id);
                     }
                 }
 

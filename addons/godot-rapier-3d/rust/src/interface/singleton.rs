@@ -1,9 +1,10 @@
 use super::debugger::GR3DDebugger;
 use super::get_net_singleton;
+use crate::network::BufferFrame;
 use crate::nodes::{generate_cuid, IRapierObject};
 use crate::utils::extract_from_dict;
 use crate::world::{restore_snapshot, unpack_snapshot};
-use crate::{Action, World};
+use crate::World;
 use godot::classes::{Engine, IObject, Object};
 use godot::prelude::*;
 
@@ -50,19 +51,24 @@ impl GR3D {
 
         for _ in 0..count {
             let tick = net.bind().tick;
+            log::trace!("Executing tick: {}", tick);
             let actions = net
                 .bind_mut()
                 .world_buffer
                 .apply_actions_to_world(tick, &mut self.world.physics);
             log::trace!("Applied actions for tick {}: {:?}", tick, actions);
 
-            log::trace!("Executing tick: {}", tick);
             let (resulting_state, next_tick) = self.world.step();
 
             net.bind_mut().tick = next_tick;
-            net.bind_mut()
-                .world_buffer
-                .on_world_stepped(next_tick, resulting_state);
+
+            // Add the next tick's BufferFrame with empty actions list and resulting physics state of the previous frame
+            if let Some(phx_state) = resulting_state {
+                let frame = BufferFrame::new_from_physics_state(next_tick, Some(phx_state));
+                net.bind_mut().world_buffer.upsert_local_frame(frame);
+            }
+            net.bind_mut().world_buffer.prune_buffers();
+            log::trace!("Tick finished: {}", tick);
         }
     }
 
@@ -198,30 +204,6 @@ pub fn get_singleton() -> Option<Gd<GR3D>> {
 
 pub fn get_tree(node: &impl IRapierObject) -> Option<Gd<SceneTree>> {
     node.base().get_tree()
-}
-
-// Convert Array of Dictionaries to Vec of Actions
-fn actions_from_array(actions: Array<Dictionary>) -> Option<Vec<Action>> {
-    let result: Vec<Action> = actions
-        .iter_shared()
-        .filter_map(|data| action_from_dict(data))
-        .collect();
-
-    if result.len() == 0 {
-        None
-    } else {
-        Some(result)
-    }
-}
-
-// Convert Dictionary to Action
-fn action_from_dict(dict: Dictionary) -> Option<Action> {
-    let cuid = GString::from(dict.get("cuid")?.to_string());
-    let handle = extract_handle_from_action_dict(&dict)?;
-    let node = extract_from_dict(&dict, "node", true)?;
-    let operation = extract_from_dict(&dict, "operation", true)?;
-    let data = extract_from_dict(&dict, "data", true)?;
-    Some(Action::new(cuid, Some(handle), node, operation, data))
 }
 
 fn extract_handle_from_action_dict(dict: &Dictionary) -> Option<(u32, u32)> {

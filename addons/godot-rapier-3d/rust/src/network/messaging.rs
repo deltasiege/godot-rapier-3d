@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Display, Formatter};
 
 use bincode::{
     config::standard,
@@ -8,66 +8,71 @@ use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 use serde::{Deserialize, Serialize};
 
-use crate::{config::MAX_BUFFER_LEN, interface::GR3DNet};
+use super::PeerBufferFrame;
+use crate::interface::GR3DNet;
 
 // TODO need serialized buffer of all timestep -> local actions - should go in world buffer
 // and separate HashMap of all timestep -> local state hashes - should go in world buffer
 
 /// Sent over the network to all peers
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct UpdateMessage {
-    pub tick: usize,                       // The tick that this message was created on
-    pub actions: HashMap<usize, Vec<u8>>, // Tick -> serialized actions. All actions known to the sending peer for the given ticks
-    pub state_hashes: HashMap<usize, u64>, // Tick -> state hash. All state hashes calculated by the sending peer for the given ticks
-    pub next_action_tick_requested: usize, // The next action tick that the sending peer wants from the receiving peer
-    pub next_hash_tick_requested: usize, // The next hash tick that the sending peer wants from the receiving peer
+    pub tick: usize, // The tick that this message was created on
+
+    pub frames: Vec<PeerBufferFrame>, // All frames that the receiving peer has not acknowledged yet
+    pub node_cache: HashMap<u32, String>, // Cache index -> node cuid as recorded by the sending peer (acknowledges that previous node cuids have been saved)
+
+    /// Array of ticks that the sending peer wants from the receiving peer.
+    /// Ticks after the latest entry in the array should still be sent if available
+    /// Any ticks that are missing from this array (prior to the latest entry) - means that the sending peer has acknowledged them and they don't need to be resent
+    pub requested_ticks: Vec<usize>,
 }
 
-pub fn send_local_actions_to_all_peers(net: &mut GR3DNet) {
+pub fn send_local_ticks_to_all_peers(net: &mut GR3DNet) {
     let adapter = match &net.network_adapter {
-        Some(adapter) => adapter,
+        Some(adapter) => adapter.clone(),
         None => {
             log::error!("Network adapter not attached");
             return;
         }
     };
 
-    for peer in net.peers.iter_mut() {
-        let current_tick = net.tick;
+    for peer in net.peers.iter() {
+        let last_tick = net.tick - 1;
 
-        // Get all actions that are after the next tick that the peer has requested
-        let mut actions_since_requested = HashMap::default();
-        let clamped_start = clamp_start_tick(peer.next_local_action_tick_requested, current_tick);
-
-        for tick in clamped_start..current_tick {
+        // Get all frames requested by the peer
+        let mut requested_frames_and_beyond = Vec::new();
+        for tick in peer.get_requested_local_ticks_and_beyond(last_tick) {
             if let Some(frame) = net.world_buffer.local_buffer.get(&tick) {
-                if let Some(ser_actions) = &frame.ser_actions {
-                    actions_since_requested.insert(tick, ser_actions.clone());
-                }
-            }
-        }
+                let ser_actions = match frame.get_serialized_actions(&mut net.node_cache) {
+                    Some(actions) => actions,
+                    None => {
+                        log::error!("Failed to serialize actions for tick {}", tick);
+                        continue;
+                    }
+                };
 
-        // Get all state hashes that are after the next tick that the peer has requested
-        let mut hashes_since_requested = HashMap::default();
-        let clamped_start = clamp_start_tick(peer.next_local_hash_tick_requested, current_tick);
-
-        for tick in clamped_start..current_tick {
-            if let Some(hash) = net.world_buffer.get_physics_state_hash(tick) {
-                hashes_since_requested.insert(tick, hash);
+                requested_frames_and_beyond.push(PeerBufferFrame::new(
+                    tick,
+                    ser_actions,
+                    frame.physics_hash,
+                ));
+            } else {
+                log::error!(
+                    "Peer requested tick {} that doesn't exist in local_buffer",
+                    tick
+                ); // This can happen if local_buffer is pruned before sync is achieved,
+                   // or a recent tick failed to be recorded in the local_buffer and the peer is asking for it
             }
         }
 
         let message = UpdateMessage {
-            tick: net.tick,
-            actions: actions_since_requested,
-            state_hashes: hashes_since_requested,
-            next_action_tick_requested: peer.latest_contiguous_action_tick + 1,
-            next_hash_tick_requested: peer.latest_contiguous_state_hash_tick + 1,
+            tick: last_tick,
+            frames: requested_frames_and_beyond,
+            requested_ticks: peer.get_ticks_to_request_and_beyond(last_tick),
         };
 
-        log::trace!("Sending update message to peer: {}", message);
-
-        let ser_message = match encode_to_vec(message, standard()) {
+        let ser_message = match encode_to_vec(message.clone(), standard()) {
             Ok(bytes) => bytes,
             Err(e) => {
                 log::error!("Failed to encode update message. Error: {}", e);
@@ -75,7 +80,11 @@ pub fn send_local_actions_to_all_peers(net: &mut GR3DNet) {
             }
         };
 
-        peer.last_local_message_size = ser_message.len();
+        log::trace!(
+            "Sending update message to peer ({} bytes): {}",
+            ser_message.len(),
+            message
+        );
         let data = PackedByteArray::from(ser_message.as_slice());
         adapter.bind().send_tick_data(peer.peer_id, data);
     }
@@ -93,38 +102,18 @@ pub fn deserialize_message_from_peer(
     }
 }
 
-impl Debug for UpdateMessage {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("UpdateMessage")
-            .field("tick", &self.tick)
-            .field("actions", &self.actions.len())
-            .field("state_hashes", &self.state_hashes.len())
-            .field(
-                "next_action_tick_requested",
-                &self.next_action_tick_requested,
-            )
-            .field("next_hash_tick_requested", &self.next_hash_tick_requested)
-            .finish()
-    }
-}
-
-// Starting tick cannot be MAX_BUFFER_LEN behind current tick, and cannot be greater than current tick
-fn clamp_start_tick(requested: usize, current: usize) -> usize {
-    let minimum_start = current.saturating_sub(MAX_BUFFER_LEN);
-    let start_tick = std::cmp::max(minimum_start, requested + 1);
-    std::cmp::min(start_tick, current)
-}
-
 impl Display for UpdateMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "UpdateMessage {{ tick: {}, actions: {}, state_hashes: {}, next_action_tick_requested: {}, next_hash_tick_requested: {} }}",
+            "UpdateMessage {{ tick: {}, frames: {:?}, requested_ticks: {:?} }}",
             self.tick,
-            self.actions.len(),
-            self.state_hashes.len(),
-            self.next_action_tick_requested,
-            self.next_hash_tick_requested
+            self.frames
+                .clone()
+                .into_iter()
+                .map(|frame| frame.tick)
+                .collect::<Vec<usize>>(),
+            self.requested_ticks
         )
     }
 }
