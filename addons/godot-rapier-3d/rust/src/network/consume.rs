@@ -50,8 +50,7 @@ pub fn ingest_peer_message(
     */
     for frame in message.frames {
         let tick = frame.tick;
-        let deserialized_actions =
-            deserialize_actions(frame.ser_actions.clone(), &scene_root, &net.node_cache);
+        let deserialized_actions = deserialize_actions(frame.ser_actions.clone(), &scene_root);
         let actions_hash = get_hash(&frame.ser_actions);
         let mut physics_hash = None;
 

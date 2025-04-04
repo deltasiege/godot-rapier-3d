@@ -34,9 +34,6 @@ pub struct Peer {
     pub requested_local_ticks: Vec<usize>, // Ticks that this peer has requested from us
     pub received_remote_ticks: HashMap<usize, PeerBufferFrame>, // tick -> PeerBufferFrame. All action + state_hash data we have received from this peer. The keys also represent acknowledged ticks that don't need to be resent by this peer
     pub received_remote_action_hashes: HashMap<usize, u64>, // tick -> u64. Contains the hash of the actions at each tick
-
-    // Node paths
-    pub node_paths: HashMap<usize, String>, // index -> node_path. Node paths sent by this peer are cached against an index provided by the peer in order to save bytes. node_paths.keys() must be sent back to the peer so it knows they are cached
 }
 
 impl Peer {
@@ -56,7 +53,6 @@ impl Peer {
             requested_local_ticks: Vec::new(),
             received_remote_ticks: HashMap::default(),
             received_remote_action_hashes: HashMap::default(),
-            node_paths: HashMap::default(),
         }
     }
 

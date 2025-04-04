@@ -36,7 +36,7 @@ pub enum Operation {
 pub struct Action {
     pub cuid: GString,
     pub handle: Option<(u32, u32)>,
-    pub node: Gd<Node>,
+    // pub node: Gd<Node>,
     pub operation: Operation,
     pub data: Dictionary,
 }
@@ -52,7 +52,7 @@ impl Action {
         Self {
             cuid,
             handle,
-            node,
+            // node,
             operation,
             data,
         }

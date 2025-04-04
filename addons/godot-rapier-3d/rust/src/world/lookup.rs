@@ -1,7 +1,7 @@
 use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 use serde::{Deserialize, Serialize};
-// use std::collections::HashMap;
+
 /*
 
   This module facilitates retrieving Rapier objects via UIDs
@@ -55,8 +55,10 @@ impl LookupTable {
         }
     }
 
-    pub fn get_rapier_handle(&self, godot_uid: &GString) -> Option<&(u32, u32)> {
-        self.godot_to_rapier.get(godot_uid.to_string().as_str())
+    pub fn get_rapier_handle(&self, godot_uid: &GString) -> Option<(u32, u32)> {
+        self.godot_to_rapier
+            .get(godot_uid.to_string().as_str())
+            .cloned()
     }
 
     pub fn get_godot_uid(&self, rapier_handle: &(u32, u32)) -> Option<GString> {
@@ -71,9 +73,17 @@ impl LookupTable {
     pub fn get_node_from_handle(
         &self,
         rapier_handle: &(u32, u32),
-        root_node: Gd<Node>,
+        root_node: &Gd<Node>,
     ) -> Option<Gd<Node>> {
         if let Some(node_path) = self.rapier_to_node_path.get(rapier_handle) {
+            root_node.get_node_or_null(node_path)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_node_from_cuid(&self, cuid: &GString, root_node: &Gd<Node>) -> Option<Gd<Node>> {
+        if let Some(node_path) = self.godot_to_node_path.get(cuid.to_string().as_str()) {
             root_node.get_node_or_null(node_path)
         } else {
             None

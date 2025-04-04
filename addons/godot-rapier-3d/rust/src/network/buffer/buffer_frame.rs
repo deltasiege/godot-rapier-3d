@@ -2,8 +2,6 @@ use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
 use crate::actions::{serialize_actions, Action};
-use crate::interface::GR3DNet;
-use crate::network::NodeCache;
 use crate::utils::get_hash;
 
 /// Represents a single tick in the buffer
@@ -47,9 +45,9 @@ impl BufferFrame {
         self.physics_state = Some(physics_state);
     }
 
-    pub fn get_serialized_actions(&self, node_cache: &mut NodeCache) -> Option<Vec<u8>> {
+    pub fn get_serialized_actions(&self) -> Option<Vec<u8>> {
         let flat: Vec<Action> = self.actions.values().flatten().cloned().collect();
-        serialize_actions(&flat, node_cache)
+        serialize_actions(&flat)
     }
 }
 

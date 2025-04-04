@@ -20,9 +20,6 @@ pub struct GR3DNet {
     pub frame_complete_peers: HashMap<usize, HashMap<i64, u64>>, // Tick -> (peer_id -> hash). List of peers that have sent tick data for this tick. Used to calculate the frame_complete_tick
     pub synchronized_tick: usize, // The latest tick that has received all peer frame data and all physics hashes match
 
-    // Nodes
-    pub node_cache: NodeCache,
-
     #[export]
     pub network_adapter: Option<Gd<GR3DNetworkAdapter>>,
     base: Base<Object>,
@@ -42,7 +39,6 @@ impl IObject for GR3DNet {
             rollback_flags: Vec::new(),
             frame_complete_peers: HashMap::default(),
             synchronized_tick: 0,
-            node_cache: NodeCache::new(),
             network_adapter: None,
             base,
         }

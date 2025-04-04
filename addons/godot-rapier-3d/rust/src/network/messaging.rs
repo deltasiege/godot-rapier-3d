@@ -5,7 +5,6 @@ use bincode::{
     serde::{decode_from_slice, encode_to_vec},
 };
 use godot::prelude::*;
-use rapier3d::parry::utils::hashmap::HashMap;
 use serde::{Deserialize, Serialize};
 
 use super::PeerBufferFrame;
@@ -20,7 +19,6 @@ pub struct UpdateMessage {
     pub tick: usize, // The tick that this message was created on
 
     pub frames: Vec<PeerBufferFrame>, // All frames that the receiving peer has not acknowledged yet
-    pub node_cache: HashMap<u32, String>, // Cache index -> node cuid as recorded by the sending peer (acknowledges that previous node cuids have been saved)
 
     /// Array of ticks that the sending peer wants from the receiving peer.
     /// Ticks after the latest entry in the array should still be sent if available
@@ -44,7 +42,7 @@ pub fn send_local_ticks_to_all_peers(net: &mut GR3DNet) {
         let mut requested_frames_and_beyond = Vec::new();
         for tick in peer.get_requested_local_ticks_and_beyond(last_tick) {
             if let Some(frame) = net.world_buffer.local_buffer.get(&tick) {
-                let ser_actions = match frame.get_serialized_actions(&mut net.node_cache) {
+                let ser_actions = match frame.get_serialized_actions() {
                     Some(actions) => actions,
                     None => {
                         log::error!("Failed to serialize actions for tick {}", tick);
