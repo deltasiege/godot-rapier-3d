@@ -5,7 +5,7 @@ use bincode::{
 use rapier3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{LookupTable, World};
+use crate::World;
 
 pub struct PhysicsState {
     pub islands: IslandManager,
@@ -21,7 +21,6 @@ pub struct PhysicsState {
     pub integration_parameters: IntegrationParameters,
     pub gravity: Vector<Real>,
     pub hooks: Box<dyn PhysicsHooks>,
-    pub lookup_table: LookupTable,
 }
 
 impl Default for PhysicsState {
@@ -46,7 +45,6 @@ impl PhysicsState {
             integration_parameters: IntegrationParameters::default(),
             gravity: Vector::y() * -9.81,
             hooks: Box::new(()),
-            lookup_table: LookupTable::new(),
         }
     }
 }
@@ -61,7 +59,6 @@ pub struct DeserializedPhysicsSnapshot {
     pub colliders: ColliderSet,
     pub impulse_joints: ImpulseJointSet,
     pub multibody_joints: MultibodyJointSet,
-    pub lookup_table: LookupTable,
 }
 
 pub fn pack_snapshot(world: &World) -> Result<Vec<u8>, bincode::error::EncodeError> {
@@ -83,7 +80,6 @@ pub fn pack_snapshot(world: &World) -> Result<Vec<u8>, bincode::error::EncodeErr
         colliders: colliders,
         impulse_joints: world.physics.impulse_joints.clone(),
         multibody_joints: world.physics.multibody_joints.clone(),
-        lookup_table: world.physics.lookup_table.clone(),
     };
 
     encode_to_vec(&output, standard())
@@ -98,33 +94,4 @@ pub fn unpack_snapshot(bytes: Vec<u8>) -> Option<DeserializedPhysicsSnapshot> {
             None
         }
     }
-}
-
-/// Overwrite the current state of the given world to the given snapshot state
-pub fn restore_snapshot(
-    world: &mut World,
-    snapshot: DeserializedPhysicsSnapshot,
-    overwrite_timestep: bool,
-) {
-    if overwrite_timestep {
-        world.state.timestep_id = snapshot.timestep_id;
-    }
-
-    world.physics.broad_phase = snapshot.broad_phase;
-    world.physics.narrow_phase = snapshot.narrow_phase;
-    world.physics.islands = snapshot.island_manager;
-    world.physics.bodies = snapshot.bodies;
-    world.physics.impulse_joints = snapshot.impulse_joints;
-    world.physics.multibody_joints = snapshot.multibody_joints;
-
-    // Carefully handle colliders to not overwrite those excluded from snapshots
-    for (handle, collider) in snapshot.colliders.iter() {
-        if let Some(collider) = world.physics.colliders.get_mut(handle) {
-            *collider = collider.clone();
-        } else {
-            world.physics.colliders.insert(collider.clone());
-        }
-    }
-
-    world.physics.lookup_table = snapshot.lookup_table;
 }

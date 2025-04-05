@@ -1,8 +1,6 @@
 use godot::classes::{EditorPlugin, IEditorPlugin};
 use godot::prelude::*;
 
-use crate::nodes::IRapierObject;
-
 /*
     The editor plugin is only responsible for attaching the runtime autoload
 */
@@ -34,9 +32,4 @@ impl IEditorPlugin for GR3DEditor {
         self.base_mut().remove_autoload_singleton("GR3DRuntime");
         log::debug!("Unregistered");
     }
-}
-
-// Runtime = internal functions / godot side orchestration
-pub fn get_runtime(obj: &impl IRapierObject) -> Option<Gd<Node>> {
-    obj.base().get_node_or_null("/root/GR3DRuntime")
 }

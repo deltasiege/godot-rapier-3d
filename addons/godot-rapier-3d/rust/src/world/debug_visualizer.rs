@@ -4,15 +4,15 @@ use rapier3d::prelude::{
     DebugRenderBackend, DebugRenderObject, DebugRenderPipeline, DebugRenderStyle, ShapeType,
 };
 
-pub struct GR3DDebugger {
-    pub backend: GR3DDebuggerBackend,
+pub struct DebugVisualizer {
+    pub backend: DebugVisualizerBackend,
     pipeline: DebugRenderPipeline,
 }
 
-impl GR3DDebugger {
+impl DebugVisualizer {
     pub fn new() -> Self {
         Self {
-            backend: GR3DDebuggerBackend {
+            backend: DebugVisualizerBackend {
                 pending_lines: Array::new(),
             },
             pipeline: DebugRenderPipeline::render_all(DebugRenderStyle::default()),
@@ -35,11 +35,11 @@ impl GR3DDebugger {
     }
 }
 
-pub struct GR3DDebuggerBackend {
+pub struct DebugVisualizerBackend {
     pub pending_lines: Array<Array<Variant>>,
 }
 
-impl DebugRenderBackend for GR3DDebuggerBackend {
+impl DebugRenderBackend for DebugVisualizerBackend {
     fn draw_line(
         &mut self,
         _object: rapier3d::prelude::DebugRenderObject,

@@ -1,70 +1,24 @@
-use crate::utils::get_hash;
-
-use super::state::{pack_snapshot, PhysicsState};
-use rapier3d::dynamics::IntegrationParameters;
-
-pub struct RunState {
-    pub timestep_id: usize,
-    pub time: f32,
-}
-
-impl Default for RunState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl RunState {
-    pub fn new() -> Self {
-        Self {
-            timestep_id: 0,
-            time: 0.0,
-        }
-    }
-}
+use crate::world::{DebugVisualizer, PhysicsState};
 
 pub struct World {
+    pub time: TimeState,
     pub physics: PhysicsState,
-    callbacks: Callbacks,
-    pub state: RunState,
+    pub debugger: DebugVisualizer,
 }
-
-type Callbacks = Vec<Box<dyn FnMut(&mut PhysicsState, &RunState)>>; // Callbacks are called after stepping every step
 
 impl World {
     pub fn new_empty() -> Self {
-        let physics = PhysicsState::new();
-        let state = RunState::new();
         Self {
-            physics,
-            callbacks: Vec::new(),
-            state,
+            time: TimeState::new(),
+            physics: PhysicsState::new(),
+            debugger: DebugVisualizer::new(),
         }
     }
 
-    pub fn integration_parameters_mut(&mut self) -> &mut IntegrationParameters {
-        &mut self.physics.integration_parameters
-    }
-
-    pub fn clear_callbacks(&mut self) {
-        self.callbacks.clear();
-    }
-
-    pub fn physics_state_mut(&mut self) -> &mut PhysicsState {
-        &mut self.physics
-    }
-
-    pub fn add_callback<F: FnMut(&mut PhysicsState, &RunState) + 'static>(&mut self, callback: F) {
-        self.callbacks.push(Box::new(callback));
-    }
-
     /// Advance the simulation by one step
-    /// Return the resulting snapshot and the next tick idx
-    pub fn step(&mut self) -> (Option<Vec<u8>>, usize) {
-        log::trace!(
-            "Stepping local world at timestep: {}",
-            self.state.timestep_id
-        );
+    /// Return the next tick and the resulting snapshot
+    pub fn step(&mut self) -> (usize, Option<Vec<u8>>) {
+        log::trace!("Stepping local world at tick: {}", self.time.tick);
 
         self.physics.pipeline.step(
             &self.physics.gravity,
@@ -82,28 +36,16 @@ impl World {
             &(),
         );
 
-        for f in &mut self.callbacks {
-            f(&mut self.physics, &self.state);
-        }
+        self.time.secs += self.physics.integration_parameters.dt as f32;
+        self.time.tick += 1;
 
-        self.state.time += self.physics.integration_parameters.dt as f32;
-        self.state.timestep_id += 1;
+        let snap = self.take_snapshot();
 
-        let snap = self.get_current_snapshot();
-
-        (snap, self.state.timestep_id)
+        (self.time.tick, snap)
     }
 
-    /// Retrieve either the current or a buffered snapshot
-    // pub fn get_snapshot(&mut self, timestep_id: Option<i64>) -> Option<Vec<u8>> {
-    //     match timestep_id {
-    //         None => self.get_current_snapshot(),
-    //         Some(timestep_id) => self.buffer.get_physics_state(timestep_id as usize),
-    //     }
-    // }
-
     /// Retrieve the current snapshot
-    pub fn get_current_snapshot(&self) -> Option<Vec<u8>> {
+    pub fn take_snapshot(&self) -> Option<Vec<u8>> {
         let snapshot = pack_snapshot(self);
         match snapshot {
             Ok(snapshot) => Some(snapshot),
@@ -114,6 +56,35 @@ impl World {
         }
     }
 
+    /// Overwrite the current state of the given world to the given snapshot state
+    pub fn restore_snapshot(
+        &mut self,
+        snapshot: DeserializedPhysicsSnapshot,
+        overwrite_timestep: bool,
+    ) {
+        if overwrite_timestep {
+            world.state.timestep_id = snapshot.timestep_id;
+        }
+
+        world.physics.broad_phase = snapshot.broad_phase;
+        world.physics.narrow_phase = snapshot.narrow_phase;
+        world.physics.islands = snapshot.island_manager;
+        world.physics.bodies = snapshot.bodies;
+        world.physics.impulse_joints = snapshot.impulse_joints;
+        world.physics.multibody_joints = snapshot.multibody_joints;
+
+        // Carefully handle colliders to not overwrite those excluded from snapshots
+        for (handle, collider) in snapshot.colliders.iter() {
+            if let Some(collider) = world.physics.colliders.get_mut(handle) {
+                *collider = collider.clone();
+            } else {
+                world.physics.colliders.insert(collider.clone());
+            }
+        }
+
+        world.physics.lookup_table = snapshot.lookup_table;
+    }
+
     /// Return the amount of bodies, colliders, impulse joints, and multibody joints in the world
     pub fn get_counts(&self) -> (usize, usize, usize, usize) {
         (
@@ -122,5 +93,22 @@ impl World {
             self.physics.impulse_joints.len(),
             self.physics.multibody_joints.multibodies().count(),
         )
+    }
+}
+
+pub struct TimeState {
+    pub tick: usize,
+    pub secs: f32,
+}
+
+impl Default for TimeState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl TimeState {
+    pub fn new() -> Self {
+        Self { tick: 0, secs: 0.0 }
     }
 }
