@@ -1,4 +1,4 @@
-extends RapierKinematicCharacter3D
+extends RollbackKinematicCharacter3D
 
 @export var speed = 10
 @export var accel = 2

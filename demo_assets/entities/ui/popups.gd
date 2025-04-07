@@ -33,7 +33,7 @@ func _get_data(title: String):
 	if title == "Character" and !character: return
 	match title:
 		"Peers":
-			var peer_data = GR3DNet._get_all_peer_data()
+			var peer_data = GR3D._get_all_peer_data()
 			var grouped = {}
 			grouped["Local ID"] = str(multiplayer.get_unique_id())
 			for peer in peer_data:
@@ -42,7 +42,7 @@ func _get_data(title: String):
 				grouped["Peer " + str(peer.peer_id)] = data
 			return grouped
 		"Sync":
-			return GR3DNet._get_debug_data()
+			return GR3D._get_debug_data()
 		"Buffer":
 			return {
 				"length": "TBA"
@@ -56,13 +56,13 @@ func _get_data(title: String):
 				"is_on_floor": character.is_on_floor(),
 			}
 			match character.get_class():
-				"RapierKinematicCharacter3D":
+				"RollbackKinematicCharacter3D":
 					return common_data.merged({
 						"last_motion": character.get_last_motion().snappedf(0.1),
 						"is_sliding_down_slope": character.is_sliding_down_slope(),
 						"slide_collision_count": character.get_slide_collision_count(),
 					})
-				"RapierPIDCharacter3D":
+				"RollbackPIDCharacter3D":
 					return common_data.merged({})
 		"Playback":
 			return [

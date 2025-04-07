@@ -1,7 +1,7 @@
 extends Node
 
-@export var kinematic_character: RapierKinematicCharacter3D
-@export var pid_character: RapierPIDCharacter3D
+@export var kinematic_character: RollbackKinematicCharacter3D
+@export var pid_character: RollbackPIDCharacter3D
 
 @onready var _chars = [kinematic_character, pid_character]
 var _active_char_idx = -1

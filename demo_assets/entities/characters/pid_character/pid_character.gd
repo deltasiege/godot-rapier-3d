@@ -1,4 +1,4 @@
-extends RapierPIDCharacter3D
+extends RollbackPIDCharacter3D
 
 @export var speed = 10
 @export var accel = 100
@@ -59,7 +59,7 @@ func _physics_process(delta):
 	
 	look_at_travel_dir(self) # Looking
 
-static func look_at_travel_dir(character: RapierPIDCharacter3D, ignore_y: bool = true):
+static func look_at_travel_dir(character: RollbackPIDCharacter3D, ignore_y: bool = true):
 	var vel = character.get_real_velocity()
 	var dir = vel.normalized()
 	var pos = character.global_position

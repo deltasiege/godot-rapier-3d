@@ -17,26 +17,26 @@ static func start_sync(tree: Node):
 	if tree.multiplayer.is_server():
 		print(LOG_PREFIX, "start_sync starting..")
 		await tree.get_tree().create_timer(2.0).timeout
-		GR3DNet.start()
+		GR3D.start()
 
 static func reset(tree: Node):
 	tree.multiplayer.multiplayer_peer = null
-	#GR3DNet.stop()
-	#GR3DNet.clear_peers()
+	#GR3D.stop()
+	#GR3D.clear_peers()
 
 static func on_ready(tree: Node):
 	NetworkManager.connect_console(tree)
-	#GR3DNet.connect("sync_error", func(): NetworkManager.reset(tree))
-	tree.multiplayer.connect("peer_connected", GR3DNet.add_peer)
-	tree.multiplayer.connect("peer_disconnected", GR3DNet.remove_peer)
+	#GR3D.connect("sync_error", func(): NetworkManager.reset(tree))
+	tree.multiplayer.connect("peer_connected", GR3D.add_peer)
+	tree.multiplayer.connect("peer_disconnected", GR3D.remove_peer)
 
 # Connects print statement functions to connection events
 static func connect_console(tree: Node):
-	GR3DNet.connect("peer_added", func(id: int): print(LOG_PREFIX, "peer_added: ", id))
-	GR3DNet.connect("peer_removed", func(id: int): print(LOG_PREFIX, "peer_removed: ", id))
-	#GR3DNet.connect("sync_lost", func(): print(LOG_PREFIX, "sync_lost"))
-	#GR3DNet.connect("sync_regained", func(): print(LOG_PREFIX, "sync_regained"))
-	#GR3DNet.connect("sync_error", func(msg: String): push_error(LOG_PREFIX, "sync_error: ", msg))
+	GR3D.connect("peer_added", func(id: int): print(LOG_PREFIX, "peer_added: ", id))
+	GR3D.connect("peer_removed", func(id: int): print(LOG_PREFIX, "peer_removed: ", id))
+	#GR3D.connect("sync_lost", func(): print(LOG_PREFIX, "sync_lost"))
+	#GR3D.connect("sync_regained", func(): print(LOG_PREFIX, "sync_regained"))
+	#GR3D.connect("sync_error", func(msg: String): push_error(LOG_PREFIX, "sync_error: ", msg))
 	tree.multiplayer.connect("peer_connected", func(id: int): print(LOG_PREFIX, "peer_connected: ", id))
 	tree.multiplayer.connect("peer_disconnected", func(id: int): print(LOG_PREFIX, "peer_disconnected: ", id))
 	tree.multiplayer.connect("connected_to_server", func(): print(LOG_PREFIX, "connected_to_server as: ", tree.multiplayer.get_unique_id()))

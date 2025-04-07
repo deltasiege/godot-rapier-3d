@@ -1,7 +1,7 @@
 @tool
 extends Node
 
-## Godot Rapier 3D game runtime functionality goes here
+## Godot Rollback 3D game runtime functionality goes here
 
 var autoplay = false
 var playing: bool = false
@@ -17,7 +17,7 @@ func _ready():
 	if Engine.is_editor_hint(): return
 	_add_child_modules()
 	if autoplay: play()
-	else: GR3DNet.connect("sync_started", play)
+	else: GR3D.connect("sync_started", play)
 
 func _exit_tree():
 	DrawLine.queue_free()
@@ -29,7 +29,7 @@ func _process(_delta):
 func _physics_process(_delta):
 	if Engine.is_editor_hint(): return
 	if playing and !paused: GR3D.step(1)
-	GR3DNet.on_physics_process()
+	GR3D.on_physics_process()
 
 func play():
 	playing = true
@@ -51,8 +51,8 @@ func _add_child_modules():
 func _add_network_adapter():
 	var network_adapter = load(DEFAULT_NETWORK_ADAPTER_PATH).new()
 	add_child(network_adapter)
-	GR3DNet._attach_network_adapter(network_adapter)
-	GR3DNet.connect("sync_started", func(): GR3DLogger.receive_peer_id(network_adapter._get_unique_id()))
+	GR3D._attach_network_adapter(network_adapter)
+	GR3D.connect("sync_started", func(): GR3DLogger.receive_peer_id(network_adapter._get_unique_id()))
 
 func _draw_line(origin: Vector3, end: Vector3):
 	DrawLine.draw_line(origin, end, Color.WHITE)

@@ -1,10 +1,14 @@
 use godot::prelude::*;
 
+mod adapters;
 pub mod config;
 mod interface;
+mod nodes;
+pub mod types;
 mod utils;
 mod world;
 
+use interface::{register_singletons, unregister_singletons};
 pub use world::World;
 
 struct GodotRapier3D;
@@ -13,13 +17,13 @@ struct GodotRapier3D;
 unsafe impl ExtensionLibrary for GodotRapier3D {
     fn on_level_init(level: InitLevel) {
         if level == InitLevel::Scene {
-            interface::register_singleton();
+            register_singletons();
         }
     }
 
     fn on_level_deinit(level: InitLevel) {
         if level == InitLevel::Scene {
-            interface::unregister_singleton();
+            unregister_singletons();
         }
     }
 }

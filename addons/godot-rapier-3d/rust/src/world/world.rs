@@ -1,16 +1,18 @@
-use crate::world::{DebugVisualizer, PhysicsState};
+use crate::world::{DebugVisualizer, NodeDatabase, PhysicsState, WorldSnapshot};
 
 pub struct World {
     pub time: TimeState,
     pub physics: PhysicsState,
+    pub node_db: NodeDatabase,
     pub debugger: DebugVisualizer,
 }
 
 impl World {
-    pub fn new_empty() -> Self {
+    pub fn new() -> Self {
         Self {
             time: TimeState::new(),
             physics: PhysicsState::new(),
+            node_db: NodeDatabase::new(),
             debugger: DebugVisualizer::new(),
         }
     }
@@ -18,7 +20,7 @@ impl World {
     /// Advance the simulation by one step
     /// Return the next tick and the resulting snapshot
     pub fn step(&mut self) -> (usize, Option<Vec<u8>>) {
-        log::trace!("Stepping local world at tick: {}", self.time.tick);
+        log::trace!("Stepping world at tick: {}", self.time.tick);
 
         self.physics.pipeline.step(
             &self.physics.gravity,
@@ -46,43 +48,18 @@ impl World {
 
     /// Retrieve the current snapshot
     pub fn take_snapshot(&self) -> Option<Vec<u8>> {
-        let snapshot = pack_snapshot(self);
-        match snapshot {
-            Ok(snapshot) => Some(snapshot),
-            Err(e) => {
-                log::error!("Failed to get current snapshot: {:?}", e);
-                None
-            }
-        }
+        log::trace!("Taking snapshot of world at tick: {}", self.time.tick);
+        WorldSnapshot::from_world(self).try_to_bytes()
     }
 
     /// Overwrite the current state of the given world to the given snapshot state
-    pub fn restore_snapshot(
-        &mut self,
-        snapshot: DeserializedPhysicsSnapshot,
-        overwrite_timestep: bool,
-    ) {
-        if overwrite_timestep {
-            world.state.timestep_id = snapshot.timestep_id;
-        }
-
-        world.physics.broad_phase = snapshot.broad_phase;
-        world.physics.narrow_phase = snapshot.narrow_phase;
-        world.physics.islands = snapshot.island_manager;
-        world.physics.bodies = snapshot.bodies;
-        world.physics.impulse_joints = snapshot.impulse_joints;
-        world.physics.multibody_joints = snapshot.multibody_joints;
-
-        // Carefully handle colliders to not overwrite those excluded from snapshots
-        for (handle, collider) in snapshot.colliders.iter() {
-            if let Some(collider) = world.physics.colliders.get_mut(handle) {
-                *collider = collider.clone();
-            } else {
-                world.physics.colliders.insert(collider.clone());
-            }
-        }
-
-        world.physics.lookup_table = snapshot.lookup_table;
+    pub fn restore_snapshot(&mut self, snapshot: WorldSnapshot, overwrite_tick: bool) {
+        let op = match overwrite_tick {
+            true => "Restoring",
+            false => "Rolling back",
+        };
+        log::trace!("{} world: {} -> {}", op, self.time.tick, snapshot.tick);
+        snapshot.apply_to_world(self, overwrite_tick)
     }
 
     /// Return the amount of bodies, colliders, impulse joints, and multibody joints in the world
