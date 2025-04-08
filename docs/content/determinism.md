@@ -1,6 +1,6 @@
-Determinism diffs are uploaded with each release by the [Github Actions workflow](https://github.com/deltasiege/godot-rapier-3d/actions/workflows/build-and-test.yml)
+Determinism diffs are uploaded with each release by the [Github Actions workflow](https://github.com/deltasiege/godot-rollback-3d/actions/workflows/build-and-test.yml)
 
-[Download the latest diffs](https://github.com/deltasiege/godot-rapier-3d/releases/latest/download/determinism-diffs.zip)
+[Download the latest diffs](https://github.com/deltasiege/godot-rollback-3d/releases/latest/download/determinism-diffs.zip)
 
 These are obtained by hashing the entire physics simulation each frame on 2 different machines, and then comparing the hashes.
 

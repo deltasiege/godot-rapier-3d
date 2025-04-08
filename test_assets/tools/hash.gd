@@ -1,4 +1,4 @@
-static var FixupGRUIDS = preload("res://addons/godot-rapier-3d/gd/fixup_gruids.gd")
+static var FixupGRUIDS = preload("res://addons/godot-rollback-3d/gd/fixup_gruids.gd")
 
 static func get_rapier_hash() -> int:
 	var state: PackedByteArray = GR3D.save_snapshot()

@@ -17,7 +17,7 @@ static func start_sync(tree: Node):
 	if tree.multiplayer.is_server():
 		print(LOG_PREFIX, "start_sync starting..")
 		await tree.get_tree().create_timer(2.0).timeout
-		GR3D.start()
+		GR3D.start_sync()
 
 static func reset(tree: Node):
 	tree.multiplayer.multiplayer_peer = null

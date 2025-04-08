@@ -6,9 +6,8 @@
 [ext_resource type="Texture2D" uid="uid://brjth02j3ci4j" path="res://demo_assets/entities/ui/icons/network.svg" id="3_r4ogj"]
 [ext_resource type="PackedScene" uid="uid://drbstenfl2i1o" path="res://demo_assets/env/outdoors/outdoors.tscn" id="7_k6fr7"]
 
-[node name="Multiplayer" type="Node" node_paths=PackedStringArray("player_spawner")]
+[node name="Multiplayer" type="Node"]
 script = ExtResource("1_11r3s")
-player_spawner = NodePath("")
 
 [node name="Toolbar" parent="." instance=ExtResource("2_di6ge")]
 popup_titles = Array[String](["Sync", "Peers", "Buffer"])

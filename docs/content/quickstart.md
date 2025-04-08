@@ -11,7 +11,7 @@
 
 ### Installation
 
-1. Download the [latest --all release](https://github.com/deltasiege/godot-rapier-3d/releases/latest)
+1. Download the [latest --all release](https://github.com/deltasiege/godot-rollback-3d/releases/latest)
 1. Extract the release archive into your godot project's root directory
 
 ### Add a rigid body

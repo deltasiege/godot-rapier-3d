@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="godot-rapier-3d"
+config/name="godot-rollback-3d"
 run/main_scene="uid://brnbp3x3w7646"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 
@@ -18,7 +18,7 @@ config/features=PackedStringArray("4.4", "GL Compatibility")
 
 WindowMgr="*res://scripts/managers/window_manager.gd"
 DevManager="*res://scripts/managers/dev_manager.gd"
-GR3DRuntime="*res://addons/godot-rapier-3d/gd/GR3DRuntime.gd"
+GR3DRuntime="*res://addons/godot-rollback-3d/gd/GR3DRuntime.gd"
 
 [file_customization]
 

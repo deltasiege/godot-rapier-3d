@@ -106,12 +106,12 @@ function getGR3DData(target: Target, osName: OSName) {
   const binExt =
     osName === "windows" ? "dll" : osName === "macos" ? "dylib" : "so";
   const packExt = osName === "windows" ? "zip" : "tar.gz";
-  const baseUrl = "https://github.com/deltasiege/godot-rapier-3d/releases";
+  const baseUrl = "https://github.com/deltasiege/godot-rollback-3d/releases";
   const version = "latest";
   return {
     version,
-    binary: `${target}-godot_rapier_3d.${binExt}`,
-    url: `${baseUrl}/${version}/download/godot-rapier-3d--${target}.${packExt}`,
+    binary: `${target}-godot_rollback_3d.${binExt}`,
+    url: `${baseUrl}/${version}/download/godot-rollback-3d--${target}.${packExt}`,
   };
 }
 

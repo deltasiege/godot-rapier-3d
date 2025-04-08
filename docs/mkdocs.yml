@@ -1,7 +1,7 @@
-site_name: Godot Rapier 3D
-site_url: https://deltasiege.github.io/godot-rapier-3d
-repo_url: https://github.com/deltasiege/godot-rapier-3d
-repo_name: deltasiege/godot-rapier-3d
+site_name: Godot Rollback 3D
+site_url: https://deltasiege.github.io/godot-rollback-3d
+repo_url: https://github.com/deltasiege/godot-rollback-3d
+repo_name: deltasiege/godot-rollback-3d
 docs_dir: content
 extra:
   generator: false

@@ -15,7 +15,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-          pattern: godot-rapier-3d-*
+          pattern: godot-rollback-3d-*
 
       - name: Download determinism diffs
         uses: actions/download-artifact@v4
@@ -28,7 +28,7 @@ jobs:
         with:
           draft: true
           files: |
-            godot-rapier-3d-*
+            godot-rollback-3d-*
             determinism-diffs.zip
           generate_release_notes: true
 

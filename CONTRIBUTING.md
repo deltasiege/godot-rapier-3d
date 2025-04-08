@@ -19,7 +19,7 @@
 
 1. Open this project in Godot
 1. Make edits as desired
-1. Run `cargo build` in the `/addons/godot-rapier-3d/rust` directory
+1. Run `cargo build` in the `/addons/godot-rollback-3d/rust` directory
 1. The extension should automatically reload when Godot is refocused
 
 ## Bugs
@@ -30,13 +30,13 @@ Please raise an issue and provide reproducible steps or a minimal reproduction p
 
 Use emscripten version 3.1.74
 
-To build the wasm binaries locally use these commands (refer to https://github.com/deltasiege/godot-rapier-3d/blob/main/.github/workflows/jobs-build.yml if these are outdated)
+To build the wasm binaries locally use these commands (refer to https://github.com/deltasiege/godot-rollback-3d/blob/main/.github/workflows/jobs-build.yml if these are outdated)
 
 ```bash
 # Multi-threaded
 set RUSTFLAGS=-C link-arg=-fwasm-exceptions -Cllvm-args=-wasm-enable-sjlj -C link-args=-sDISABLE_EXCEPTION_CATCHING=1 -C link-args=-sSUPPORT_LONGJMP=wasm -C link-args=-pthread -C link-args=-sSIDE_MODULE=2  -C target-feature=+atomics,+bulk-memory,+mutable-globals -Zlink-native-libraries=no -Cllvm-args=-enable-emscripten-cxx-exceptions=0
 cargo +nightly build -Zbuild-std --target wasm32-unknown-emscripten
-mv ./target/wasm32-unknown-emscripten/debug/godot_rapier_3d.wasm ./target/wasm32-unknown-emscripten/debug/godot_rapier_3d.threads.wasm
+mv ./target/wasm32-unknown-emscripten/debug/godot_rollback_3d.wasm ./target/wasm32-unknown-emscripten/debug/godot_rollback_3d.threads.wasm
 
 # Single-threaded
 set RUSTFLAGS=-C link-arg=-fwasm-exceptions -Cllvm-args=-wasm-enable-sjlj -C link-args=-sDISABLE_EXCEPTION_CATCHING=1 -C link-args=-sSUPPORT_LONGJMP=wasm -C link-args=-sSIDE_MODULE=2 -C target-feature=+atomics,+bulk-memory,+mutable-globals -Zlink-native-libraries=no -Cllvm-args=-enable-emscripten-cxx-exceptions=0

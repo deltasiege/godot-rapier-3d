@@ -58,22 +58,19 @@ environment = SubResource("Environment_h4mtc")
 transform = Transform3D(-0.866024, -0.433016, 0.25, 0, 0.499998, 0.866027, -0.500003, 0.75, -0.43301, 0, 0, 0)
 shadow_enabled = true
 
-[node name="TerrainStaticBody3D" type="RapierStaticBody3D" parent="."]
-cuid = "unz4d47xqqnh2si74v5b07s2"
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.59949, 0)
-metadata/cuid = "exwx3nl8rse12q0lyr9ovy06"
+[node name="RollbackStaticBody3D" type="RollbackStaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -82.708, 0)
+metadata/gruid = [0, 1]
 
-[node name="Terrain" type="MeshInstance3D" parent="TerrainStaticBody3D"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -82.7079, 0)
+[node name="Terrain" type="MeshInstance3D" parent="RollbackStaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.91821e-05, 0)
 material_override = ExtResource("1_ook41")
 mesh = SubResource("ArrayMesh_tccui")
 skeleton = NodePath("")
 
-[node name="TerrainCollisionShape" type="RapierCollisionShape3D" parent="TerrainStaticBody3D" node_paths=PackedStringArray("col_shape")]
+[node name="RollbackCollisionShape3D" type="RollbackCollisionShape3D" parent="RollbackStaticBody3D" node_paths=PackedStringArray("col_shape")]
 col_shape = NodePath("../CollisionShape3D")
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -82.708, 0)
-metadata/cuid = "a118qwr0ulqdd92mdz777exa"
+metadata/gruid = [0, 0]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="TerrainStaticBody3D"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -82.708, 0)
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RollbackStaticBody3D"]
 shape = ExtResource("2_6g17n")

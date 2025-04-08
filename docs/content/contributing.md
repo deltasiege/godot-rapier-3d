@@ -19,7 +19,7 @@
 
 1. Open this project in Godot
 1. Make edits as desired
-1. Run `cargo build` in the `/addons/godot-rapier-3d/rust` directory
+1. Run `cargo build` in the `/addons/godot-rollback-3d/rust` directory
 1. The extension should automatically reload when Godot is refocused
 
 ## Bugs

@@ -1,3 +1,3 @@
 {
-  "rust-analyzer.linkedProjects": ["./addons/godot-rapier-3d/rust/Cargo.toml"]
+  "rust-analyzer.linkedProjects": ["./addons/godot-rollback-3d/rust/Cargo.toml"]
 }

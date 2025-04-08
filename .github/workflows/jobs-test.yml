@@ -50,28 +50,28 @@ jobs:
       - name: Download gr3d package
         uses: actions/download-artifact@v4
         with:
-          name: godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+          name: godot-rollback-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
 
       - name: Clear landing zone
         shell: bash
         run: |
-          rm godot-rapier-3d.gdextension
-          rm -rf ./addons/godot-rapier-3d
+          rm godot-rollback-3d.gdextension
+          rm -rf ./addons/godot-rollback-3d
 
       - name: Unpack archive
         shell: bash
         run: |
           if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
-            7z l godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
-            7z x -y godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+            7z l godot-rollback-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+            7z x -y godot-rollback-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
           else
-            tar ztvf godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
-            tar xzvf godot-rapier-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+            tar ztvf godot-rollback-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
+            tar xzvf godot-rollback-3d--${{ matrix.pack }}${{ matrix.pack_ext }}
           fi
 
       - name: Rename .gdextension config
         shell: bash
-        run: mv godot-rapier-3d.gdext.test godot-rapier-3d.gdextension
+        run: mv godot-rollback-3d.gdext.test godot-rollback-3d.gdextension
 
       - name: bun build-tests.ts
         shell: bash
@@ -84,7 +84,7 @@ jobs:
           name: gr3d-test-binaries-${{ matrix.runner }}
           path: |
             build/gr3d-tests-*
-            build/*godot_rapier_3d.*
+            build/*godot_rollback_3d.*
 
       - name: bun ci/debug.ts
         shell: bash

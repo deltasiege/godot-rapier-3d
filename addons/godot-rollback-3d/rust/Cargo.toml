@@ -1,0 +1,38 @@
+[package]
+name = "godot-rollback-3d"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]  # Compile this crate to a dynamic C library.
+
+[dependencies]
+serde = "1.0.218"
+cuid2 = "0.1.4"
+log = "0.4.27"
+flexi_logger = "0.29.8"
+
+[dependencies.bincode]
+version = "2.0.1"
+features = ["serde"]
+
+[dependencies.rapier3d]
+version = "0.23.1"
+features = [ "enhanced-determinism", "serde-serialize", "debug-render" ]
+
+[dependencies.godot]
+version = "0.2.4"
+# git = "https://github.com/godot-rust/gdext"
+# branch = "master"
+features = ["serde", "register-docs", "experimental-wasm", "lazy-function-tables"]
+
+[features]
+nothreads = ["godot/experimental-wasm-nothreads"]
+
+# Rapier optimizations
+# https://rapier.rs/docs/user_guides/rust/common_mistakes
+[profile.dev.package.rapier3d]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1

@@ -32,10 +32,10 @@ async function extractMacOSBinary({ buildDir, tests }: any): Promise<string> {
   await extract(join(buildDir, tests.binary), buildDir);
   return join(
     buildDir,
-    "godot-rapier-3d.app",
+    "godot-rollback-3d.app",
     "Contents",
     "MacOS",
-    "godot-rapier-3d"
+    "godot-rollback-3d"
   );
 }
 

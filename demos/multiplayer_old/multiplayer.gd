@@ -30,5 +30,5 @@ func reset(): NetworkManager.reset(self)
 func start():
 	if !multiplayer.is_server(): return
 	NetworkManager.start_sync(self)
-	await get_tree().create_timer(2.01).timeout
-	player_spawner.spawn_all_players()
+	await get_tree().create_timer(2.0).timeout
+	# TODO spawn players

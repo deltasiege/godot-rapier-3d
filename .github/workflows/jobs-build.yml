@@ -4,9 +4,9 @@ on:
   workflow_call:
 
 env:
-  ADDON_DIR: addons/godot-rapier-3d
-  RUST_DIR: addons/godot-rapier-3d/rust
-  BIN_DIR: addons/godot-rapier-3d/bin
+  ADDON_DIR: addons/godot-rollback-3d
+  RUST_DIR: addons/godot-rollback-3d/rust
+  BIN_DIR: addons/godot-rollback-3d/bin
 
 jobs:
   build:
@@ -20,8 +20,8 @@ jobs:
             target: wasm32-unknown-emscripten
             single_threaded_cmd: cargo +nightly build --features nothreads -Zbuild-std --target wasm32-unknown-emscripten --release
             multi_threaded_cmd: cargo +nightly build -Zbuild-std --target wasm32-unknown-emscripten --release
-            bin_single: godot_rapier_3d.wasm
-            bin_multi: godot_rapier_3d.threads.wasm
+            bin_single: godot_rollback_3d.wasm
+            bin_multi: godot_rollback_3d.threads.wasm
             archive: web-wasm32
             archive_ext: .tar.gz
 
@@ -31,7 +31,7 @@ jobs:
             compiler: cross
             archive: linux-gnu-x86_32
             archive_ext: .tar.gz
-            bin: libgodot_rapier_3d.so
+            bin: libgodot_rollback_3d.so
 
           - release_for: linux-gnu64
             runner: ubuntu-latest
@@ -39,7 +39,7 @@ jobs:
             compiler: cross
             archive: linux-gnu-x86_64
             archive_ext: .tar.gz
-            bin: libgodot_rapier_3d.so
+            bin: libgodot_rollback_3d.so
 
           - release_for: linux-arm64
             runner: ubuntu-latest
@@ -47,7 +47,7 @@ jobs:
             compiler: cross
             archive: linux-arm64
             archive_ext: .tar.gz
-            bin: libgodot_rapier_3d.so
+            bin: libgodot_rollback_3d.so
 
           - release_for: windows-msvc32
             runner: windows-latest
@@ -55,8 +55,8 @@ jobs:
             compiler: cross
             archive: windows-msvc-x86_32
             archive_ext: .zip
-            bin: godot_rapier_3d.dll
-            pdb: godot_rapier_3d.pdb
+            bin: godot_rollback_3d.dll
+            pdb: godot_rollback_3d.pdb
 
           - release_for: windows-msvc64
             runner: windows-latest
@@ -64,8 +64,8 @@ jobs:
             compiler: cross
             archive: windows-msvc-x86_64
             archive_ext: .zip
-            bin: godot_rapier_3d.dll
-            pdb: godot_rapier_3d.pdb
+            bin: godot_rollback_3d.dll
+            pdb: godot_rollback_3d.pdb
 
           - release_for: macos-amd64
             runner: macos-latest
@@ -73,7 +73,7 @@ jobs:
             compiler: cross
             archive: macos-amd-x86_64
             archive_ext: .zip
-            bin: libgodot_rapier_3d.dylib
+            bin: libgodot_rollback_3d.dylib
 
           - release_for: macos-arm64
             runner: macos-latest
@@ -81,7 +81,7 @@ jobs:
             compiler: cross
             archive: macos-arm-x86_64
             archive_ext: .zip
-            bin: libgodot_rapier_3d.dylib
+            bin: libgodot_rollback_3d.dylib
 
     steps:
       - uses: actions/checkout@v4
@@ -97,7 +97,7 @@ jobs:
         id: cache-rust-target
         uses: actions/cache@v4
         with:
-          key: cache-rust-target-${{ hashFiles('addons/godot-rapier-3d/rust/Cargo.lock') }}
+          key: cache-rust-target-${{ hashFiles('addons/godot-rollback-3d/rust/Cargo.lock') }}
           path: "${{ env.RUST_DIR }}/target"
 
       - name: Install Rust
@@ -178,8 +178,8 @@ jobs:
       - name: Replace .gdextension config
         shell: bash
         run: |
-          rm godot-rapier-3d.gdextension
-          mv godot-rapier-3d.gdext.dist godot-rapier-3d.gdextension
+          rm godot-rollback-3d.gdextension
+          mv godot-rollback-3d.gdext.dist godot-rollback-3d.gdextension
 
       - name: Add VERSION.txt
         shell: bash
@@ -194,25 +194,25 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ matrix.runner }}" == "windows-latest" ]]; then
-            7z a godot-rapier-3d--${{ matrix.archive }}${{ matrix.archive_ext }} -xr!rust ./addons/
-            7z a godot-rapier-3d--${{ matrix.archive }}${{ matrix.archive_ext }} godot-rapier-3d.gdextension
-            7z l godot-rapier-3d--${{ matrix.archive }}${{ matrix.archive_ext }}
+            7z a godot-rollback-3d--${{ matrix.archive }}${{ matrix.archive_ext }} -xr!rust ./addons/
+            7z a godot-rollback-3d--${{ matrix.archive }}${{ matrix.archive_ext }} godot-rollback-3d.gdextension
+            7z l godot-rollback-3d--${{ matrix.archive }}${{ matrix.archive_ext }}
           else
-            tar czvf godot-rapier-3d--${{ matrix.archive }}${{ matrix.archive_ext }} --exclude=rust ./addons/godot-rapier-3d/ godot-rapier-3d.gdextension
-            tar ztvf godot-rapier-3d--${{ matrix.archive }}${{ matrix.archive_ext }}
+            tar czvf godot-rollback-3d--${{ matrix.archive }}${{ matrix.archive_ext }} --exclude=rust ./addons/godot-rollback-3d/ godot-rollback-3d.gdextension
+            tar ztvf godot-rollback-3d--${{ matrix.archive }}${{ matrix.archive_ext }}
           fi
 
       - name: Upload rust binary artifact
         uses: actions/upload-artifact@v4
         with:
           name: gr3d-rust-binary-${{ matrix.release_for }}
-          path: "${{ env.BIN_DIR }}/*godot_rapier_3d*"
+          path: "${{ env.BIN_DIR }}/*godot_rollback_3d*"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: godot-rapier-3d--${{ matrix.archive }}${{ matrix.archive_ext }}
-          path: "godot-rapier-3d-*"
+          name: godot-rollback-3d--${{ matrix.archive }}${{ matrix.archive_ext }}
+          path: "godot-rollback-3d-*"
 
       - name: bun ci/debug.ts
         shell: bash
@@ -239,8 +239,8 @@ jobs:
       - name: Replace .gdextension config
         shell: bash
         run: |
-          rm godot-rapier-3d.gdextension
-          mv godot-rapier-3d.gdext.dist godot-rapier-3d.gdextension
+          rm godot-rollback-3d.gdextension
+          mv godot-rollback-3d.gdext.dist godot-rollback-3d.gdextension
 
       - name: Add VERSION.txt
         shell: bash
@@ -254,27 +254,27 @@ jobs:
       - name: Isolate GR3D addon
         run: |
           mkdir -p ./addons-temp
-          mv ./addons/godot-rapier-3d ./addons-temp
+          mv ./addons/godot-rollback-3d ./addons-temp
           rm -rf ./addons
           mv ./addons-temp ./addons
 
       - name: Create package
         run: |
-          7z a godot-rapier-3d--all.zip -xr!rust ./addons/
-          7z a godot-rapier-3d--all.zip -xr!rust godot-rapier-3d.gdextension
-          tar czvf godot-rapier-3d--all.tar.gz --exclude=rust ./addons/godot-rapier-3d/ godot-rapier-3d.gdextension
+          7z a godot-rollback-3d--all.zip -xr!rust ./addons/
+          7z a godot-rollback-3d--all.zip -xr!rust godot-rollback-3d.gdextension
+          tar czvf godot-rollback-3d--all.tar.gz --exclude=rust ./addons/godot-rollback-3d/ godot-rollback-3d.gdextension
 
       - name: Upload .zip
         uses: actions/upload-artifact@v4
         with:
-          name: godot-rapier-3d--all.zip
-          path: "godot-rapier-3d--all.zip"
+          name: godot-rollback-3d--all.zip
+          path: "godot-rollback-3d--all.zip"
 
       - name: Upload .tar.gz
         uses: actions/upload-artifact@v4
         with:
-          name: godot-rapier-3d--all.tar.gz
-          path: "godot-rapier-3d--all.tar.gz"
+          name: godot-rollback-3d--all.tar.gz
+          path: "godot-rollback-3d--all.tar.gz"
 
       - name: bun ci/debug.ts
         shell: bash

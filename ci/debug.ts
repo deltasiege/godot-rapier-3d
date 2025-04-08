@@ -6,9 +6,9 @@ async function main() {
   const paths = [
     "./",
     "./ci/bin",
-    "./addons/godot-rapier-3d/bin",
-    "./addons/godot-rapier-3d/rust/target/debug",
-    "./addons/godot-rapier-3d/rust/target/release",
+    "./addons/godot-rollback-3d/bin",
+    "./addons/godot-rollback-3d/rust/target/debug",
+    "./addons/godot-rollback-3d/rust/target/release",
     "./build",
     "./build/reports",
     getExportTemplatesDir(runnerEnvToOSName(process.env)),
@@ -21,8 +21,8 @@ async function main() {
     await ls(path);
   }
 
-  printCommand("cat godot-rapier-3d.gdextension");
-  await $`cat godot-rapier-3d.gdextension`;
+  printCommand("cat godot-rollback-3d.gdextension");
+  await $`cat godot-rollback-3d.gdextension`;
 
   printCommand("bun --print process.env");
   await $`bun --print process.env`;
