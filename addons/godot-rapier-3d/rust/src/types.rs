@@ -1,10 +1,13 @@
 use godot::prelude::*;
+use rapier3d::parry::utils::hashmap::HashMap;
 use rapier3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
 pub type Tick = usize;
 pub type GRUID = (u8, u32); // Godot Rollback unique identifier (peer_index, generation)
 pub type RapierHandle = (u32, u32); // Rapier unique identifier (id, generation)
+
+pub type InputMap = HashMap<String, Variant>; // Input keys+values for a single tick
 
 #[derive(Serialize, Deserialize, Clone)]
 pub enum RollbackNodeClass {

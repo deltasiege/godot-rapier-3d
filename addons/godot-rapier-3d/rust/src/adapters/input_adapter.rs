@@ -2,7 +2,8 @@ use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 use serde::{Deserialize, Serialize};
 
-use crate::utils::{decode_or_none, deserialize_variant, encode_or_none, serialize_variant};
+use crate::types::*;
+use crate::utils::*;
 
 #[derive(GodotClass)]
 #[class(base = Node)]
@@ -37,7 +38,7 @@ impl GR3DInputAdapter {
         Variant::nil()
     }
 
-    fn get_inputs(&self) -> HashMap<String, Variant> {
+    fn get_inputs(&self) -> InputMap {
         let mut inputs = HashMap::default();
         for input_key in self.all_inputs.iter() {
             let input_value = self.get_input();
@@ -59,7 +60,7 @@ impl GR3DInputAdapter {
         encode_or_none(&values).unwrap_or_default()
     }
 
-    fn deserialize_inputs(&self, ser_inputs: Vec<u8>) -> HashMap<String, Variant> {
+    fn deserialize_inputs(&self, ser_inputs: Vec<u8>) -> InputMap {
         let mut sorted_inputs: Vec<_> = self.get_inputs().into_iter().collect();
         sorted_inputs.sort_by(|a, b| a.0.cmp(&b.0));
 

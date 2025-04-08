@@ -32,10 +32,6 @@ folder_colors={
 "res://tests/": "orange"
 }
 
-[global_group]
-
-network_sync=""
-
 [input]
 
 ui_accept={

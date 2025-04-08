@@ -3,12 +3,14 @@ use godot::prelude::*;
 mod adapters;
 pub mod config;
 mod interface;
+mod network;
 mod nodes;
 pub mod types;
 mod utils;
 mod world;
 
 use interface::{register_singletons, unregister_singletons};
+pub use network::Network;
 pub use world::World;
 
 struct GodotRapier3D;

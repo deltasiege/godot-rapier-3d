@@ -1,8 +1,7 @@
-use crate::World;
 use godot::prelude::*;
-use rapier3d::prelude::{
-    DebugRenderBackend, DebugRenderObject, DebugRenderPipeline, DebugRenderStyle, ShapeType,
-};
+use rapier3d::prelude::*;
+
+use crate::world::PhysicsState;
 
 pub struct DebugVisualizer {
     pub backend: DebugVisualizerBackend,
@@ -19,14 +18,14 @@ impl DebugVisualizer {
         }
     }
 
-    pub fn render(&mut self, world: &World) -> Array<Array<Variant>> {
+    pub fn render(&mut self, physics: &PhysicsState) -> Array<Array<Variant>> {
         self.pipeline.render(
             &mut self.backend,
-            &world.physics.bodies,
-            &world.physics.colliders,
-            &world.physics.impulse_joints,
-            &world.physics.multibody_joints,
-            &world.physics.narrow_phase,
+            &physics.bodies,
+            &physics.colliders,
+            &physics.impulse_joints,
+            &physics.multibody_joints,
+            &physics.narrow_phase,
         );
 
         let result = self.backend.pending_lines.duplicate_shallow();
@@ -42,10 +41,10 @@ pub struct DebugVisualizerBackend {
 impl DebugRenderBackend for DebugVisualizerBackend {
     fn draw_line(
         &mut self,
-        _object: rapier3d::prelude::DebugRenderObject,
-        a: rapier3d::prelude::Point<f32>,
-        b: rapier3d::prelude::Point<f32>,
-        color: rapier3d::prelude::DebugColor,
+        _object: DebugRenderObject,
+        a: Point<f32>,
+        b: Point<f32>,
+        color: DebugColor,
     ) {
         let mut entry = Array::new();
         entry.push(&Vector3::new(a.x, a.y, a.z).to_variant());

@@ -17,9 +17,17 @@ impl World {
         }
     }
 
+    pub fn reset(&mut self) {
+        log::trace!("Resetting world to empty state");
+        self.time = TimeState::new();
+        self.physics = PhysicsState::new();
+        self.node_db = NodeDatabase::new();
+        self.debugger = DebugVisualizer::new();
+    }
+
     /// Advance the simulation by one step
-    /// Return the next tick and the resulting snapshot
-    pub fn step(&mut self) -> (usize, Option<Vec<u8>>) {
+    /// Return the resulting world snapshot after stepping
+    pub fn step(&mut self) -> Option<Vec<u8>> {
         log::trace!("Stepping world at tick: {}", self.time.tick);
 
         self.physics.pipeline.step(
@@ -38,12 +46,13 @@ impl World {
             &(),
         );
 
-        self.time.secs += self.physics.integration_parameters.dt as f32;
-        self.time.tick += 1;
-
         let snap = self.take_snapshot();
 
-        (self.time.tick, snap)
+        self.time.secs += self.physics.integration_parameters.dt as f32;
+        self.time.tick += 1;
+        log::trace!("Tick counter advanced to: {}", self.time.tick);
+
+        snap
     }
 
     /// Retrieve the current snapshot

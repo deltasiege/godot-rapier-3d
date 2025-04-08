@@ -21,7 +21,9 @@ version = "0.23.1"
 features = [ "enhanced-determinism", "serde-serialize", "debug-render" ]
 
 [dependencies.godot]
-version = "0.2.4"
+# version = "0.2.4"
+git = "https://github.com/godot-rust/gdext"
+branch = "master"
 features = ["serde", "register-docs", "experimental-wasm", "lazy-function-tables"]
 
 [features]

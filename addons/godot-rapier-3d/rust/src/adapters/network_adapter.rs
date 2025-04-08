@@ -1,5 +1,7 @@
 use godot::prelude::*;
 
+use crate::interface::{disconnect_incoming_signals, disconnect_outgoing_signals, GR3D};
+
 #[derive(GodotClass)]
 #[class(base = Node)]
 /// Base class that can be overriden by GDScript
@@ -18,104 +20,128 @@ impl INode for GR3DNetworkAdapter {
 #[godot_api]
 impl GR3DNetworkAdapter {
     #[signal]
-    fn received_ping(peer_id: i64, origin_time: GString);
-
+    pub fn received_ping(peer_id: i64, origin_ts: GString);
     #[signal]
-    fn received_ping_back(peer_id: i64, local_time: GString, remote_time: GString);
-
+    pub fn received_ping_back(peer_id: i64, origin_ts: GString, remote_ts: GString);
     #[signal]
-    fn received_remote_start();
-
+    pub fn received_remote_start(peer_idx: i64);
     #[signal]
-    fn received_remote_stop();
-
+    pub fn received_remote_stop();
     #[signal]
-    fn received_tick_data(peer_id: i64, data: PackedByteArray);
+    pub fn received_tick_data(peer_id: i64, data: PackedByteArray);
 
     #[func(virtual)]
     pub fn on_attached(&self) {
+        debug_msg("attached", self);
         log::debug!("Net adapter '{:?}' attached", self.base().get_name());
     }
 
     #[func(virtual)]
     pub fn on_detached(&self) {
+        debug_msg("detached", self);
         log::debug!("Net adapter '{:?}' detached", self.base().get_name());
     }
 
     #[func(virtual)]
     pub fn on_sync_start(&self) {
-        log::debug!("Net adapter '{:?}' sync started", self.base().get_name());
+        debug_msg("sync started", self);
     }
 
     #[func(virtual)]
     pub fn on_sync_stop(&self) {
-        log::debug!("Net adapter '{:?}' sync stopped", self.base().get_name());
+        debug_msg("sync stopped", self);
     }
 
     #[func(virtual)]
-    pub fn send_ping(&self, _peer_id: i64, _origin_time: GString) {
-        log::error!(
-            "UNIMPLEMENTED: send_ping on Network adapter: {:?}",
-            self.base().get_name()
-        );
+    pub fn send_ping(&self, _peer_id: i64, _origin_ts: GString) {
+        unimpl("send_ping", self);
     }
 
     #[func(virtual)]
-    pub fn send_ping_back(&self, _peer_id: i64, _origin_time: GString, _local_time: GString) {
-        log::error!(
-            "UNIMPLEMENTED: send_ping_back on Network adapter: {:?}",
-            self.base().get_name()
-        );
+    pub fn send_ping_back(&self, _peer_id: i64, _origin_ts: GString, _local_ts: GString) {
+        unimpl("send_ping_back", self);
     }
 
     #[func(virtual)]
-    pub fn send_remote_start(&self, _peer_id: i64) {
-        log::error!(
-            "UNIMPLEMENTED: send_remote_start on Network adapter: {:?}",
-            self.base().get_name()
-        );
+    pub fn send_remote_start(&self, _peer_id: i64, _peer_idx: i64) {
+        unimpl("send_remote_start", self);
     }
 
     #[func(virtual)]
     pub fn send_remote_stop(&self, _peer_id: i64) {
-        log::error!(
-            "UNIMPLEMENTED: send_remote_stop on Network adapter: {:?}",
-            self.base().get_name()
-        );
+        unimpl("send_remote_stop", self);
     }
 
     #[func(virtual)]
     pub fn send_tick_data(&self, _peer_id: i64, _data: PackedByteArray) {
-        log::error!(
-            "UNIMPLEMENTED: send_tick_data on Network adapter: {:?}",
-            self.base().get_name()
-        );
+        unimpl("send_tick_data", self);
     }
 
     #[func(virtual)]
     pub fn is_network_host(&self) -> bool {
-        log::error!(
-            "UNIMPLEMENTED: is_network_host on Network adapter: {:?}",
-            self.base().get_name()
-        );
+        unimpl("is_network_host", self);
         true
     }
 
     #[func(virtual)]
     pub fn is_network_authority_for_node(&self, _node: Gd<Node>) -> bool {
-        log::error!(
-            "UNIMPLEMENTED: is_network_authority_for_node on Network adapter: {:?}",
-            self.base().get_name()
-        );
+        unimpl("is_network_authority_for_node", self);
         true
     }
 
     #[func(virtual)]
     pub fn get_unique_id(&self) -> i64 {
-        log::error!(
-            "UNIMPLEMENTED: get_unique_id on Network adapter: {:?}",
-            self.base().get_name()
-        );
+        unimpl("get_unique_id", self);
         1
     }
+}
+
+/// Attach a network adapter to the GR3D instance and connect all signals to the GR3D singleton.
+pub fn attach_network_adapter(gr3d: &mut GR3D, mut adapter: Gd<GR3DNetworkAdapter>) {
+    log::debug!("Attaching NetworkAdapter: {:?}", adapter);
+    adapter.bind().on_attached();
+    adapter
+        .signals()
+        .received_ping()
+        .connect_obj(&gr3d.to_gd(), GR3D::_received_ping);
+    adapter
+        .signals()
+        .received_ping_back()
+        .connect_obj(&gr3d.to_gd(), GR3D::_received_ping_back);
+    adapter
+        .signals()
+        .received_remote_start()
+        .connect_obj(&gr3d.to_gd(), GR3D::_received_remote_start);
+    adapter
+        .signals()
+        .received_remote_stop()
+        .connect_obj(&gr3d.to_gd(), GR3D::_received_remote_stop);
+    adapter
+        .signals()
+        .received_tick_data()
+        .connect_obj(&gr3d.to_gd(), GR3D::_received_tick_data);
+    gr3d.network.adapter = Some(adapter);
+}
+
+/// Detach the network adapter and disconnect all signals from the GR3D singleton.
+pub fn detach_network_adapter(gr3d: &mut GR3D) {
+    log::debug!("Detaching NetworkAdapter: {:?}", gr3d.network.adapter);
+    if let Some(adapter) = &mut gr3d.network.adapter {
+        adapter.bind().on_detached();
+        disconnect_incoming_signals(adapter);
+        disconnect_outgoing_signals(adapter);
+    }
+    gr3d.network.adapter = None;
+}
+
+fn debug_msg(msg: &str, adapter: &GR3DNetworkAdapter) {
+    log::debug!("NetworkAdapter '{:?}' {}", adapter.base().get_name(), msg);
+}
+
+fn unimpl(func_name: &str, adapter: &GR3DNetworkAdapter) {
+    log::error!(
+        "UNIMPLEMENTED: {} on NetworkAdapter: {:?}",
+        func_name,
+        adapter.base().get_name()
+    );
 }
