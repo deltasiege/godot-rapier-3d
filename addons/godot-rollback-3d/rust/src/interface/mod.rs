@@ -7,7 +7,7 @@ mod singleton;
 
 // Interface module is responsible for all communication between Godot and Rapier
 
-pub use debug::dump_debug_data;
+pub use debug::*;
 pub use globals::*;
 pub use logger::*;
 pub use signals::*;

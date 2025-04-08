@@ -2,7 +2,7 @@ use godot::classes::{IObject, Object};
 use godot::prelude::*;
 
 use crate::adapters::*;
-use crate::interface::{dump_debug_data, Logger};
+use crate::interface::*;
 use crate::network::*;
 use crate::{Network, World};
 
@@ -140,9 +140,15 @@ impl GR3D {
     // Debugging -----------------------------
 
     #[func]
-    /// Returns large dictionary containing all debug data
-    fn _dump_debug_data(&mut self) -> GString {
-        dump_debug_data(self)
+    /// Returns verbose string containing all debug data
+    fn _get_debug_string(&mut self) -> GString {
+        get_debug_string(self)
+    }
+
+    #[func]
+    /// Returns a dictionary containing all debug data
+    fn _get_debug_dictionary(&mut self) -> Dictionary {
+        get_debug_dictionary(self)
     }
 
     #[func]

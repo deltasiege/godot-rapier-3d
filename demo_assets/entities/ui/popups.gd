@@ -29,9 +29,11 @@ func on_popup_opened(popup: Control):
 
 func _get_data(title: String):
 	if title == "Character" and !character: return
+	var debug_dictionary = GR3D._get_debug_dictionary()
 	match title:
 		"Peers":
 			#var peer_data = GR3D._get_all_peer_data()
+			return debug_dictionary.network
 			var peer_data = {}
 			var grouped = {}
 			grouped["Local ID"] = str(multiplayer.get_unique_id())

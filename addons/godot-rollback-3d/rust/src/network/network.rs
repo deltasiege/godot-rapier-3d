@@ -3,12 +3,14 @@ use godot::prelude::*;
 use crate::adapters::GR3DNetworkAdapter;
 use crate::interface::GR3D;
 use crate::network::*;
+use crate::types::*;
 
 #[derive(Debug)]
 pub struct Network {
     pub started: bool,
     pub host_starting: bool,
     pub adapter: Option<Gd<GR3DNetworkAdapter>>,
+    pub peer_map: Option<PeerMap>,
     pub local_peer: Option<LocalPeer>,
     pub remote_peers: Vec<RemotePeer>,
 }
@@ -19,6 +21,7 @@ impl Network {
             started: false,
             host_starting: false,
             adapter: None,
+            peer_map: None,
             local_peer: None,
             remote_peers: Vec::new(),
         }

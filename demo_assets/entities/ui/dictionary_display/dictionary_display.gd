@@ -18,11 +18,11 @@ func set_entries(entries, sync: bool = true):
 	delete_extra_entries(arr)
 	add_missing_entries(arr)
 
-func create_entry(entry: Dictionary):
+func create_entry(entry: Dictionary, at_idx = null):
 	match entry.type:
-		"text": create_text_entry(entry)
-		"button": create_button_entry(entry)
-		"group": create_group(entry)
+		"text": create_text_entry(entry, at_idx)
+		"button": create_button_entry(entry, at_idx)
+		"group": create_group(entry, at_idx)
 		_: pass
 
 func set_entry(entry: Dictionary):
@@ -38,21 +38,24 @@ func force_set_entries(entries):
 func clear_entries():
 	for child in container.get_children(): child.queue_free()
 
+# UP TO: - instead of add/deleting deltas - just detect change is needed and recreate all
+# easier to preserve ordering than mucking around with indexes
 func delete_extra_entries(desired_entries: Array):
 	for child in container.get_children():
 		if desired_entries.filter(func(entry):
-			return child.name.contains(str(entry.get("id", entry.get("key"))))
+			return child.name.contains(safe_name(str(entry.get("id", entry.get("key")))))
 		).size() <= 0: child.queue_free()
 
 func add_missing_entries(desired_entries: Array):
-	for entry: Dictionary in desired_entries:
-		var id = str(entry.get("id", entry.get("key")))
-		if container.find_child(id, false, false) != null: continue
-		create_entry(entry)
+	for idx in desired_entries.size():
+		var entry: Dictionary = desired_entries[idx]
+		var id = safe_name(str(entry.get("id", entry.get("key"))))
+		if container.find_child(id, true, false) != null: continue
+		create_entry(entry, idx)
 
-func create_button_entry(entry: Dictionary):
+func create_button_entry(entry: Dictionary, at_idx = null):
 	var key = str(entry.get("key", null))
-	var id = str(entry.get("id", key))
+	var id = safe_name(str(entry.get("id", key)))
 	var new_button = Button.new()
 	new_button.text = key
 	new_button.name = id
@@ -60,11 +63,12 @@ func create_button_entry(entry: Dictionary):
 	new_button.connect("pressed", entry.on_pressed)
 	new_button.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
 	container.add_child(new_button)
+	if at_idx: container.move_child(new_button, at_idx)
 	new_button.owner = container
 
 func set_button_entry(entry: Dictionary):
 	var key = str(entry.get("key", null))
-	var id = str(entry.get("id", key))
+	var id = safe_name(str(entry.get("id", key)))
 	var found_button: Button = container.find_child(id)
 	if !found_button: return
 	found_button.text = key
@@ -73,12 +77,12 @@ func set_button_entry(entry: Dictionary):
 		if conn.signal.get_name() == "pressed": conn.signal.disconnect(conn.callable)
 	found_button.connect("pressed", entry.on_pressed)
 
-func create_text_entry(entry: Dictionary):
+func create_text_entry(entry: Dictionary, at_idx = null):
 	var hbox = HBoxContainer.new()
 	var label = Label.new()
 	var ledit = LineEdit.new()
 	var key = str(entry.get("key", null))
-	var id = str(entry.get("id", key))
+	var id = safe_name(str(entry.get("id", key)))
 	var value = str(entry.get("value", null))
 	hbox.name = id
 	label.theme = theme_res
@@ -90,13 +94,14 @@ func create_text_entry(entry: Dictionary):
 	ledit.editable = false
 	ledit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	container.add_child(hbox)
+	if at_idx: container.move_child(hbox, at_idx)
 	hbox.add_child(label)
 	hbox.add_child(ledit)
 	hbox.owner = container
 
 func set_text_entry(entry: Dictionary):
 	var key = str(entry.get("key", null))
-	var id = str(entry.get("id", key))
+	var id = safe_name(str(entry.get("id", key)))
 	var value = str(entry.get("value", null))
 	var found_hbox = container.find_child(id)
 	if !found_hbox: return
@@ -106,18 +111,19 @@ func set_text_entry(entry: Dictionary):
 	found_label.text = key
 	found_ledit.text = value
 
-func create_group(entry: Dictionary):
+func create_group(entry: Dictionary, at_idx = null):
 	var label = Label.new()
 	var sep = HSeparator.new()
 	var key = str(entry.get("key", null))
-	var id = str(entry.get("id", key))
+	var id = safe_name(str(entry.get("id", key)))
 	label.name = id
 	label.theme = theme_res
 	label.text = key
 	sep.name = id + "_sep"
 	sep.theme = theme_res
 	container.add_child(label)
-	container.add_child(sep)
+	if at_idx: container.move_child(label, at_idx)
+	#label.add_sibling(sep)
 	label.owner = container
 	sep.owner = container
 
@@ -135,12 +141,16 @@ func homogenize_entries(entries) -> Array:
 		elif given_type: type = given_type
 		else: type = "text"
 		var data = entry.merged({ "type": type }, true)
-		out.append(data)
+		out.push_front(data)
 	return out
 
 func flatten_dict(dict: Dictionary, out_arr: Array):
 	for key in dict:
 		if dict[key] is Dictionary:
-			out_arr.append({ "type": type_string(typeof(dict)), "key": key })
+			out_arr.push_front({ "type": type_string(typeof(dict)), "key": key })
 			flatten_dict(dict[key], out_arr)
-		else: out_arr.append({ "key": key, "value": dict[key] })
+		else: out_arr.push_front({ "key": key, "value": dict[key] })
+
+# Remove unsafe characters from name
+func safe_name(unsafe_name: String) -> String:
+	return unsafe_name.replace(":", "")

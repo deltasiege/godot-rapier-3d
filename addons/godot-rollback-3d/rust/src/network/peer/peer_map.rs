@@ -28,6 +28,8 @@ pub fn apply_peer_map_to_network(
     let local_id = adapter.bind().get_unique_id();
     match decode_peer_map(peer_map) {
         Some(peer_map) => {
+            network.peer_map = Some(peer_map.clone());
+
             for (idx, peer_id) in peer_map.iter().enumerate() {
                 if peer_id == &local_id {
                     network.local_peer = Some(LocalPeer::new(PeerMetadata::new_with_idx(
