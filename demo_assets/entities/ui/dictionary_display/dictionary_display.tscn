@@ -4,5 +4,6 @@
 [ext_resource type="PackedScene" uid="uid://xidhy5cyh7mv" path="res://demo_assets/entities/ui/expandable_section/expandable_section.tscn" id="2_x627r"]
 
 [node name="Dictionary Display" type="VBoxContainer"]
+size_flags_horizontal = 3
 script = ExtResource("1_ygxsg")
 expandable_section = ExtResource("2_x627r")

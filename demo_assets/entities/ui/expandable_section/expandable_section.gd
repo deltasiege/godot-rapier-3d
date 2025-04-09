@@ -38,8 +38,8 @@ enum State {
 }
 
 var _last_content_size = Vector2.ZERO
-var _tween_fac = 1 if start_open else 0
-var _state := State.OPENED if start_open else State.CLOSED
+var _tween_fac = 0
+var _state := State.CLOSED
 var _on_toggle_callbacks = []
 
 # Public ---
@@ -61,8 +61,17 @@ func append_content(node: Control, reparent: bool = false):
 	if reparent: node.reparent(content_vbox_container)
 	else: content_vbox_container.add_child(node)
 	node.owner = content_vbox_container
-	content_margin_container.reset_size()
 	set_button_enabled(true)
+	shrink_content_container()
+
+func shrink_content_container():
+	if !is_inside_tree(): return
+	await get_tree().process_frame
+	await get_tree().process_frame
+	content_margin_container.size.y = 0
+	await get_tree().process_frame
+	await get_tree().process_frame
+	content_margin_container.set_position(Vector2(0, 0))
 
 # Call this function to delete all content and mark the section as empty
 func clear_content():
@@ -99,9 +108,11 @@ func toggle():
 
 func _ready():
 	if missing_defs(): return
-	if start_open: open(true)
+	if start_open and has_content(): open(true)
 	else: close(true)
 	setup_button()
+	process_tween_fac()
+	shrink_content_container()
 
 func _process(delta):
 	if missing_defs(): return
@@ -111,6 +122,7 @@ func _process(delta):
 func watch_content_size():
 	if _last_content_size != get_content_size(): # Content size change
 		fit_mask_to_content(_tween_fac)
+		shrink_content_container()
 		_last_content_size = get_content_size()
 
 func process_tweens(delta):
@@ -160,19 +172,24 @@ func set_stretch_button(stretch: bool):
 func get_content_size() -> Vector2:
 	return Vector2(content_margin_container.size.x, content_margin_container.size.y)
 
-func fit_mask_to_content(tween_progress: float = 1):
+func fit_mask_to_content(tween_fac: float = 1):
+	# UP TO - mask size needs to take into account that nested sections might be collapsed
+	
 	content_mask.custom_minimum_size.x = content_margin_container.size.x
-	content_mask.custom_minimum_size.y = tween_progress * content_margin_container.size.y
+	content_mask.custom_minimum_size.y = tween_fac * content_margin_container.size.y
 
-func rotate_target(tween_progress: float = 1):
+func rotate_target(tween_fac: float = 1):
 	if !rot_target: return
-	rot_target.rotation = lerpf(deg_to_rad(open_rotation), deg_to_rad(closed_rotation), tween_progress)
+	rot_target.rotation = lerpf(deg_to_rad(open_rotation), deg_to_rad(closed_rotation), tween_fac)
 
 func cant_interrupt(state: State) -> bool:
 	return is_tweening(state) and !interruptible
 
 func is_tweening(state: State) -> bool:
 	return state == State.OPENING or state == State.CLOSING
+
+func has_content() -> bool:
+	return content_vbox_container.get_children().size() > 0
 
 func set_content_margin(new_margin: int):
 	if !content_margin_container: return

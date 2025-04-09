@@ -4,7 +4,7 @@
 [ext_resource type="Theme" uid="uid://e6yvsm582ayp" path="res://demo_assets/entities/ui/theme.tres" id="2_a53m6"]
 
 [node name="Drag Panel" type="PanelContainer"]
-custom_minimum_size = Vector2(300, 200)
+custom_minimum_size = Vector2(300, 500)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -47,6 +47,10 @@ theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 8
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/MarginContainer"]
+layout_mode = 2
+horizontal_scroll_mode = 0
 
 [connection signal="mouse_entered" from="VBoxContainer/HBoxContainer/Drag" to="." method="_on_drag_mouse_entered"]
 [connection signal="mouse_exited" from="VBoxContainer/HBoxContainer/Drag" to="." method="_on_drag_mouse_exited"]

@@ -10,7 +10,14 @@ extends Control
 var _last_entries_count: int
 var _opened_groups = {}
 
-func _ready(): theme = theme_res
+# Public ---
+
+## Converts the given dictionary's items to entries and then displays them
+## Does not support dynamic entry types such as buttons
+## Example input:
+## { "my_key": "my_value", "my_group": { "nested_key": "nested_value" } }
+func create_from_data(data: Dictionary):
+	create_from_entries(convert_data_to_entries(data))
 
 ## Allows utilizing "type" field to specify dynamic entries such as buttons
 ## Example `entries` input:
@@ -34,14 +41,9 @@ func _ready(): theme = theme_res
 ## ]
 func create_from_entries(entries: Array):
 	for entry: Dictionary in entries: create_entry(entry, container)
+	_last_entries_count = count_entries(entries)
 
-## Converts the given dictionary's items to entries and then displays them
-## Does not support dynamic entry types such as buttons
-## Example input:
-## { "my_key": "my_value", "my_group": { "nested_key": "nested_value" } }
-func create_from_data(data: Dictionary):
-	create_from_entries(convert_data_to_entries(data))
-
+## Set entries without recreating them unnecessarily
 func set_from_entries(entries: Array):
 	var count = count_entries(entries)
 	if count != _last_entries_count: # Recreate all entries if there has been a change in their number
@@ -51,8 +53,13 @@ func set_from_entries(entries: Array):
 		for entry: Dictionary in entries: set_entry(entry)
 	_last_entries_count = count
 
+## Set data without recreating entries unnecessarily
 func set_from_data(data: Dictionary):
 	set_from_entries(convert_data_to_entries(data))
+
+# Private ---
+
+func _ready(): theme = theme_res
 
 func convert_data_to_entries(data: Dictionary) -> Array:
 	var entries = []
@@ -86,9 +93,9 @@ func create_entry(entry: Dictionary, parent: Control, parent_is_group: bool = fa
 		_: pass
 	
 	var id = safe_name(str(entry.get("id", entry.get("key"))))
-	created_control.name = id
 	if parent_is_group: parent.append_content(created_control)
 	else: parent.add_child(created_control)
+	created_control.name = id
 	created_control.owner = parent
 
 func set_entry(entry: Dictionary):
@@ -155,27 +162,28 @@ func create_group(entry: Dictionary):
 	var new_group = expandable_section.instantiate()
 	var key = str(entry.get("key", null))
 	var id = safe_name(str(entry.get("id", key)))
-	new_group.start_open = group_was_open(id)
+	var has_sub_entries = entry.value.size() > 0
 	new_group.on_toggle(record_group_toggle(id))
 	for idx in entry.value.size(): 
 		var sub_entry: Dictionary = entry.value[idx]
 		if idx == 0: new_group.clear_content()
 		create_entry(sub_entry, new_group, true)
-	if entry.value.size() == 0: new_group.clear_content(); new_group.title = key + " (empty)"
-	else: new_group.title = key
+	if has_sub_entries:
+		new_group.start_open = group_was_open(id, true)
+		new_group.title = key
+	else:
+		new_group.start_open = false
+		new_group.clear_content(); new_group.title = key + " (empty)"
 	return new_group
-
-func record_group_toggle(id: String) -> Callable:
-	return func(new_state): _opened_groups[id] = new_state
-
-func group_was_open(id: String):
-	return _opened_groups.has(id) and _opened_groups[id]
 
 func set_group(entry: Dictionary):
 	var key = str(entry.get("key", null))
 	var id = safe_name(str(entry.get("id", key)))
 	var found_group = container.find_child(id, true, false)
 	if !found_group: return
+	for idx in entry.value.size(): 
+		var sub_entry: Dictionary = entry.value[idx]
+		set_entry(sub_entry)
 	if entry.value.size() == 0: found_group.title = key + " (empty)"
 	else: found_group.title = key
 
@@ -188,6 +196,13 @@ func count_entries(entries: Array) -> int:
 				recurse.call(entry.value, counter, recurse)
 	recurse.call(entries, arr_counter, recurse)
 	return arr_counter.size()
+
+func record_group_toggle(id: String) -> Callable:
+	return func(new_state): _opened_groups[id] = new_state
+
+func group_was_open(id: String, default: bool = false):
+	if _opened_groups.has(id): return _opened_groups[id]
+	return default
 
 # Remove unsafe characters from name
 func safe_name(unsafe_name: String) -> String:

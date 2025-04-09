@@ -77,9 +77,11 @@ custom_minimum_size = Vector2(416, 474)
 layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="Mask"]
-layout_mode = 2
-offset_right = 416.0
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
 offset_bottom = 474.0
+grow_horizontal = 2
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 8
@@ -87,6 +89,7 @@ theme_override_constants/margin_bottom = 8
 
 [node name="Content" type="VBoxContainer" parent="Mask/MarginContainer"]
 layout_mode = 2
+size_flags_vertical = 0
 
 [node name="Label" type="Label" parent="Mask/MarginContainer/Content"]
 custom_minimum_size = Vector2(400, 100)

@@ -71,7 +71,7 @@ impl GR3D {
     // Networking ----------------------------
 
     #[signal]
-    fn sync_started(peer_idx: i64);
+    fn sync_started();
     #[signal]
     fn sync_stopped();
     #[signal]

@@ -32,20 +32,10 @@ func _get_data(title: String):
 	if title == "Character" and !character: return
 	var debug_dictionary = GR3D._get_debug_dictionary()
 	match title:
-		"Peers":
-			#var peer_data = GR3D._get_all_peer_data()
+		"World":
+			return debug_dictionary.world
+		"Network":
 			return debug_dictionary.network
-			var peer_data = {}
-			var grouped = {}
-			grouped["Local ID"] = str(multiplayer.get_unique_id())
-			for peer in peer_data:
-				var data = peer.duplicate()
-				data.erase("peer_id")
-				grouped["Peer " + str(peer.peer_id)] = data
-			return grouped
-		"Sync":
-			#return GR3D._get_debug_data()
-			return {}
 		"Buffer":
 			return {
 				"length": "TBA"

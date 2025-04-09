@@ -4,7 +4,7 @@ extends PanelContainer
 @export var content_scene: PackedScene
 
 @onready var drag_handle: Button = $VBoxContainer/HBoxContainer/Drag
-@onready var content_container: Control = $VBoxContainer/MarginContainer
+@onready var content_container: Control = $VBoxContainer/MarginContainer/ScrollContainer
 
 signal closed
 
