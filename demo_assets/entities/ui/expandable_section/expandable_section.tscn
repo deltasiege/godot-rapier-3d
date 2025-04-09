@@ -1,0 +1,110 @@
+[gd_scene load_steps=4 format=3 uid="uid://xidhy5cyh7mv"]
+
+[ext_resource type="Theme" uid="uid://e6yvsm582ayp" path="res://demo_assets/entities/ui/theme.tres" id="1_csdby"]
+[ext_resource type="Texture2D" uid="uid://8c84m0kmia3t" path="res://demo_assets/entities/ui/icons/right_arrow.svg" id="2_1pwvc"]
+[ext_resource type="Script" uid="uid://dbwci6pitu0sb" path="res://demo_assets/entities/ui/expandable_section/expandable_section.gd" id="2_l7pht"]
+
+[node name="Expandable Section" type="VBoxContainer" node_paths=PackedStringArray("content_mask", "content_container", "rot_target")]
+offset_right = 57.0
+offset_bottom = 427.0
+size_flags_horizontal = 3
+theme = ExtResource("1_csdby")
+theme_override_constants/separation = 0
+script = ExtResource("2_l7pht")
+content_mask = NodePath("Mask")
+content_container = NodePath("Mask/Content")
+rot_target = NodePath("ButtonMarginContainer/Button Contents/HBoxContainer/Control/TextureRect")
+rot_pivot = Vector2(0.4, 0.5)
+
+[node name="ButtonMarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Button" type="Button" parent="ButtonMarginContainer"]
+layout_mode = 2
+
+[node name="Button Contents" type="MarginContainer" parent="ButtonMarginContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ButtonMarginContainer/Button Contents"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Control" type="Control" parent="ButtonMarginContainer/Button Contents/HBoxContainer"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+
+[node name="TextureRect" type="TextureRect" parent="ButtonMarginContainer/Button Contents/HBoxContainer/Control"]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+rotation = 1.5708
+pivot_offset = Vector2(6.4, 8)
+size_flags_horizontal = 0
+size_flags_vertical = 4
+texture = ExtResource("2_1pwvc")
+expand_mode = 1
+
+[node name="Label" type="Label" parent="ButtonMarginContainer/Button Contents/HBoxContainer"]
+layout_mode = 2
+text = "Title"
+
+[node name="Mask" type="Control" parent="."]
+clip_contents = true
+custom_minimum_size = Vector2(416, 474)
+layout_mode = 2
+
+[node name="Content" type="MarginContainer" parent="Mask"]
+layout_mode = 2
+offset_right = 416.0
+offset_bottom = 474.0
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="HBoxContainer" type="VBoxContainer" parent="Mask/Content"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Mask/Content/HBoxContainer"]
+custom_minimum_size = Vector2(400, 100)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "Good morning and welcome to the Black Mesa Transit System. This automated train is provided for the security and convenience of the Black Mesa Research Facility personnel."
+autowrap_mode = 2
+text_overrun_behavior = 2
+
+[node name="Label2" type="Label" parent="Mask/Content/HBoxContainer"]
+custom_minimum_size = Vector2(400, 100)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "The time is 08:47 AM. Current topside temperature is 93 degrees, with an estimated high of one hundred and five. The Black Mesa compound is maintained at a pleasant 68 degrees at all times."
+autowrap_mode = 2
+text_overrun_behavior = 2
+
+[node name="Label3" type="Label" parent="Mask/Content/HBoxContainer"]
+custom_minimum_size = Vector2(400, 250)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "This train is inbound from Level 3 Dormitories to Sector C Test Labs and Control Facilities. If your intended destination is a high-security area beyond Sector C, you will need to return to the Central Transit Hub in Area 9 and board a high security train. If you have not yet submitted your identity to the retinal clearance system, you must report to Black Mesa Personnel for processing before you will be permitted into the high security branch of the transit system."
+autowrap_mode = 2
+text_overrun_behavior = 2

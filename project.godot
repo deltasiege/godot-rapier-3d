@@ -20,6 +20,10 @@ WindowMgr="*res://scripts/managers/window_manager.gd"
 DevManager="*res://scripts/managers/dev_manager.gd"
 GR3DRuntime="*res://addons/godot-rollback-3d/gd/GR3DRuntime.gd"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/collapsible_container/plugin.cfg")
+
 [file_customization]
 
 folder_colors={
