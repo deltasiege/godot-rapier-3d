@@ -4,17 +4,19 @@
 [ext_resource type="Texture2D" uid="uid://8c84m0kmia3t" path="res://demo_assets/entities/ui/icons/right_arrow.svg" id="2_1pwvc"]
 [ext_resource type="Script" uid="uid://dbwci6pitu0sb" path="res://demo_assets/entities/ui/expandable_section/expandable_section.gd" id="2_l7pht"]
 
-[node name="Expandable Section" type="VBoxContainer" node_paths=PackedStringArray("content_mask", "content_container", "rot_target")]
+[node name="Expandable Section" type="VBoxContainer" node_paths=PackedStringArray("title_label", "rot_target", "content_mask", "content_margin_container", "content_vbox_container")]
 offset_right = 57.0
 offset_bottom = 427.0
 size_flags_horizontal = 3
 theme = ExtResource("1_csdby")
 theme_override_constants/separation = 0
 script = ExtResource("2_l7pht")
-content_mask = NodePath("Mask")
-content_container = NodePath("Mask/Content")
+title_label = NodePath("ButtonMarginContainer/Button Contents/HBoxContainer/Label")
 rot_target = NodePath("ButtonMarginContainer/Button Contents/HBoxContainer/Control/TextureRect")
 rot_pivot = Vector2(0.4, 0.5)
+content_mask = NodePath("Mask")
+content_margin_container = NodePath("Mask/MarginContainer")
+content_vbox_container = NodePath("Mask/MarginContainer/Content")
 
 [node name="ButtonMarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
@@ -25,6 +27,7 @@ layout_mode = 2
 
 [node name="Button Contents" type="MarginContainer" parent="ButtonMarginContainer"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 4
 theme_override_constants/margin_top = 4
 theme_override_constants/margin_right = 4
@@ -32,6 +35,7 @@ theme_override_constants/margin_bottom = 4
 
 [node name="HBoxContainer" type="HBoxContainer" parent="ButtonMarginContainer/Button Contents"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 0
 
 [node name="Control" type="Control" parent="ButtonMarginContainer/Button Contents/HBoxContainer"]
@@ -39,6 +43,7 @@ custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
+mouse_filter = 2
 
 [node name="TextureRect" type="TextureRect" parent="ButtonMarginContainer/Button Contents/HBoxContainer/Control"]
 custom_minimum_size = Vector2(16, 16)
@@ -58,6 +63,7 @@ rotation = 1.5708
 pivot_offset = Vector2(6.4, 8)
 size_flags_horizontal = 0
 size_flags_vertical = 4
+mouse_filter = 2
 texture = ExtResource("2_1pwvc")
 expand_mode = 1
 
@@ -70,7 +76,7 @@ clip_contents = true
 custom_minimum_size = Vector2(416, 474)
 layout_mode = 2
 
-[node name="Content" type="MarginContainer" parent="Mask"]
+[node name="MarginContainer" type="MarginContainer" parent="Mask"]
 layout_mode = 2
 offset_right = 416.0
 offset_bottom = 474.0
@@ -79,10 +85,10 @@ theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 8
 
-[node name="HBoxContainer" type="VBoxContainer" parent="Mask/Content"]
+[node name="Content" type="VBoxContainer" parent="Mask/MarginContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Mask/Content/HBoxContainer"]
+[node name="Label" type="Label" parent="Mask/MarginContainer/Content"]
 custom_minimum_size = Vector2(400, 100)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -91,7 +97,7 @@ text = "Good morning and welcome to the Black Mesa Transit System. This automate
 autowrap_mode = 2
 text_overrun_behavior = 2
 
-[node name="Label2" type="Label" parent="Mask/Content/HBoxContainer"]
+[node name="Label2" type="Label" parent="Mask/MarginContainer/Content"]
 custom_minimum_size = Vector2(400, 100)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -100,7 +106,7 @@ text = "The time is 08:47 AM. Current topside temperature is 93 degrees, with an
 autowrap_mode = 2
 text_overrun_behavior = 2
 
-[node name="Label3" type="Label" parent="Mask/Content/HBoxContainer"]
+[node name="Label3" type="Label" parent="Mask/MarginContainer/Content"]
 custom_minimum_size = Vector2(400, 250)
 layout_mode = 2
 size_flags_horizontal = 0

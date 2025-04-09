@@ -1,9 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://catsbly4tdfm0"]
+[gd_scene load_steps=5 format=3 uid="uid://catsbly4tdfm0"]
 
 [ext_resource type="FontFile" uid="uid://bbojb47dw42nl" path="res://demo_assets/entities/ui/font/FixelDisplay-Regular.woff2" id="1_0fuqr"]
 [ext_resource type="Script" uid="uid://6up10ut5ujb0" path="res://demo_assets/entities/ui/toolbar/toolbar.gd" id="1_70jrx"]
 [ext_resource type="Script" uid="uid://dvedonthhj4mh" path="res://demo_assets/entities/ui/popups.gd" id="2_6xmtj"]
-[ext_resource type="PackedScene" uid="uid://xidhy5cyh7mv" path="res://demo_assets/entities/ui/expandable_section/expandable_section.tscn" id="3_wmirf"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_t7uuf"]
 font = ExtResource("1_0fuqr")
@@ -21,9 +20,6 @@ button_container = NodePath("Left/MarginContainer/VBoxContainer")
 
 [node name="Popups" type="Node" parent="."]
 script = ExtResource("2_6xmtj")
-
-[node name="Expandable Section" parent="." instance=ExtResource("3_wmirf")]
-layout_mode = 0
 
 [node name="Left" type="Control" parent="."]
 layout_mode = 1

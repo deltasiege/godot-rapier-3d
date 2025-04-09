@@ -1,90 +1,132 @@
 extends Control
 
 ## Displays dictionary key + value pairs in a vertical list
+## Depends on the Expandable Section ui element for displaying nested dictionaries
 
 @export var container: Control = self
+@export var expandable_section: PackedScene
 @export var theme_res: Theme = preload("../theme.tres")
+
+var _last_entries_count: int
+var _opened_groups = {}
 
 func _ready(): theme = theme_res
 
-func create_entries(entries):
-	var arr = homogenize_entries(entries)
-	for entry in arr: create_entry(entry)
+## Allows utilizing "type" field to specify dynamic entries such as buttons
+## Example `entries` input:
+## [
+##   {
+##     "type": "group",
+##     "key": "my_group",
+##     "value": [
+##       {
+##         "type": "button",
+##         "key": "Do something",
+##         "on_pressed": "do_something"
+##       },
+##       {
+##         "type": "text",
+##         "key": "my_key",
+##         "value": "my_value"
+##       }
+##     ]
+##   }
+## ]
+func create_from_entries(entries: Array):
+	for entry: Dictionary in entries: create_entry(entry, container)
 
-func set_entries(entries, sync: bool = true):
-	var arr = homogenize_entries(entries)
-	for entry in arr: set_entry(entry)
-	if !sync: return
-	delete_extra_entries(arr)
-	add_missing_entries(arr)
+## Converts the given dictionary's items to entries and then displays them
+## Does not support dynamic entry types such as buttons
+## Example input:
+## { "my_key": "my_value", "my_group": { "nested_key": "nested_value" } }
+func create_from_data(data: Dictionary):
+	create_from_entries(convert_data_to_entries(data))
 
-func create_entry(entry: Dictionary, at_idx = null):
-	match entry.type:
-		"text": create_text_entry(entry, at_idx)
-		"button": create_button_entry(entry, at_idx)
-		"group": create_group(entry, at_idx)
+func set_from_entries(entries: Array):
+	var count = count_entries(entries)
+	if count != _last_entries_count: # Recreate all entries if there has been a change in their number
+		clear_children()
+		create_from_entries(entries)
+	else:
+		for entry: Dictionary in entries: set_entry(entry)
+	_last_entries_count = count
+
+func set_from_data(data: Dictionary):
+	set_from_entries(convert_data_to_entries(data))
+
+func convert_data_to_entries(data: Dictionary) -> Array:
+	var entries = []
+	recurse_data(data, entries)
+	return entries
+
+func recurse_data(data: Dictionary, out_arr: Array):
+	for key in data:
+		if data[key] is Dictionary:
+			var children = []
+			recurse_data(data[key], children)
+			out_arr.append({ "type": "group", "key": key, "value": children })
+		else: out_arr.append({ "key": key, "value": data[key] })
+
+var group_types = ["Dictionary"]
+func get_entry_type(entry: Dictionary) -> String:
+	var given_type = entry.type if entry.has("type") else null
+	var inferred_type = type_string(typeof(entry.value)) if (entry.has("value") and entry.value != null) else "unknown"
+	var type
+	if group_types.has(given_type) or group_types.has(inferred_type): type = "group"
+	elif given_type: type = given_type
+	else: type = "text"
+	return type
+
+func create_entry(entry: Dictionary, parent: Control, parent_is_group: bool = false):
+	var created_control: Control
+	match get_entry_type(entry):
+		"text": created_control = create_text(entry)
+		"button": created_control = create_button(entry)
+		"group": created_control = create_group(entry)
 		_: pass
+	
+	var id = safe_name(str(entry.get("id", entry.get("key"))))
+	created_control.name = id
+	if parent_is_group: parent.append_content(created_control)
+	else: parent.add_child(created_control)
+	created_control.owner = parent
 
 func set_entry(entry: Dictionary):
-	match entry.type:
-		"text": set_text_entry(entry)
-		"button": set_button_entry(entry)
+	match get_entry_type(entry):
+		"text": set_text(entry)
+		"button": set_button(entry)
+		"group": set_group(entry)
 		_: pass
 
-func force_set_entries(entries):
-	clear_entries()
-	create_entries(entries)
-
-func clear_entries():
+func clear_children():
 	for child in container.get_children(): child.queue_free()
 
-# UP TO: - instead of add/deleting deltas - just detect change is needed and recreate all
-# easier to preserve ordering than mucking around with indexes
-func delete_extra_entries(desired_entries: Array):
-	for child in container.get_children():
-		if desired_entries.filter(func(entry):
-			return child.name.contains(safe_name(str(entry.get("id", entry.get("key")))))
-		).size() <= 0: child.queue_free()
-
-func add_missing_entries(desired_entries: Array):
-	for idx in desired_entries.size():
-		var entry: Dictionary = desired_entries[idx]
-		var id = safe_name(str(entry.get("id", entry.get("key"))))
-		if container.find_child(id, true, false) != null: continue
-		create_entry(entry, idx)
-
-func create_button_entry(entry: Dictionary, at_idx = null):
+func create_button(entry: Dictionary):
 	var key = str(entry.get("key", null))
-	var id = safe_name(str(entry.get("id", key)))
 	var new_button = Button.new()
 	new_button.text = key
-	new_button.name = id
 	new_button.theme = theme_res
 	new_button.connect("pressed", entry.on_pressed)
 	new_button.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS
-	container.add_child(new_button)
-	if at_idx: container.move_child(new_button, at_idx)
-	new_button.owner = container
+	return new_button
 
-func set_button_entry(entry: Dictionary):
+func set_button(entry: Dictionary):
 	var key = str(entry.get("key", null))
 	var id = safe_name(str(entry.get("id", key)))
-	var found_button: Button = container.find_child(id)
+	var found_button: Button = container.find_child(id, true, false)
 	if !found_button: return
 	found_button.text = key
-	found_button.name = id
 	for conn in found_button.get_signal_connection_list("pressed"):
 		if conn.signal.get_name() == "pressed": conn.signal.disconnect(conn.callable)
 	found_button.connect("pressed", entry.on_pressed)
 
-func create_text_entry(entry: Dictionary, at_idx = null):
+func create_text(entry: Dictionary):
 	var hbox = HBoxContainer.new()
 	var label = Label.new()
 	var ledit = LineEdit.new()
 	var key = str(entry.get("key", null))
 	var id = safe_name(str(entry.get("id", key)))
 	var value = str(entry.get("value", null))
-	hbox.name = id
 	label.theme = theme_res
 	ledit.theme = theme_res
 	label.text = key
@@ -93,17 +135,15 @@ func create_text_entry(entry: Dictionary, at_idx = null):
 	ledit.name = id + "_ledit"
 	ledit.editable = false
 	ledit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	container.add_child(hbox)
-	if at_idx: container.move_child(hbox, at_idx)
 	hbox.add_child(label)
 	hbox.add_child(ledit)
-	hbox.owner = container
+	return hbox
 
-func set_text_entry(entry: Dictionary):
+func set_text(entry: Dictionary):
 	var key = str(entry.get("key", null))
 	var id = safe_name(str(entry.get("id", key)))
 	var value = str(entry.get("value", null))
-	var found_hbox = container.find_child(id)
+	var found_hbox = container.find_child(id, true, false)
 	if !found_hbox: return
 	var found_label = found_hbox.find_child(id + "_label", false, false)
 	var found_ledit = found_hbox.find_child(id + "_ledit", false, false)
@@ -111,45 +151,43 @@ func set_text_entry(entry: Dictionary):
 	found_label.text = key
 	found_ledit.text = value
 
-func create_group(entry: Dictionary, at_idx = null):
-	var label = Label.new()
-	var sep = HSeparator.new()
+func create_group(entry: Dictionary):
+	var new_group = expandable_section.instantiate()
 	var key = str(entry.get("key", null))
 	var id = safe_name(str(entry.get("id", key)))
-	label.name = id
-	label.theme = theme_res
-	label.text = key
-	sep.name = id + "_sep"
-	sep.theme = theme_res
-	container.add_child(label)
-	if at_idx: container.move_child(label, at_idx)
-	#label.add_sibling(sep)
-	label.owner = container
-	sep.owner = container
+	new_group.start_open = group_was_open(id)
+	new_group.on_toggle(record_group_toggle(id))
+	for idx in entry.value.size(): 
+		var sub_entry: Dictionary = entry.value[idx]
+		if idx == 0: new_group.clear_content()
+		create_entry(sub_entry, new_group, true)
+	if entry.value.size() == 0: new_group.clear_content(); new_group.title = key + " (empty)"
+	else: new_group.title = key
+	return new_group
 
-func homogenize_entries(entries) -> Array:
-	var flat = []
-	var group_types = ["Dictionary"]
-	if entries is Array: flat = entries
-	else: flatten_dict(entries, flat)
-	var out = []
-	for entry: Dictionary in flat:
-		var given_type = entry.type if entry.has("type") else null
-		var inferred_type = type_string(typeof(entry.value)) if (entry.has("value") and entry.value != null) else "unknown"
-		var type
-		if group_types.has(given_type) or group_types.has(inferred_type): type = "group"
-		elif given_type: type = given_type
-		else: type = "text"
-		var data = entry.merged({ "type": type }, true)
-		out.push_front(data)
-	return out
+func record_group_toggle(id: String) -> Callable:
+	return func(new_state): _opened_groups[id] = new_state
 
-func flatten_dict(dict: Dictionary, out_arr: Array):
-	for key in dict:
-		if dict[key] is Dictionary:
-			out_arr.push_front({ "type": type_string(typeof(dict)), "key": key })
-			flatten_dict(dict[key], out_arr)
-		else: out_arr.push_front({ "key": key, "value": dict[key] })
+func group_was_open(id: String):
+	return _opened_groups.has(id) and _opened_groups[id]
+
+func set_group(entry: Dictionary):
+	var key = str(entry.get("key", null))
+	var id = safe_name(str(entry.get("id", key)))
+	var found_group = container.find_child(id, true, false)
+	if !found_group: return
+	if entry.value.size() == 0: found_group.title = key + " (empty)"
+	else: found_group.title = key
+
+func count_entries(entries: Array) -> int:
+	var arr_counter = []
+	var recurse := func(entries: Array, counter: Array, recurse: Callable):
+		for entry: Dictionary in entries:
+			counter.append(0)
+			if get_entry_type(entry) == "group" and entry.value is Array:
+				recurse.call(entry.value, counter, recurse)
+	recurse.call(entries, arr_counter, recurse)
+	return arr_counter.size()
 
 # Remove unsafe characters from name
 func safe_name(unsafe_name: String) -> String:
