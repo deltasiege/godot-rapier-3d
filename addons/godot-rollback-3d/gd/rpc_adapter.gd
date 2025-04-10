@@ -16,11 +16,11 @@ func _remote_ping_back(origin_time: String, local_time: String) -> void:
 	var peer_id = multiplayer.get_remote_sender_id()
 	received_ping_back.emit(peer_id, origin_time, local_time)
 
-func _send_remote_start(peer_id: int, peer_map: PackedByteArray) -> void:
+func _send_remote_start(peer_id: int, peer_map: Array[int]) -> void:
 	_remote_start.rpc_id(peer_id, peer_map)
 
 @rpc("any_peer")
-func _remote_start(peer_map: PackedByteArray) -> void:
+func _remote_start(peer_map: Array[int]) -> void:
 	received_remote_start.emit(peer_map)
 
 func _send_remote_stop(peer_id: int) -> void:

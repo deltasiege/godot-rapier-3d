@@ -4,6 +4,7 @@ use godot::prelude::*;
 use crate::adapters::*;
 use crate::interface::*;
 use crate::network::*;
+use crate::types::*;
 use crate::world::*;
 
 /// Public API interface for Godot Rollback 3D.
@@ -113,7 +114,7 @@ impl GR3D {
         detach_network_adapter(self);
     }
     #[func]
-    pub fn _received_remote_start(&mut self, peer_map: PackedByteArray) {
+    pub fn _received_remote_start(&mut self, peer_map: PeerMap) {
         let _ = on_received_remote_start(self, peer_map);
     }
     #[func]
@@ -129,7 +130,7 @@ impl GR3D {
         let _ = record_rtt(self, peer_id, origin_ts, remote_ts);
     }
     #[func]
-    pub fn _received_tick_data(&mut self, peer_id: i64, data: PackedByteArray) {
+    pub fn _received_tick_data(&mut self, peer_id: i64, data: TickData) {
         on_received_tick_data(self, peer_id, data);
     }
     #[func]

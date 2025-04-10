@@ -1,6 +1,7 @@
 use godot::prelude::*;
 
 use crate::interface::{disconnect_incoming_signals, disconnect_outgoing_signals, GR3D};
+use crate::types::*;
 
 #[derive(GodotClass)]
 #[class(base = Node)]
@@ -62,7 +63,7 @@ impl GR3DNetworkAdapter {
     }
 
     #[func(virtual)]
-    pub fn send_remote_start(&self, _peer_id: i64, _peer_map: PackedByteArray) {
+    pub fn send_remote_start(&self, _peer_id: i64, _peer_map: PeerMap) {
         unimpl("send_remote_start", self);
     }
 
@@ -72,7 +73,7 @@ impl GR3DNetworkAdapter {
     }
 
     #[func(virtual)]
-    pub fn send_tick_data(&self, _peer_id: i64, _data: PackedByteArray) {
+    pub fn send_tick_data(&self, _peer_id: i64, _data: TickData) {
         unimpl("send_tick_data", self);
     }
 

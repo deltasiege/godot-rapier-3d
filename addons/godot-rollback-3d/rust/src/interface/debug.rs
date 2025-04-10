@@ -39,11 +39,24 @@ fn debug_signals(node: &mut Gd<impl Inherits<Object>>, node_name: &str) {
         let name = node_name.to_string();
         let sig_name = signal_name.clone();
         let callable = Callable::from_local_fn(&signal_name, move |args| {
-            log::debug!("Signal emitted: [{:?}][{:?}]: {:?}", name, sig_name, args);
+            log::log!(
+                signal_name_to_log_level(&sig_name),
+                "Signal emitted: [{:?}][{:?}]: {:?}",
+                name,
+                sig_name,
+                args
+            );
             Ok(Variant::nil())
         });
 
         upcast.connect(signal_name.as_str(), &callable);
+    }
+}
+
+fn signal_name_to_log_level(signal_name: &str) -> log::Level {
+    match signal_name {
+        _ if signal_name.contains("ping") => log::Level::Trace,
+        _ => log::Level::Debug,
     }
 }
 
@@ -123,8 +136,10 @@ fn network_dictionary(network: &Network) -> Dictionary {
         remote_peers.set(format!("Remote peer: {}", peer.metadata.id), pd);
     }
 
-    for (idx, peer) in network.remote_peers.iter().enumerate() {
-        peer_map.set(idx as i64, peer.metadata.id);
+    if let Some(pm) = network.peer_map.as_ref() {
+        for (idx, peer_id) in pm.iter_shared().enumerate() {
+            peer_map.set(idx as i64, peer_id);
+        }
     }
 
     dict.set("local_peer", local_peer);

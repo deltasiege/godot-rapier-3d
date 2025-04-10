@@ -12,7 +12,8 @@ pub type InputMap = HashMap<String, Variant>; // Input keys+values for a single 
 // Network
 pub type PeerId = i64; // Godot peer ID
 pub type PeerIndex = usize; // Index of the peer in the host's list of peers
-pub type PeerMap = Vec<PeerId>;
+pub type PeerMap = Array<PeerId>;
+pub type TickData = PackedByteArray; // Serialized tick data
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum RollbackNodeClass {

@@ -3,6 +3,7 @@ use godot::prelude::*;
 
 use crate::interface::GR3D;
 use crate::network::*;
+use crate::types::*;
 
 /// Network host notifies all other peers to start syncing and informs them of their peer index.
 pub fn start_sync(gr3d: &mut GR3D) -> Result<(), ()> {
@@ -18,7 +19,7 @@ pub fn start_sync(gr3d: &mut GR3D) -> Result<(), ()> {
         .max()
         .unwrap_or(0);
 
-    let peer_map = get_peer_map(network);
+    let peer_map = get_peer_map(network)?;
 
     for peer in network.remote_peers.iter() {
         adapter
@@ -49,7 +50,7 @@ pub fn stop_sync(gr3d: &mut GR3D) -> Result<(), ()> {
 }
 
 /// Reset all local data, define local peer and emit sync_started signal.
-pub fn on_received_remote_start(gr3d: &mut GR3D, peer_map: PackedByteArray) -> Result<(), ()> {
+pub fn on_received_remote_start(gr3d: &mut GR3D, peer_map: PeerMap) -> Result<(), ()> {
     let world = &mut gr3d.world;
     let network = &mut gr3d.network;
     validate_net_state(network, "on_received_remote_start", false, false)?;
@@ -66,8 +67,8 @@ pub fn on_received_remote_start(gr3d: &mut GR3D, peer_map: PackedByteArray) -> R
     world.physics.integration_parameters.dt =
         1.0 / (Engine::singleton().get_physics_ticks_per_second() as f32);
 
-    let arr = peer_map_to_godot(peer_map);
-    gr3d.base_mut().emit_signal("peer_map_changed", &[arr]);
+    let pm_var = peer_map.to_variant();
+    gr3d.base_mut().emit_signal("peer_map_changed", &[pm_var]);
     gr3d.base_mut().emit_signal("sync_started", &[]);
 
     Ok(())
