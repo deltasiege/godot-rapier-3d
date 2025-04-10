@@ -189,11 +189,11 @@ func set_group(entry: Dictionary):
 
 func count_entries(entries: Array) -> int:
 	var arr_counter = []
-	var recurse := func(entries: Array, counter: Array, recurse: Callable):
-		for entry: Dictionary in entries:
+	var recurse := func(ents: Array, counter: Array, cb: Callable):
+		for entry: Dictionary in ents:
 			counter.append(0)
 			if get_entry_type(entry) == "group" and entry.value is Array:
-				recurse.call(entry.value, counter, recurse)
+				cb.call(entry.value, counter, cb)
 	recurse.call(entries, arr_counter, recurse)
 	return arr_counter.size()
 

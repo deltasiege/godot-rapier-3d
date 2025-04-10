@@ -22,7 +22,7 @@ GR3DRuntime="*res://addons/godot-rollback-3d/gd/GR3DRuntime.gd"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/collapsible_container/plugin.cfg")
+enabled=PackedStringArray()
 
 [file_customization]
 

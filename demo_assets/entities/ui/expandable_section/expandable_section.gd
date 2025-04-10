@@ -37,6 +37,8 @@ enum State {
 	CLOSING,
 }
 
+signal tweening(state, factor)
+
 var _last_content_size = Vector2.ZERO
 var _tween_fac = 0
 var _state := State.CLOSED
@@ -50,28 +52,20 @@ func on_toggle(callable: Callable):
 	_on_toggle_callbacks.append(callable)
 
 # Call this to provide your own section content from a script
-func replace_content(node: Control, reparent: bool = false):
+func replace_content(node: Control):
 	clear_content()
-	append_content(node, reparent)
+	append_content(node)
 
 # Call this to append your own section content from a script
 # Multiple items will stack vertically
-func append_content(node: Control, reparent: bool = false):
+func append_content(node: Control):
 	if !content_vbox_container: push_error("content_vbox_container is not set"); return
-	if reparent: node.reparent(content_vbox_container)
+	if node.get_parent() != null: node.reparent(content_vbox_container)
 	else: content_vbox_container.add_child(node)
 	node.owner = content_vbox_container
 	set_button_enabled(true)
 	shrink_content_container()
-
-func shrink_content_container():
-	if !is_inside_tree(): return
-	await get_tree().process_frame
-	await get_tree().process_frame
-	content_margin_container.size.y = 0
-	await get_tree().process_frame
-	await get_tree().process_frame
-	content_margin_container.set_position(Vector2(0, 0))
+	watch_child_tweens(node)
 
 # Call this function to delete all content and mark the section as empty
 func clear_content():
@@ -113,11 +107,24 @@ func _ready():
 	setup_button()
 	process_tween_fac()
 	shrink_content_container()
+	watch_child_tweens(self)
+	watch_child_changes()
+
+func _exit_tree():
+	unwatch_child_changes()
 
 func _process(delta):
 	if missing_defs(): return
 	watch_content_size()
 	process_tweens(delta)
+
+func watch_child_changes():
+	self.connect("child_entered_tree", watch_child_tweens)
+	self.connect("child_exiting_tree", unwatch_child_tweens)
+
+func unwatch_child_changes():
+	self.disconnect("child_entered_tree", watch_child_tweens)
+	self.disconnect("child_exiting_tree", unwatch_child_tweens)
 
 func watch_content_size():
 	if _last_content_size != get_content_size(): # Content size change
@@ -127,15 +134,16 @@ func watch_content_size():
 
 func process_tweens(delta):
 	if is_tweening(_state): # Tween
-		var sign := 1
+		var dir := 1
 		match _state:
 			State.OPENING:
-				sign = 1
+				dir = 1
 				if _tween_fac == 1: _state = State.OPENED
 			State.CLOSING:
-				sign = -1
+				dir = -1
 				if _tween_fac == 0: _state = State.CLOSED
-		_tween_fac = clampf(_tween_fac + (sign * (1 / tween_duration) * delta), 0, 1)
+		_tween_fac = clampf(_tween_fac + (dir * (1 / tween_duration) * delta), 0, 1)
+		emit_signal("tweening", _state, _tween_fac)
 		process_tween_fac()
 
 func process_tween_fac():
@@ -172,9 +180,32 @@ func set_stretch_button(stretch: bool):
 func get_content_size() -> Vector2:
 	return Vector2(content_margin_container.size.x, content_margin_container.size.y)
 
+func watch_child_tweens(exp_section: Control):
+	var sub_sections: Array = exp_section.find_children("Expandable Section", "VBoxContainer", true, false)
+	if is_type(exp_section): sub_sections.push_front(exp_section)
+	for child_section in sub_sections:
+		child_section.connect("tweening", on_child_tweening)
+
+func unwatch_child_tweens(exp_section: Control):
+	var sub_sections: Array = exp_section.find_children("Expandable Section", "VBoxContainer", true, false)
+	if is_type(exp_section): sub_sections.push_front(exp_section)
+	for child_section in sub_sections:
+		child_section.disconnect("tweening", on_child_tweening)
+		
+func on_child_tweening(_current_state, _factor):
+	shrink_content_container()
+	fit_mask_to_content()
+
+func shrink_content_container():
+	if !is_inside_tree(): return
+	await get_tree().process_frame
+	await get_tree().process_frame
+	content_margin_container.size.y = 0
+	await get_tree().process_frame
+	await get_tree().process_frame
+	content_margin_container.set_position(Vector2(0, 0))
+
 func fit_mask_to_content(tween_fac: float = 1):
-	# UP TO - mask size needs to take into account that nested sections might be collapsed
-	
 	content_mask.custom_minimum_size.x = content_margin_container.size.x
 	content_mask.custom_minimum_size.y = tween_fac * content_margin_container.size.y
 
@@ -200,3 +231,14 @@ func set_content_margin(new_margin: int):
 
 func missing_defs() -> bool:
 	return content_mask == null or content_margin_container == null or content_vbox_container == null or _state == null
+
+static func is_type(control: Control):
+	return control is VBoxContainer \
+		and control.has_method("on_toggle") \
+		and control.has_method("replace_content") \
+		and control.has_method("append_content") \
+		and control.has_method("shrink_content_container") \
+		and control.has_method("clear_content") \
+		and control.has_method("open") \
+		and control.has_method("close") \
+		and control.has_method("toggle")
