@@ -4,6 +4,7 @@ use crate::interface::GR3D;
 use crate::utils::vector_to_godot;
 use crate::{Network, World};
 
+/// Returns a string with all GR3D debug information.
 pub fn get_debug_string(gr3d: &GR3D) -> GString {
     GString::from(format!(
         "GR3D Debug Data:\n\n{:#?}\n\n{:#?}",
@@ -11,11 +12,39 @@ pub fn get_debug_string(gr3d: &GR3D) -> GString {
     ))
 }
 
+/// Returns a godot dictionary with all GR3D debug information.
 pub fn get_debug_dictionary(gr3d: &GR3D) -> Dictionary {
     let mut dict = Dictionary::new();
     dict.set("world", world_dictionary(&gr3d.world));
     dict.set("network", network_dictionary(&gr3d.network));
     dict
+}
+
+/// Log a debug message when any signal is emitted.
+pub fn debug_all_signals(gr3d: &mut GR3D) {
+    debug_signals(&mut gr3d.base_mut(), "GR3D");
+    if let Some(adapter) = gr3d.network.get_adapter_mut() {
+        debug_signals(adapter, "NetworkAdapter");
+    }
+}
+
+fn debug_signals(node: &mut Gd<impl Inherits<Object>>, node_name: &str) {
+    let upcast = node.upcast_mut::<Object>();
+
+    for signal_name in upcast
+        .get_signal_list()
+        .iter_shared()
+        .map(|dict| dict.get("name").unwrap().to::<String>())
+    {
+        let name = node_name.to_string();
+        let sig_name = signal_name.clone();
+        let callable = Callable::from_local_fn(&signal_name, move |args| {
+            log::debug!("Signal emitted: [{:?}][{:?}]: {:?}", name, sig_name, args);
+            Ok(Variant::nil())
+        });
+
+        upcast.connect(signal_name.as_str(), &callable);
+    }
 }
 
 fn world_dictionary(world: &World) -> Dictionary {

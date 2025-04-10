@@ -33,6 +33,7 @@ fn register_singleton(name: &str, instance: &Gd<impl Inherits<Object>>) {
 /// Unregister the given singleton by name.
 fn unregister_singleton(name: &str) {
     if let Some(singleton) = get_singleton(name) {
+        Engine::singleton().unregister_singleton(name);
         singleton.free();
     }
 }

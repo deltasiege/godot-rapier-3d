@@ -27,9 +27,30 @@ impl Network {
         }
     }
 
+    pub fn add_remote_peer(&mut self, peer_id: i64) {
+        self.remote_peers
+            .push(RemotePeer::new(PeerMetadata::new(peer_id)));
+        log::debug!("Added peer: {}", peer_id);
+    }
+
+    pub fn remove_remote_peer(&mut self, peer_id: i64) {
+        self.remote_peers.retain(|peer| peer.metadata.id != peer_id);
+        log::debug!("Removed peer: {}", peer_id);
+    }
+
     pub fn get_adapter(&self) -> Option<&Gd<GR3DNetworkAdapter>> {
         match self.adapter {
             Some(ref adapter) => Some(adapter),
+            None => {
+                log::error!("Network adapter is not attached");
+                None
+            }
+        }
+    }
+
+    pub fn get_adapter_mut(&mut self) -> Option<&mut Gd<GR3DNetworkAdapter>> {
+        match self.adapter {
+            Some(ref mut adapter) => Some(adapter),
             None => {
                 log::error!("Network adapter is not attached");
                 None
@@ -49,17 +70,6 @@ impl Network {
                 None
             }
         }
-    }
-
-    pub fn add_remote_peer(&mut self, peer_id: i64) {
-        self.remote_peers
-            .push(RemotePeer::new(PeerMetadata::new(peer_id)));
-        log::debug!("Added peer: {}", peer_id);
-    }
-
-    pub fn remove_remote_peer(&mut self, peer_id: i64) {
-        self.remote_peers.retain(|peer| peer.metadata.id != peer_id);
-        log::debug!("Removed peer: {}", peer_id);
     }
 }
 

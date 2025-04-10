@@ -32,8 +32,7 @@ folder_colors={
 "res://demos/": "green",
 "res://docs/": "teal",
 "res://scripts/": "purple",
-"res://test_assets/": "orange",
-"res://tests/": "orange"
+"res://test_assets/": "orange"
 }
 
 [input]

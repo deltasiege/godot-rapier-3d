@@ -1,6 +1,6 @@
 use godot::builtin::PackedByteArray;
 
-use crate::world::*;
+use crate::{interface::GR3D, world::*};
 
 pub struct World {
     pub time: TimeState,
@@ -99,5 +99,20 @@ impl std::fmt::Debug for World {
             .field("physics", &self.physics)
             .field("node_db", &self.node_db)
             .finish()
+    }
+}
+
+pub fn step(gr3d: &mut GR3D, count: i64) {
+    for _ in 0..count {
+        let tick = gr3d.world.time.tick;
+        log::trace!("Executing tick: {}", tick);
+
+        // TODO execute all inputs
+        // log::trace!("Applied inputs for tick {}: {:?}", tick, inputs);
+
+        let _resulting_state = gr3d.world.step();
+
+        // TODO add resulting state to local_peer buffer
+        log::trace!("Tick finished: {}", tick);
     }
 }

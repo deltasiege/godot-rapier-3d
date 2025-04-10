@@ -100,19 +100,19 @@ pub fn attach_network_adapter(gr3d: &mut GR3D, mut adapter: Gd<GR3DNetworkAdapte
     log::debug!("Attaching NetworkAdapter: {:?}", adapter);
     adapter.bind().on_attached();
 
-    let received_ping_cb = gr3d.base().callable("received_ping");
+    let received_ping_cb = gr3d.base().callable("_received_ping");
     adapter.connect("received_ping", &received_ping_cb);
 
-    let received_ping_back_cb = gr3d.base().callable("received_ping_back");
+    let received_ping_back_cb = gr3d.base().callable("_received_ping_back");
     adapter.connect("received_ping_back", &received_ping_back_cb);
 
-    let received_remote_start_cb = gr3d.base().callable("received_remote_start");
+    let received_remote_start_cb = gr3d.base().callable("_received_remote_start");
     adapter.connect("received_remote_start", &received_remote_start_cb);
 
-    let received_remote_stop_cb = gr3d.base().callable("received_remote_stop");
+    let received_remote_stop_cb = gr3d.base().callable("_received_remote_stop");
     adapter.connect("received_remote_stop", &received_remote_stop_cb);
 
-    let received_tick_data_cb = gr3d.base().callable("received_tick_data");
+    let received_tick_data_cb = gr3d.base().callable("_received_tick_data");
     adapter.connect("received_tick_data", &received_tick_data_cb);
 
     // Requires newer version - uncomment when godot-rust 0.2.5 is released

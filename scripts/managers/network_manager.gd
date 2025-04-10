@@ -17,18 +17,18 @@ static func start_sync(tree: Node):
 	if tree.multiplayer.is_server():
 		print(LOG_PREFIX, "start_sync starting..")
 		await tree.get_tree().create_timer(2.0).timeout
-		#GR3D.start_sync()
+		GR3D.start_sync()
 
 static func reset(tree: Node):
 	tree.multiplayer.multiplayer_peer = null
-	#GR3D.stop()
+	GR3D.stop_sync()
 	#GR3D.clear_peers()
 
 static func on_ready(tree: Node):
 	NetworkManager.connect_console(tree)
 	#GR3D.connect("sync_error", func(): NetworkManager.reset(tree))
-	#tree.multiplayer.connect("peer_connected", GR3D.add_peer)
-	#tree.multiplayer.connect("peer_disconnected", GR3D.remove_peer)
+	tree.multiplayer.connect("peer_connected", GR3D.add_peer)
+	tree.multiplayer.connect("peer_disconnected", GR3D.remove_peer)
 
 # Connects print statement functions to connection events
 static func connect_console(tree: Node):

@@ -75,7 +75,7 @@ impl LogWriter for GodotConsoleWriter {
     }
 }
 
-#[derive(Debug, Clone, GodotConvert, Var, Export)]
+#[derive(GodotConvert, Debug, Clone, Var, Export)]
 #[godot(via = GString)]
 pub enum LogLevel {
     Off,
