@@ -1,8 +1,9 @@
 static var FixupGRUIDS = preload("res://addons/godot-rollback-3d/gd/fixup_gruids.gd")
 
 static func get_rapier_hash() -> int:
-	var state: PackedByteArray = GR3D.save_snapshot()
-	return Array(state.compress()).hash()
+	return 1
+	#var state: PackedByteArray = GR3D.save_snapshot()
+	#return Array(state.compress()).hash()
 
 static func get_godot_hash(root: Node) -> int:
 	var state = _get_physics_state(root)

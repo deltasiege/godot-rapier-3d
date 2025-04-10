@@ -20,13 +20,13 @@ pub trait RollbackNode: HasBlueprint + WithBaseField + GodotClass<Base = Node3D>
 
     fn on_enter_editor_tree(&mut self) {
         if let Some(mut gr3d) = get_gr3d() {
-            gr3d.call_deferred("_node_editor_enter", &[self.get_blueprint_variant()]);
+            // gr3d.call_deferred("_node_editor_enter", &[self.get_blueprint_variant()]);
         }
     }
 
     fn on_enter_runtime_tree(&mut self) {
         if let Some(mut gr3d) = get_gr3d() {
-            gr3d.call_deferred("_node_runtime_enter", &[self.get_blueprint_variant()]);
+            // gr3d.call_deferred("_node_runtime_enter", &[self.get_blueprint_variant()]);
         }
     }
 
@@ -39,13 +39,13 @@ pub trait RollbackNode: HasBlueprint + WithBaseField + GodotClass<Base = Node3D>
 
     fn on_exit_editor_tree(&mut self) {
         if let Some(mut gr3d) = get_gr3d() {
-            gr3d.call_deferred("_node_editor_exit", &[self.get_blueprint_variant()]);
+            // gr3d.call_deferred("_node_editor_exit", &[self.get_blueprint_variant()]);
         }
     }
 
     fn on_exit_runtime_tree(&mut self) {
         if let Some(mut gr3d) = get_gr3d() {
-            gr3d.call_deferred("_node_runtime_exit", &[self.get_blueprint_variant()]);
+            // gr3d.call_deferred("_node_runtime_exit", &[self.get_blueprint_variant()]);
         }
     }
 
