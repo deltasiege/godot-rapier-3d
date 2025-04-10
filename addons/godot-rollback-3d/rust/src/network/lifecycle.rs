@@ -85,7 +85,7 @@ pub fn on_received_remote_stop(gr3d: &mut GR3D) -> Result<(), ()> {
 
     network.started = false;
     network.host_starting = false;
-    network.local_peer = None;
+    network.local_peer.metadata = None;
 
     network.remote_peers.iter_mut().for_each(|peer| {
         peer.reset();

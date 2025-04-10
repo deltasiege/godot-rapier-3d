@@ -1,9 +1,10 @@
 use godot::prelude::*;
 
 use crate::network::*;
+use crate::types::*;
 
 /// Array of all peer IDs known to the host peer, used to uniquely define the peer_index of each peer
-pub fn get_peer_map(network: &Network) -> Result<Array<i64>, ()> {
+pub fn get_peer_map(network: &Network) -> Result<PeerMap, ()> {
     match network.get_adapter() {
         Some(adapter) => {
             let mut peer_map = Array::new();
@@ -22,8 +23,8 @@ pub fn get_peer_map(network: &Network) -> Result<Array<i64>, ()> {
     }
 }
 
-/// Decode the peer map data and update the local and remote peers accordingly.
-pub fn apply_peer_map_to_network(network: &mut Network, peer_map: Array<i64>) -> Result<(), ()> {
+/// Update the local and remote peers according to the given PeerMap.
+pub fn apply_peer_map_to_network(network: &mut Network, peer_map: PeerMap) -> Result<(), ()> {
     let adapter = match network.get_adapter() {
         Some(adapter) => adapter,
         None => return Err(()),
@@ -34,9 +35,7 @@ pub fn apply_peer_map_to_network(network: &mut Network, peer_map: Array<i64>) ->
 
     for (idx, peer_id) in peer_map.iter_shared().enumerate() {
         if peer_id == local_id {
-            network.local_peer = Some(LocalPeer::new(PeerMetadata::new_with_idx(
-                peer_id, idx as i64,
-            )));
+            network.local_peer.metadata = Some(PeerMetadata::new_with_idx(peer_id, idx as i64));
         } else if let Some(peer) = network.get_remote_peer_mut(peer_id) {
             peer.metadata.id = peer_id;
             peer.metadata.idx = Some(idx as i64);

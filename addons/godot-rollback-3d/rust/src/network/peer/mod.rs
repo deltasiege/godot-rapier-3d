@@ -4,7 +4,7 @@ mod metadata;
 mod peer_map;
 mod remote_peer;
 
-pub use buffers::PeerBuffers;
+pub use buffers::*;
 pub use local_peer::LocalPeer;
 pub use metadata::PeerMetadata;
 pub use peer_map::*;

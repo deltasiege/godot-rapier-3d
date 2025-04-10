@@ -2,35 +2,43 @@ use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 use serde::{Deserialize, Serialize};
 
+use crate::interface::GR3D;
 use crate::types::*;
 use crate::utils::*;
 
 #[derive(GodotClass)]
 #[class(base = Node)]
 /// Base class that must be overriden by GDScript
-/// User must define:
-/// - all_inputs - an array of all actions that can be used by rollback nodes
-/// - get_input - a function that returns some value for every possible action specified in all_inputs
 /// Responsible collecting and serializing/deserializing inputs
+/// User must define functions:
+/// - get_input_list
+/// - get_input
 pub struct GR3DInputAdapter {
-    pub all_inputs: Vec<String>,
     base: Base<Node>,
 }
 
 #[godot_api]
 impl INode for GR3DInputAdapter {
     fn init(base: Base<Node>) -> Self {
-        Self {
-            all_inputs: Vec::new(),
-            base,
-        }
+        Self { base }
     }
 }
 
 #[godot_api]
 impl GR3DInputAdapter {
     #[func(virtual)]
-    pub fn get_input(&self) -> Variant {
+    /// Must be provided. Returns a constant array of all actions that can be used by rollback nodes. Must not change at runtime.
+    fn get_input_list(&self) -> Vec<GString> {
+        log::error!(
+            "UNIMPLEMENTED: get_input_list on InputAdapter: {:?}",
+            self.base().get_name()
+        );
+        Vec::new()
+    }
+
+    #[func(virtual)]
+    /// Must be provided. Returns some variant value for every possible action specified in all_inputs.
+    fn get_input(&self, _input_key: GString) -> Variant {
         log::error!(
             "UNIMPLEMENTED: get_input on InputAdapter: {:?}",
             self.base().get_name()
@@ -38,17 +46,25 @@ impl GR3DInputAdapter {
         Variant::nil()
     }
 
-    fn get_inputs(&self) -> InputMap {
-        let mut inputs = HashMap::default();
-        for input_key in self.all_inputs.iter() {
-            let input_value = self.get_input();
-            inputs.insert(input_key.clone(), input_value);
-        }
-
-        inputs
+    /// Returns all current inputs as an InputMap.
+    pub fn get_inputs(&mut self) -> InputMap {
+        let input_list = self
+            .base_mut()
+            .call("get_input_list", &[])
+            .to::<Vec<GString>>();
+        input_list
+            .iter()
+            .map(|input_key| {
+                (
+                    input_key.clone(),
+                    self.base_mut().call("get_input", &[input_key.to_variant()]),
+                )
+            })
+            .collect()
     }
 
-    fn get_ser_inputs(&self) -> Vec<u8> {
+    /// Returns all current inputs as a serialized byte array.
+    pub fn get_ser_inputs(&mut self) -> Vec<u8> {
         let mut sorted_inputs: Vec<_> = self.get_inputs().into_iter().collect();
         sorted_inputs.sort_by(|a, b| a.0.cmp(&b.0));
 
@@ -60,7 +76,8 @@ impl GR3DInputAdapter {
         encode_or_none(&values).unwrap_or_default()
     }
 
-    fn deserialize_inputs(&self, ser_inputs: Vec<u8>) -> InputMap {
+    /// Deserializes the inputs from a byte array and returns an InputMap.
+    pub fn deserialize_inputs(&mut self, ser_inputs: Vec<u8>) -> InputMap {
         let mut sorted_inputs: Vec<_> = self.get_inputs().into_iter().collect();
         sorted_inputs.sort_by(|a, b| a.0.cmp(&b.0));
 
@@ -85,6 +102,21 @@ impl GR3DInputAdapter {
         }
         inputs
     }
+}
+
+/// Attach a input adapter to the GR3D instance and connect all signals to the GR3D singleton.
+pub fn attach_input_adapter(gr3d: &mut GR3D, adapter: Gd<GR3DInputAdapter>) {
+    log::debug!("Attaching InputAdapter: {:?}", adapter);
+    gr3d.network.local_peer.input_adapter = Some(adapter.clone());
+}
+
+/// Detach the input adapter and disconnect all signals from the GR3D singleton.
+pub fn detach_input_adapter(gr3d: &mut GR3D) {
+    log::debug!(
+        "Detaching InputAdapter: {:?}",
+        gr3d.network.local_peer.input_adapter
+    );
+    gr3d.network.local_peer.input_adapter = None;
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

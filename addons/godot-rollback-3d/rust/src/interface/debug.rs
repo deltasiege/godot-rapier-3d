@@ -96,19 +96,22 @@ fn network_dictionary(network: &Network) -> Dictionary {
     dict.set("host_starting", network.host_starting);
     dict.set("adapter", class_or_none(&network.adapter));
 
-    if let Some(lp) = &network.local_peer {
-        local_peer.set("id", lp.metadata.id);
-        local_peer.set("idx", lp.metadata.idx.unwrap_or(-1));
-        local_peer.set("is_spectator", lp.metadata.is_spectator);
-        local_peer.set("input_adapter", class_or_none(&lp.input_adapter));
-
-        let mut buffers = Dictionary::new();
-        buffers.set("inputs", lp.buffers.inputs.len() as i64);
-        buffers.set("ser_inputs", lp.buffers.ser_inputs.len() as i64);
-        buffers.set("input_hashes", lp.buffers.input_hashes.len() as i64);
-        buffers.set("world_snapshots", lp.world_snapshots.len() as i64);
-        buffers.set("world_hashes", lp.buffers.world_hashes.len() as i64);
+    let lp = &network.local_peer;
+    if let Some(meta) = &lp.metadata {
+        local_peer.set("id", meta.id);
+        local_peer.set("idx", meta.idx.unwrap_or(-1));
+        local_peer.set("is_spectator", meta.is_spectator);
     }
+    local_peer.set("input_adapter", class_or_none(&lp.input_adapter));
+
+    let mut buffers = Dictionary::new();
+    buffers.set("inputs", lp.buffers.inputs.len() as i64);
+    buffers.set("ser_inputs", lp.buffers.ser_inputs.len() as i64);
+    buffers.set("input_hashes", lp.buffers.input_hashes.len() as i64);
+    buffers.set("world_snapshots", lp.world_snapshots.len() as i64);
+    buffers.set("world_hashes", lp.buffers.world_hashes.len() as i64);
+
+    local_peer.set("buffers", buffers);
 
     for peer in network.remote_peers.iter() {
         let mut pd = Dictionary::new();
@@ -132,6 +135,8 @@ fn network_dictionary(network: &Network) -> Dictionary {
         buffers.set("ser_inputs", peer.buffers.ser_inputs.len() as i64);
         buffers.set("input_hashes", peer.buffers.input_hashes.len() as i64);
         buffers.set("world_hashes", peer.buffers.world_hashes.len() as i64);
+
+        pd.set("buffers", buffers);
 
         remote_peers.set(format!("Remote peer: {}", peer.metadata.id), pd);
     }

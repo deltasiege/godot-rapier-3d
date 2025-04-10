@@ -7,7 +7,7 @@ pub type Tick = usize;
 pub type GRUID = (u8, u32); // Godot Rollback unique identifier (peer_index, generation)
 pub type RapierHandle = (u32, u32); // Rapier unique identifier (id, generation)
 
-pub type InputMap = HashMap<String, Variant>; // Input keys+values for a single tick
+pub type InputMap = HashMap<GString, Variant>; // Input keys+values for a single tick
 
 // Network
 pub type PeerId = i64; // Godot peer ID

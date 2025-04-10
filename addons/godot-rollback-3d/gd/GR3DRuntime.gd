@@ -11,7 +11,8 @@ var pending_actions = []
 
 @onready var DrawLine = preload("./draw_line.gd").new()
 @onready var PingTimer = preload("./ping_timer.gd").new()
-const DEFAULT_NETWORK_ADAPTER_PATH = "res://addons/godot-rollback-3d/gd/rpc_adapter.gd"
+const DEFAULT_NETWORK_ADAPTER_PATH = "res://addons/godot-rollback-3d/gd/adapters/rpc_adapter.gd"
+const DEFAULT_INPUT_ADAPTER_PATH = "res://addons/godot-rollback-3d/gd/adapters/example_input_adapter.gd"
 
 func _ready():
 	if Engine.is_editor_hint(): return
@@ -47,12 +48,18 @@ func toggle_pause(_paused: bool):
 func _add_child_modules():
 	add_child(DrawLine)
 	add_child(PingTimer)
-	_add_network_adapter()
+	_attach_network_adapter()
+	_attach_input_adapter()
 
-func _add_network_adapter():
+func _attach_network_adapter():
 	var network_adapter = load(DEFAULT_NETWORK_ADAPTER_PATH).new()
 	add_child(network_adapter)
 	GR3D._attach_network_adapter(network_adapter)
+
+func _attach_input_adapter():
+	var input_adapter = load(DEFAULT_INPUT_ADAPTER_PATH).new()
+	add_child(input_adapter)
+	GR3D._attach_input_adapter(input_adapter)
 
 func _draw_line(origin: Vector3, end: Vector3):
 	DrawLine.draw_line(origin, end, Color.WHITE)

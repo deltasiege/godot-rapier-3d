@@ -1,5 +1,3 @@
-use core::panic;
-
 use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
@@ -10,7 +8,7 @@ use crate::utils::get_hash;
 
 #[derive(Debug)]
 pub struct LocalPeer {
-    pub metadata: PeerMetadata,
+    pub metadata: Option<PeerMetadata>,
     pub buffers: PeerBuffers,
 
     pub input_adapter: Option<Gd<GR3DInputAdapter>>, // The input adapter for this peer
@@ -18,22 +16,22 @@ pub struct LocalPeer {
 }
 
 impl LocalPeer {
-    pub fn new(metadata: PeerMetadata) -> Self {
-        if metadata.idx.is_none() {
-            let msg = format!(
-                "Local peer index must be known on creation. Peer ID: {}",
-                metadata.id
-            );
-            log::error!("{}", msg);
-            panic!("{}", msg);
-        }
-
+    pub fn new() -> Self {
         Self {
-            metadata,
+            metadata: None,
             buffers: PeerBuffers::default(),
-
             input_adapter: None,
             world_snapshots: HashMap::default(),
+        }
+    }
+
+    pub fn get_adapter(&self) -> Option<&Gd<GR3DInputAdapter>> {
+        match self.input_adapter {
+            Some(ref adapter) => Some(adapter),
+            None => {
+                log::error!("Input adapter is not set");
+                None
+            }
         }
     }
 

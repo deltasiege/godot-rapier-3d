@@ -114,6 +114,14 @@ impl GR3D {
         detach_network_adapter(self);
     }
     #[func]
+    fn _attach_input_adapter(&mut self, adapter: Gd<GR3DInputAdapter>) {
+        attach_input_adapter(self, adapter);
+    }
+    #[func]
+    fn _detach_input_adapter(&mut self) {
+        detach_input_adapter(self);
+    }
+    #[func]
     pub fn _received_remote_start(&mut self, peer_map: PeerMap) {
         let _ = on_received_remote_start(self, peer_map);
     }

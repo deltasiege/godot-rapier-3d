@@ -9,6 +9,7 @@ extends Control
 
 var _last_entries_count: int
 var _opened_groups = {}
+var _existing_ids = []
 
 # Public ---
 
@@ -63,6 +64,7 @@ func _ready(): theme = theme_res
 
 func convert_data_to_entries(data: Dictionary) -> Array:
 	var entries = []
+	_existing_ids.clear()
 	recurse_data(data, entries)
 	return entries
 
@@ -71,8 +73,15 @@ func recurse_data(data: Dictionary, out_arr: Array):
 		if data[key] is Dictionary:
 			var children = []
 			recurse_data(data[key], children)
-			out_arr.append({ "type": "group", "key": key, "value": children })
-		else: out_arr.append({ "key": key, "value": data[key] })
+			out_arr.append({ "id": get_unique_id(str(key)), "type": "group", "key": key, "value": children })
+		else: out_arr.append({ "id": get_unique_id(str(key)), "key": key, "value": data[key] })
+
+func get_unique_id(key: String) -> String:
+	var counter = 0
+	while _existing_ids.has(key + "_" + str(counter)):
+		counter += 1
+	_existing_ids.append(key + "_" + str(counter))
+	return key + "_" + str(counter)
 
 var group_types = ["Dictionary"]
 func get_entry_type(entry: Dictionary) -> String:

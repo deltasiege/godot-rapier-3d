@@ -11,7 +11,7 @@ pub struct Network {
     pub host_starting: bool,
     pub adapter: Option<Gd<GR3DNetworkAdapter>>,
     pub peer_map: Option<PeerMap>,
-    pub local_peer: Option<LocalPeer>,
+    pub local_peer: LocalPeer,
     pub remote_peers: Vec<RemotePeer>,
 }
 
@@ -22,7 +22,7 @@ impl Network {
             host_starting: false,
             adapter: None,
             peer_map: None,
-            local_peer: None,
+            local_peer: LocalPeer::new(),
             remote_peers: Vec::new(),
         }
     }
@@ -76,7 +76,13 @@ impl Network {
 pub fn network_physics_process(gr3d: &mut GR3D) {
     // TODO
     record_all_advantages(gr3d, false);
-    // local_peer.record_inputs()
+
+    capture_current_inputs(
+        &mut gr3d.network.local_peer.buffers,
+        gr3d.world.time.tick,
+        &mut gr3d.network.local_peer.input_adapter,
+    );
+
     // send_updates_to_all_peers
 }
 
