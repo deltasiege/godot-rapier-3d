@@ -10,9 +10,8 @@ use crate::utils::get_hash;
 pub struct LocalPeer {
     pub metadata: Option<PeerMetadata>,
     pub buffers: PeerBuffers,
-
+    pub world_snapshots: HashMap<Tick, Vec<u8>>, // The world snapshots of this peer
     pub input_adapter: Option<Gd<GR3DInputAdapter>>, // The input adapter for this peer
-    pub world_snapshots: HashMap<Tick, Vec<u8>>,     // The world snapshots of this peer
 }
 
 impl LocalPeer {
@@ -20,8 +19,8 @@ impl LocalPeer {
         Self {
             metadata: None,
             buffers: PeerBuffers::default(),
-            input_adapter: None,
             world_snapshots: HashMap::default(),
+            input_adapter: None,
         }
     }
 

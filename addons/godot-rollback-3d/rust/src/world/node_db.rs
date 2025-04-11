@@ -1,18 +1,27 @@
+use godot::classes::packed_scene;
+use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
-use crate::nodes::NodeBlueprint;
+use crate::interface::GR3D;
+use crate::nodes::{NodeBlueprint, RollbackNode};
 use crate::types::*;
 
 #[derive(Debug)]
 pub struct NodeDatabase {
+    pub gruid_counter: u32,
     pub nodes: HashMap<GRUID, HashMap<Tick, Option<NodeBlueprint>>>,
 }
 
 impl NodeDatabase {
     pub fn new() -> Self {
         Self {
+            gruid_counter: 0,
             nodes: HashMap::default(),
         }
+    }
+
+    pub fn create_gruid(&self, peer_index: PeerIndex) -> GRUID {
+        return (peer_index, self.gruid_counter);
     }
 
     // TODO pull off Gd<> reference instead
@@ -80,6 +89,43 @@ impl NodeDatabase {
 
         for gruid in gruids_to_remove {
             self.nodes.swap_remove(&gruid);
+        }
+    }
+}
+
+// May not need this! https://docs.godotengine.org/en/stable/classes/class_node.html#class-node-property-scene-file-path
+
+// this should definitely be disabled during rollback so nodes aren't recreated
+pub fn spawn_node(
+    gr3d: &mut GR3D,
+    name: String,
+    parent_path: String,
+    resource_path: String,
+) -> Option<Gd<Node3D>> {
+    if !gr3d.network.started {
+        log::error!("Cannot spawn node '{}' before network has started", name);
+        return None;
+    }
+
+    let peer_index = gr3d.network.local_peer.metadata.clone()?.idx?;
+    let gruid = gr3d.world.node_db.create_gruid(peer_index);
+    let packed_scene = load_scene(&resource_path)?;
+
+    let foo = PackedScene::instantiate(&packed_scene);
+
+    None
+}
+
+fn load_scene(scene_path: &String) -> Option<Gd<PackedScene>> {
+    load_path::<PackedScene>(scene_path)
+}
+
+fn load_path<T: Inherits<Resource>>(resource_path: &String) -> Option<Gd<PackedScene>> {
+    match try_load(resource_path) {
+        Ok(packed_scene) => Some(packed_scene),
+        Err(err) => {
+            log::error!("Failed to load packed scene '{}': {}", resource_path, err);
+            None
         }
     }
 }

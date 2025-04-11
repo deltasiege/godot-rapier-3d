@@ -1,9 +1,11 @@
+use crate::types::*;
+
 /// Data describing a peer in the network.
 #[derive(Debug, Clone)]
 pub struct PeerMetadata {
-    pub id: i64,            // The unique identifier for this peer (peer_id in Godot)
-    pub idx: Option<i64>,   // The unique index of this peer in the host peer's list of peers
-    pub is_spectator: bool, // Whether this peer is a spectator
+    pub id: PeerId,             // The unique identifier for this peer (peer_id in Godot)
+    pub idx: Option<PeerIndex>, // The unique index of this peer in the host peer's list of peers
+    pub is_spectator: bool,     // Whether this peer is a spectator
 }
 
 impl PeerMetadata {
@@ -15,7 +17,7 @@ impl PeerMetadata {
         }
     }
 
-    pub fn new_with_idx(id: i64, idx: i64) -> Self {
+    pub fn new_with_idx(id: PeerId, idx: PeerIndex) -> Self {
         Self {
             id,
             idx: Some(idx),

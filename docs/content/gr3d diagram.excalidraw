@@ -6,8 +6,8 @@
     {
       "id": "0KnrND3ZX0tIjNc3Sgt-r",
       "type": "text",
-      "x": -5046.960206166508,
-      "y": 1057.216170644107,
+      "x": -5049.817349023651,
+      "y": 1058.6447420726786,
       "width": 935,
       "height": 1075,
       "angle": 0,
@@ -23,8 +23,8 @@
       "index": "a7",
       "roundness": null,
       "seed": 437509830,
-      "version": 1499,
-      "versionNonce": 1275078317,
+      "version": 1529,
+      "versionNonce": 1471516443,
       "isDeleted": false,
       "boundElements": [
         {
@@ -32,7 +32,7 @@
           "type": "arrow"
         }
       ],
-      "updated": 1744080854872,
+      "updated": 1744386512173,
       "link": null,
       "locked": false,
       "text": "# GR3D\n    - World\n    - Network\n    - Logger\n\n---\n\n#[func]\nfn step():\n    let snapshot = World.step()\n    Network.local_peer.record_world_snapshot(snapshot)\n\n#[func]\nfn spawn( name, parent path, packed scene) -> Gd<spawned node>:\n    Network -> create_gruid()\n    spawns the provided packed scene at the parent path and renames to the given name\n    attaches generated GRUID to that node\n\n    then we call WorldDatabase record_spawn and pass in the created node\n\n#[func]\nfn despawn( Gd<RollbackObject> ):\n    NodeDatabase -> record_despawn(Gd<RollbackObject>)\n    queue_free the node\n\n\n--- private\n\n#[func]\nfn _on_physics_process():\n    Network.record_all_advantages()\n    Network.local_peer.record_inputs()\n    Network.send_updates_to_all_peers( World.time.tick )\n\n#[func]\nfn _node_editor_enter():\n    Assign ambient GRUID to the node\n\n#[func]\nfn _attach/detach_network_adapter():\n\n#[func]\nfn _attach/detach_input_adapter():",
@@ -90,9 +90,9 @@
     {
       "id": "kyoCrVtRVORVpx08C5qLE",
       "type": "text",
-      "x": -620.4761904761917,
-      "y": 2968.571428571429,
-      "width": 319,
+      "x": -1032.4761904761917,
+      "y": 2872.571428571429,
+      "width": 275,
       "height": 100,
       "angle": 0,
       "strokeColor": "#1e1e1e",
@@ -107,8 +107,8 @@
       "index": "aG",
       "roundness": null,
       "seed": 967342170,
-      "version": 602,
-      "versionNonce": 1115547299,
+      "version": 645,
+      "versionNonce": 1287120757,
       "isDeleted": false,
       "boundElements": [
         {
@@ -116,16 +116,16 @@
           "type": "arrow"
         }
       ],
-      "updated": 1744008068446,
+      "updated": 1744342697628,
       "link": null,
       "locked": false,
-      "text": "UpdateFrame\n    - tick: usize\n    - ser_inputs: Vec<u8>\n    - world_hash: Option<u64>",
+      "text": "UpdateFrame\n    - tick: usize\n    - ser_inputs: Vec<u8>\n    - world_hash: u64",
       "fontSize": 20,
       "fontFamily": 8,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "UpdateFrame\n    - tick: usize\n    - ser_inputs: Vec<u8>\n    - world_hash: Option<u64>",
+      "originalText": "UpdateFrame\n    - tick: usize\n    - ser_inputs: Vec<u8>\n    - world_hash: u64",
       "autoResize": true,
       "lineHeight": 1.25
     },
@@ -216,8 +216,8 @@
     {
       "id": "BM84FnDL4TY6FdUWQe7up",
       "type": "text",
-      "x": -1452.1904761904766,
-      "y": 2942.904761904763,
+      "x": -1652.1904761904766,
+      "y": 2852.904761904763,
       "width": 374,
       "height": 100,
       "angle": 0,
@@ -233,8 +233,8 @@
       "index": "aT",
       "roundness": null,
       "seed": 229850169,
-      "version": 527,
-      "versionNonce": 876141027,
+      "version": 535,
+      "versionNonce": 2025999925,
       "isDeleted": false,
       "boundElements": [
         {
@@ -242,7 +242,7 @@
           "type": "arrow"
         }
       ],
-      "updated": 1744008068446,
+      "updated": 1744342697628,
       "link": null,
       "locked": false,
       "text": "UpdateMessage\n    - creation tick\n    - frames: Vec<UpdateFrame>\n    - requested_frames: Vec<usize>",
@@ -974,10 +974,10 @@
     {
       "id": "gI9yDw8f8eIQUNGrt-Elu",
       "type": "arrow",
-      "x": -1067.4337938762374,
-      "y": 3008.833237974999,
-      "width": 442.90476190476124,
-      "height": 5.500146971447975,
+      "x": -1267.4337938762374,
+      "y": 2916.994911218596,
+      "width": 230.90476190476124,
+      "height": 7.646181994783092,
       "angle": 0,
       "strokeColor": "#1e1e1e",
       "backgroundColor": "transparent",
@@ -991,11 +991,11 @@
       "index": "b00",
       "roundness": null,
       "seed": 663278436,
-      "version": 562,
-      "versionNonce": 1264491341,
+      "version": 624,
+      "versionNonce": 421295643,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1744008068695,
+      "updated": 1744342697673,
       "link": null,
       "locked": false,
       "points": [
@@ -1004,19 +1004,19 @@
           0
         ],
         [
-          442.90476190476124,
-          -5.500146971447975
+          230.90476190476124,
+          -7.646181994783092
         ]
       ],
       "lastCommittedPoint": null,
       "startBinding": {
         "elementId": "BM84FnDL4TY6FdUWQe7up",
-        "focus": 0.35136666464434047,
+        "focus": 0.3672862373704536,
         "gap": 10.756682314239242
       },
       "endBinding": {
         "elementId": "kyoCrVtRVORVpx08C5qLE",
-        "focus": 0.3322268695921212,
+        "focus": 0.32830501349349295,
         "gap": 4.052841495284383
       },
       "startArrowhead": null,
@@ -1250,7 +1250,7 @@
       "version": 605,
       "versionNonce": 241555981,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1744080842942,
       "link": null,
       "locked": false,
@@ -1267,10 +1267,10 @@
     {
       "id": "6LvsXZVRwHijBvQyxLioN",
       "type": "arrow",
-      "x": -5076.915189885365,
-      "y": 1188.9597817230258,
-      "width": 605.9579512751561,
-      "height": 36.44866175128914,
+      "x": -5079.772332742509,
+      "y": 1190.3088109737873,
+      "width": 603.1008084180112,
+      "height": 35.51526995320364,
       "angle": 0,
       "strokeColor": "#1e1e1e",
       "backgroundColor": "transparent",
@@ -1284,11 +1284,11 @@
       "index": "b0C",
       "roundness": null,
       "seed": 610616675,
-      "version": 732,
-      "versionNonce": 1073793293,
+      "version": 760,
+      "versionNonce": 1511844117,
       "isDeleted": false,
-      "boundElements": null,
-      "updated": 1744080854872,
+      "boundElements": [],
+      "updated": 1744386505371,
       "link": null,
       "locked": false,
       "points": [
@@ -1297,8 +1297,8 @@
           0
         ],
         [
-          -605.9579512751561,
-          36.44866175128914
+          -603.1008084180112,
+          35.51526995320364
         ]
       ],
       "lastCommittedPoint": null,
@@ -1341,12 +1341,7 @@
       "version": 2112,
       "versionNonce": 1516128451,
       "isDeleted": false,
-      "boundElements": [
-        {
-          "id": "nAVFprauYOECRonTsPLXp",
-          "type": "arrow"
-        }
-      ],
+      "boundElements": [],
       "updated": 1744007211987,
       "link": null,
       "locked": false,
@@ -1415,7 +1410,7 @@
       "version": 613,
       "versionNonce": 162833123,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1744008115721,
       "link": null,
       "locked": false,
@@ -1452,7 +1447,7 @@
       "version": 2325,
       "versionNonce": 730978051,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1744030515589,
       "link": null,
       "locked": false,
@@ -1489,7 +1484,7 @@
       "version": 44,
       "versionNonce": 344982403,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1744011278542,
       "link": null,
       "locked": false,

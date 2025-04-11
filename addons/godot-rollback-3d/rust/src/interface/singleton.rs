@@ -4,6 +4,7 @@ use godot::prelude::*;
 use crate::adapters::*;
 use crate::interface::*;
 use crate::network::*;
+use crate::nodes::RollbackNode;
 use crate::types::*;
 use crate::utils::try_wrap_bytes;
 use crate::world::*;
@@ -40,11 +41,6 @@ impl GR3D {
     }
 
     #[func]
-    fn _on_physics_process(&mut self, step_world: bool) {
-        on_physics_process(self, step_world);
-    }
-
-    #[func]
     fn save_snapshot(&mut self) -> PackedByteArray {
         try_wrap_bytes(self.world.save_snapshot())
     }
@@ -53,7 +49,23 @@ impl GR3D {
         self.world.load_snapshot(snapshot.to_vec());
     }
 
+    #[func]
+    fn _on_physics_process(&mut self, step_world: bool) {
+        on_physics_process(self, step_world);
+    }
+
     // Nodes ---------------------------------
+
+    #[func]
+    fn spawn(
+        &mut self,
+        name: String,
+        parent_path: String,
+        resource_path: String,
+    ) -> Option<Gd<Node3D>> {
+        spawn_node(self, name, parent_path, resource_path);
+        None
+    }
 
     #[func]
     fn _node_editor_enter(&mut self, blueprint: Dictionary) {
