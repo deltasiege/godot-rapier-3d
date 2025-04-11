@@ -1,5 +1,5 @@
 /// Data describing a peer in the network.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PeerMetadata {
     pub id: i64,            // The unique identifier for this peer (peer_id in Godot)
     pub idx: Option<i64>,   // The unique index of this peer in the host peer's list of peers

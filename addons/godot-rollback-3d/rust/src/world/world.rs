@@ -1,5 +1,3 @@
-use godot::builtin::PackedByteArray;
-
 use crate::{interface::GR3D, world::*};
 
 pub struct World {
@@ -63,11 +61,11 @@ impl World {
         WorldSnapshot::from_world(self).try_to_bytes()
     }
 
-    /// Convert a PackedByteArray into a WorldSnapshot and then restore it
-    pub fn load_snapshot(&mut self, snapshot: PackedByteArray) {
-        match WorldSnapshot::try_from_bytes(&snapshot.to_vec()) {
-            Some(snapshot) => self.restore_snapshot(snapshot, false),
-            None => log::error!("Failed to load snapshot from PackedByteArray"),
+    /// Convert bytes into a WorldSnapshot and then restore it
+    pub fn load_snapshot(&mut self, snapshot: Vec<u8>) {
+        log::trace!("Decoding snapshot of length: {}", snapshot.len());
+        if let Some(snapshot) = WorldSnapshot::try_from_bytes(&snapshot) {
+            self.restore_snapshot(snapshot, false);
         }
     }
 
@@ -104,15 +102,18 @@ impl std::fmt::Debug for World {
 
 pub fn step(gr3d: &mut GR3D, count: i64) {
     for _ in 0..count {
-        let tick = gr3d.world.time.tick;
+        let tick = gr3d.world.time.tick.clone();
         log::trace!("Executing tick: {}", tick);
 
         // TODO execute all inputs
         // log::trace!("Applied inputs for tick {}: {:?}", tick, inputs);
 
-        let _resulting_state = gr3d.world.step();
+        if let Some(snapshot) = gr3d.world.step() {
+            gr3d.network
+                .local_peer
+                .record_world_snapshot(tick, snapshot);
+        }
 
-        // TODO add resulting state to local_peer buffer
         log::trace!("Tick finished: {}", tick);
     }
 }

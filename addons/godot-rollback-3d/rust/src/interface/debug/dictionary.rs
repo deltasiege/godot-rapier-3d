@@ -20,46 +20,6 @@ pub fn get_debug_dictionary(gr3d: &GR3D) -> Dictionary {
     dict
 }
 
-/// Log a debug message when any signal is emitted.
-pub fn debug_all_signals(gr3d: &mut GR3D) {
-    debug_signals(&mut gr3d.base_mut(), "GR3D");
-    if let Some(adapter) = gr3d.network.get_adapter_mut() {
-        debug_signals(adapter, "NetworkAdapter");
-    }
-}
-
-fn debug_signals(node: &mut Gd<impl Inherits<Object>>, node_name: &str) {
-    let upcast = node.upcast_mut::<Object>();
-
-    for signal_name in upcast
-        .get_signal_list()
-        .iter_shared()
-        .map(|dict| dict.get("name").unwrap().to::<String>())
-    {
-        let name = node_name.to_string();
-        let sig_name = signal_name.clone();
-        let callable = Callable::from_local_fn(&signal_name, move |args| {
-            log::log!(
-                signal_name_to_log_level(&sig_name),
-                "Signal emitted: [{:?}][{:?}]: {:?}",
-                name,
-                sig_name,
-                args
-            );
-            Ok(Variant::nil())
-        });
-
-        upcast.connect(signal_name.as_str(), &callable);
-    }
-}
-
-fn signal_name_to_log_level(signal_name: &str) -> log::Level {
-    match signal_name {
-        _ if signal_name.contains("ping") => log::Level::Trace,
-        _ => log::Level::Debug,
-    }
-}
-
 fn world_dictionary(world: &World) -> Dictionary {
     let mut dict = Dictionary::new();
     let mut time = Dictionary::new();
@@ -121,10 +81,10 @@ fn network_dictionary(network: &Network) -> Dictionary {
         pd.set("rtt", peer.rtt as i64);
         pd.set("last_ping_received", peer.last_ping_received as i64);
         pd.set("time_delta", peer.time_delta);
-        let lrtr = peer.latest_remote_tick_received;
-        pd.set("latest_remote_tick_received", lrtr as i64);
-        let lltr = peer.latest_local_tick_requested;
-        pd.set("latest_local_tick_requested", lltr as i64);
+        let lrt = peer.get_lastest_received_tick();
+        pd.set("latest_received_tick", lrt as i64);
+        let lrqt = peer.get_latest_requested_tick();
+        pd.set("latest_requested_tick", lrqt as i64);
         pd.set("remote_lag", peer.remote_lag);
         pd.set("local_lag", peer.local_lag);
         pd.set("calculated_advantage", peer.calculated_advantage);

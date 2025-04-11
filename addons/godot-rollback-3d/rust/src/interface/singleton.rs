@@ -5,6 +5,7 @@ use crate::adapters::*;
 use crate::interface::*;
 use crate::network::*;
 use crate::types::*;
+use crate::utils::try_wrap_bytes;
 use crate::world::*;
 
 /// Public API interface for Godot Rollback 3D.
@@ -39,18 +40,20 @@ impl GR3D {
     }
 
     #[func]
+    fn _on_physics_process(&mut self, step_world: bool) {
+        on_physics_process(self, step_world);
+    }
+
+    #[func]
     fn save_snapshot(&mut self) -> PackedByteArray {
-        match self.world.save_snapshot() {
-            Some(snapshot) => PackedByteArray::from(snapshot),
-            None => PackedByteArray::new(),
-        }
+        try_wrap_bytes(self.world.save_snapshot())
     }
     #[func]
     fn load_snapshot(&mut self, snapshot: PackedByteArray) {
-        self.world.load_snapshot(snapshot);
+        self.world.load_snapshot(snapshot.to_vec());
     }
 
-    // Nodes --------------------------------- FFFF
+    // Nodes ---------------------------------
 
     #[func]
     fn _node_editor_enter(&mut self, blueprint: Dictionary) {
@@ -101,10 +104,6 @@ impl GR3D {
         self.network.remove_remote_peer(peer_id);
     }
 
-    #[func]
-    fn _on_physics_process(&mut self) {
-        network_physics_process(self);
-    }
     #[func]
     fn _attach_network_adapter(&mut self, adapter: Gd<GR3DNetworkAdapter>) {
         attach_network_adapter(self, adapter);

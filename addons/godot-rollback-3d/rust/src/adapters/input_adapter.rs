@@ -48,10 +48,17 @@ impl GR3DInputAdapter {
 
     /// Returns all current inputs as an InputMap.
     pub fn get_inputs(&mut self) -> InputMap {
+        // Doesnt call overriden func
+        // self.get_input_list()
+        //     .iter()
+        //     .map(|input_key| (input_key.clone(), self.get_input(input_key.clone())))
+        //     .collect();
+
         let input_list = self
             .base_mut()
             .call("get_input_list", &[])
             .to::<Vec<GString>>();
+
         input_list
             .iter()
             .map(|input_key| {
@@ -77,7 +84,7 @@ impl GR3DInputAdapter {
     }
 
     /// Deserializes the inputs from a byte array and returns an InputMap.
-    pub fn deserialize_inputs(&mut self, ser_inputs: Vec<u8>) -> InputMap {
+    pub fn deserialize_inputs(&mut self, ser_inputs: &Vec<u8>) -> InputMap {
         let mut sorted_inputs: Vec<_> = self.get_inputs().into_iter().collect();
         sorted_inputs.sort_by(|a, b| a.0.cmp(&b.0));
 

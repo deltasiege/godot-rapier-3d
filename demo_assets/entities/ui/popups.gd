@@ -20,13 +20,11 @@ func _process(_delta):
 	if Input.is_action_just_pressed("load_snapshot"): load_snapshot()
 
 func _physics_process(_delta):
-	if opened_popup: opened_popup.current_content.set_from_data(_get_data(opened_popup.title))
+	if opened_popup: opened_popup.current_content.display_data(_get_data(opened_popup.title))
 
 func on_popup_opened(popup: Control):
 	character = get_tree().root.find_child("Active Character", true, false)
 	opened_popup = popup
-	opened_popup.current_content.clear_children()
-	opened_popup.current_content.create_from_data(_get_data(opened_popup.title))
 
 func _get_data(title: String):
 	if title == "Character" and !character: return

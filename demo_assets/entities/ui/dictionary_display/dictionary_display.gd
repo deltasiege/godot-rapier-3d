@@ -17,8 +17,11 @@ var _existing_ids = []
 ## Does not support dynamic entry types such as buttons
 ## Example input:
 ## { "my_key": "my_value", "my_group": { "nested_key": "nested_value" } }
-func create_from_data(data: Dictionary):
-	create_from_entries(convert_data_to_entries(data))
+func display_data(data: Dictionary):
+	var output = convert_data_to_entries(data)
+	var total_entries = output[0]
+	var entries = output[1]
+	create_or_set_entries(entries, total_entries)
 
 ## Allows utilizing "type" field to specify dynamic entries such as buttons
 ## Example `entries` input:
@@ -40,23 +43,26 @@ func create_from_data(data: Dictionary):
 ##     ]
 ##   }
 ## ]
+func display_entries(entries: Array):
+	var total_entries = count_entries(entries)
+	create_or_set_entries(entries, total_entries)
+
+# Recreate all entries if there has been a change in their number
+func create_or_set_entries(entries: Array, total_entries: int):
+	if total_entries != _last_entries_count:
+		clear_children()
+		await get_tree().process_frame # Wait one frame so Godot doesn't increment conflicting names
+		create_from_entries(entries)
+	else:
+		set_from_entries(entries)
+	_last_entries_count = total_entries
+
 func create_from_entries(entries: Array):
 	for entry: Dictionary in entries: create_entry(entry, container)
-	_last_entries_count = count_entries(entries)
 
 ## Set entries without recreating them unnecessarily
 func set_from_entries(entries: Array):
-	var count = count_entries(entries)
-	if count != _last_entries_count: # Recreate all entries if there has been a change in their number
-		clear_children()
-		create_from_entries(entries)
-	else:
-		for entry: Dictionary in entries: set_entry(entry)
-	_last_entries_count = count
-
-## Set data without recreating entries unnecessarily
-func set_from_data(data: Dictionary):
-	set_from_entries(convert_data_to_entries(data))
+	for entry: Dictionary in entries: set_entry(entry)
 
 # Private ---
 
@@ -64,22 +70,36 @@ func _ready(): theme = theme_res
 
 func convert_data_to_entries(data: Dictionary) -> Array:
 	var entries = []
+	var counter = []
 	_existing_ids.clear()
-	recurse_data(data, entries)
-	return entries
+	recurse_data(data, entries, counter)
+	var total_entries = counter.size()
+	return [total_entries, entries]
 
-func recurse_data(data: Dictionary, out_arr: Array):
+func count_entries(entries: Array) -> int:
+	var arr_counter = []
+	var recurse := func(ents: Array, counter: Array, cb: Callable):
+		for entry: Dictionary in ents:
+			counter.append(0)
+			if get_entry_type(entry) == "group" and entry.value is Array:
+				cb.call(entry.value, counter, cb)
+	recurse.call(entries, arr_counter, recurse)
+	return arr_counter.size()
+
+func recurse_data(data: Dictionary, out_arr: Array, out_arr_counter: Array):
 	for key in data:
 		if data[key] is Dictionary:
 			var children = []
-			recurse_data(data[key], children)
+			recurse_data(data[key], children, out_arr_counter)
+			out_arr_counter.append(0)
 			out_arr.append({ "id": get_unique_id(str(key)), "type": "group", "key": key, "value": children })
-		else: out_arr.append({ "id": get_unique_id(str(key)), "key": key, "value": data[key] })
+		else:
+			out_arr_counter.append(0)
+			out_arr.append({ "id": get_unique_id(str(key)), "key": key, "value": data[key] })
 
 func get_unique_id(key: String) -> String:
 	var counter = 0
-	while _existing_ids.has(key + "_" + str(counter)):
-		counter += 1
+	while _existing_ids.has(key + "_" + str(counter)): counter += 1
 	_existing_ids.append(key + "_" + str(counter))
 	return key + "_" + str(counter)
 
@@ -103,7 +123,7 @@ func create_entry(entry: Dictionary, parent: Control, parent_is_group: bool = fa
 	
 	var id = safe_name(str(entry.get("id", entry.get("key"))))
 	if parent_is_group: parent.append_content(created_control)
-	else: parent.add_child(created_control)
+	else: parent.add_child(created_control, true)
 	created_control.name = id
 	created_control.owner = parent
 
@@ -159,7 +179,7 @@ func set_text(entry: Dictionary):
 	var key = str(entry.get("key", null))
 	var id = safe_name(str(entry.get("id", key)))
 	var value = str(entry.get("value", null))
-	var found_hbox = container.find_child(id, true, false)
+	var found_hbox = container.find_child(id, true, true)
 	if !found_hbox: return
 	var found_label = found_hbox.find_child(id + "_label", false, false)
 	var found_ledit = found_hbox.find_child(id + "_ledit", false, false)
@@ -195,16 +215,6 @@ func set_group(entry: Dictionary):
 		set_entry(sub_entry)
 	if entry.value.size() == 0: found_group.title = key + " (empty)"
 	else: found_group.title = key
-
-func count_entries(entries: Array) -> int:
-	var arr_counter = []
-	var recurse := func(ents: Array, counter: Array, cb: Callable):
-		for entry: Dictionary in ents:
-			counter.append(0)
-			if get_entry_type(entry) == "group" and entry.value is Array:
-				cb.call(entry.value, counter, cb)
-	recurse.call(entries, arr_counter, recurse)
-	return arr_counter.size()
 
 func record_group_toggle(id: String) -> Callable:
 	return func(new_state): _opened_groups[id] = new_state
