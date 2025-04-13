@@ -63,7 +63,7 @@ impl GR3D {
         parent_path: String,
         resource_path: String,
     ) -> Option<Gd<Node3D>> {
-        spawn_node(self, name, parent_path, resource_path);
+        // spawn_node(self, name, parent_path, resource_path);
         None
     }
 

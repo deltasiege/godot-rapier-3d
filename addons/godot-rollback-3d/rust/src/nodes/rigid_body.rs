@@ -8,6 +8,7 @@ use crate::utils::vector_to_godot;
 #[derive(GodotClass)]
 #[class(tool, base=Node3D)]
 pub struct RollbackRigidBody3D {
+    pub node_data: Option<NodeData>,
     pub blueprint: Option<NodeBlueprint>,
     base: Base<Node3D>,
 }
@@ -16,6 +17,7 @@ pub struct RollbackRigidBody3D {
 impl INode3D for RollbackRigidBody3D {
     fn init(base: Base<Node3D>) -> Self {
         Self {
+            node_data: None,
             blueprint: None,
             base,
         }

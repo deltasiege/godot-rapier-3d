@@ -12,6 +12,7 @@ use crate::utils::{vector_to_godot, vector_to_point};
 #[class(tool, base=Node3D)]
 /// Description of the RollbackPIDCharacter3D class.
 pub struct RollbackPIDCharacter3D {
+    pub node_data: Option<NodeData>,
     pub blueprint: Option<NodeBlueprint>,
     #[export]
     /// The Proportional gain applied to the instantaneous linear position errors.
@@ -53,6 +54,7 @@ pub struct RollbackPIDCharacter3D {
 impl INode3D for RollbackPIDCharacter3D {
     fn init(base: Base<Node3D>) -> Self {
         Self {
+            node_data: None,
             blueprint: None,
             lin_kp: 60.0,
             lin_ki: 1.0,
@@ -116,7 +118,7 @@ impl RollbackPIDCharacter3D {
 
     fn try_is_on_floor(&self) -> Option<bool> {
         if let Some(gr3d) = get_gr3d() {
-            let handle = self.get_blueprint()?.get_rapier_handle().left()?;
+            let handle = self.get_node_data()?.get_rapier_handle().left()?;
 
             let bind = gr3d.bind();
             let bodies = &bind.world.physics.bodies;

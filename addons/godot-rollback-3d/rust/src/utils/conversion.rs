@@ -57,3 +57,10 @@ pub fn gstr_to_millis(gstr: GString) -> u128 {
 pub fn to_string_variant(value: impl std::fmt::Debug) -> Variant {
     format!("{:?}", value).to_variant()
 }
+
+pub fn stringify_option(value: Option<impl std::fmt::Debug>) -> String {
+    match value {
+        Some(v) => format!("{:?}", v),
+        None => "None".to_string(),
+    }
+}

@@ -2,12 +2,14 @@ mod blueprint;
 mod controllable;
 mod forceable;
 mod identifiable;
+mod node_data;
 mod rollback_node;
 
 pub use blueprint::{HasBlueprint, NodeBlueprint};
 pub use controllable::Controllable;
 pub use forceable::Forceable;
 pub use identifiable::Identifiable;
+pub use node_data::{HasNodeData, NodeData};
 pub use rollback_node::RollbackNode;
 
 #[macro_export]

@@ -1,64 +1,64 @@
-# Rollback Spawn Manager
+## FAQ
 
-Handles spawning + despawning all rollback-aware nodes
+Why do we need GR3D.spawn? Cleaner if just listen to instantiate()? - A: No we don't always want to create the Godot node, so we need GR3D.spawn
 
-Reference: https://gitlab.com/BimDav/delta-rollback/-/blob/e8514be34dfe01bc505579cda7df66a2faae51d4/addons/delta_rollback/SpawnManager.gd
+# Spawning / despawning / ambient nodes and rolling back
 
-Whenever a node is spawned, we must record:
+For both GR3D.spawn + enter_tree (only for ambient peer_idx)
 
-- GRUID
-- node name
-- parent path
-- resource path of the packed scene that was spawned
+1. extract needed data from godot resource
+2. (batch) create in rapier and get handle
+3. push blueprint with spawn tick into node_db
+4. Set GRUID action to `SPAWN` in `godot_action_list` (UNLESS ambient enter_tree! peer_idx 0)
 
-## Receiving remote actions flows
+configuration does not need to be queued or serialized! - its just part of rapier state, which is already rollback friendly! - godot will need to sync the node properties with rapier though after rolling back for read purposes
 
-### We deleted node referred to by remote action
+For GR3D.despawn
 
-If a remote action has a GRUID that refers to a local peer_index node in our Lookup Table that we have since despawned locally, the smart pointer will be invalid at the current tick.
+1. set end tick on node blueprint
+2. (batch) delete the rapier object
+3. queue_free the node
+4. Set GRUID action to `DESPAWN` in `godot_action_list`
 
-Assuming receiving the remote action caused a rollback, the following happens:
+For exit_tree
 
-We consult our local spawn buffer and spawn any
+1. Push error - use gr3d.despawn to delete rollback nodes!
 
-, it just needs to recreate the node that it spawned previously.Then, it needs to suppress that node's `on_enter_tree` event from adding more actions to the local_buffer.
+On every physics frame
 
-The node will be configured the same way in Rapier automatically it was when it was originally spawned because the settings on the Godot node should match, which is what the `ConfigureNode` action reads from
+1. Godot needs to know which GRUIDs to create and which GRUIDs to destroy in order to match blueprint status
 
-After re-creating the node, `RollbackMultiplayerSpawner` must update this Lookup Table with the new Gd smart pointer so that actions referencing it can be processed
+## Scenarios
 
-Later when the `AddNode` action is processed, this lookup table is updated again to update the Rapier handle to the newly added one.
+### We receive a missed input from a remote peer which causes spawn
 
-### A remote action has a GRUID that is not in our local Lookup Table
+1. Blueprints with spawn ticks after beginning of rollback tick are destroyed and those GRUIDs added to `godot_action_list` as `DESPAWN`
+2. Inputs are replayed
+3. GR3D.spawn is replayed because of new input
+4. New rapier object + blueprint is (batch) created
+5. GRUID is added to `godot_action_list` as `SPAWN`
+6. Rollback ends
+7. Godot iterates all GRUIDs in `godot_action_list`
+   - Retrieves blueprint from GRUID
+   - Confirms node does not already exist at path in blueprint - error if it does
+   - Retrieves current isometry from rapier handle in blueprint
+   - Retrieves current property settings from rapier handle in blueprint
+   - Create node in Godot, but suppress enter_tree event (avoid ambient spawn)
 
-That means the remote peer has spawned an object that we haven't spawned yet.
+### We receive a missed input from a remote peer which causes despawn
 
-## Spawning players
+1. Blueprints with spawn ticks after beginning of rollback tick are destroyed, and those GRUIDs added to `godot_action_list` as `DESPAWN`
+2. Inputs are replayed
+3. GR3D.despawn is replayed because of new input
+4. Rapier object is (batch) deleted and end tick is recorded on blueprint
+5. GRUID is added to `godot_action_list` as `DESPAWN`
+6. Rollback ends
+7. Godot iterates all GRUIDs in `godot_action_list`
 
-Server locally spawns a player via `GR3D.spawn()`
----> `GR3D.spawn()` adds a SpawnEvent into local buffer
-------> SpawnEvent includes all necessary data to recreate that node on other peers
+   - Retrieves blueprint from GRUID
+   - Confirms node still exists at path in blueprint - error if it doesn't
+   - `queue_free` the node
 
----> `GR3D.spawn()` sends spawn event to all peers
-------> All peers add the spawn event into their own spawn buffer
-------> All peers rollback and re-create that node from the spawn event
+## Cleaning up blueprints
 
-Actions refer to Rapier actions only (current)
-
-## Destroying peer_index 0 objects
-
-All peers already have peer_index 0 objects
-
-Non-server peer A destroys a peer_index 0 object via `GR3D.despawn()`
----> `GR3D.despawn()` adds a DespawnEvent into local buffer
-
----
-
-When rolling back, we don't want to recreate Godot nodes,
-we only want to recreate them if they are meant to be present at the end of rollback but they are missing
-
-But how do the actions grab their needed data? Transform / shape type etc.
-
-!! Rapier configuration needs to be separate from Godot Nodes !! Actions should retrieve from SpawnEvent
-
-It should be called `NodeRegistry`
+Every 10k ticks, iterate all blueprints and clean up blueprints that have been despawned for a long time, and cant possible be spawned during rollback

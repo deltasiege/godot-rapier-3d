@@ -7,6 +7,7 @@ use crate::nodes::common::*;
 #[derive(GodotClass)]
 #[class(tool, base=Node3D)]
 pub struct RollbackStaticBody3D {
+    pub node_data: Option<NodeData>,
     pub blueprint: Option<NodeBlueprint>,
     base: Base<Node3D>,
 }
@@ -15,6 +16,7 @@ pub struct RollbackStaticBody3D {
 impl INode3D for RollbackStaticBody3D {
     fn init(base: Base<Node3D>) -> Self {
         Self {
+            node_data: None,
             blueprint: None,
             base,
         }

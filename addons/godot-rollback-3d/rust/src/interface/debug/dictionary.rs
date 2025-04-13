@@ -1,7 +1,7 @@
 use godot::prelude::*;
 
 use crate::interface::GR3D;
-use crate::utils::vector_to_godot;
+use crate::utils::{stringify_option, vector_to_godot};
 use crate::{Network, World};
 
 /// Returns a string with all GR3D debug information.
@@ -59,7 +59,7 @@ fn network_dictionary(network: &Network) -> Dictionary {
     let lp = &network.local_peer;
     if let Some(meta) = &lp.metadata {
         local_peer.set("id", meta.id);
-        local_peer.set("idx", meta.idx.unwrap_or(-1));
+        local_peer.set("idx", stringify_option(meta.idx));
         local_peer.set("is_spectator", meta.is_spectator);
     }
     local_peer.set("input_adapter", class_or_none(&lp.input_adapter));
@@ -76,7 +76,7 @@ fn network_dictionary(network: &Network) -> Dictionary {
     for peer in network.remote_peers.iter() {
         let mut pd = Dictionary::new();
         pd.set("id", peer.metadata.id);
-        pd.set("idx", peer.metadata.idx.unwrap_or(-1));
+        pd.set("idx", stringify_option(peer.metadata.idx));
         pd.set("is_spectator", peer.metadata.is_spectator);
         pd.set("rtt", peer.rtt as i64);
         pd.set("last_ping_received", peer.last_ping_received as i64);

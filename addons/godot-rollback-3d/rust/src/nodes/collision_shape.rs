@@ -2,11 +2,12 @@ use godot::classes::notify::Node3DNotification;
 use godot::classes::{CollisionShape3D, INode3D, Node3D, Shape3D};
 use godot::prelude::*;
 
-use crate::nodes::{NodeBlueprint, RollbackNode};
+use crate::nodes::common::*;
 
 #[derive(GodotClass)]
 #[class(tool, base=Node3D)]
 pub struct RollbackCollisionShape3D {
+    pub node_data: Option<NodeData>,
     pub blueprint: Option<NodeBlueprint>,
     #[export]
     pub col_shape: Option<Gd<CollisionShape3D>>,
@@ -17,6 +18,7 @@ pub struct RollbackCollisionShape3D {
 impl INode3D for RollbackCollisionShape3D {
     fn init(base: Base<Node3D>) -> Self {
         Self {
+            node_data: None,
             blueprint: None,
             col_shape: None,
             base,

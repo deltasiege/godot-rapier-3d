@@ -1,10 +1,8 @@
 use bincode::config::standard;
 use bincode::serde::{decode_from_slice, encode_to_vec};
-use rapier3d::parry::utils::hashmap::HashMap;
 use rapier3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::nodes::NodeBlueprint;
 use crate::types::*;
 use crate::World;
 
@@ -16,24 +14,21 @@ pub struct WorldSnapshot {
     pub island_manager: IslandManager,
     pub bodies: RigidBodySet,
     pub colliders: ColliderSet,
-    pub nodes: HashMap<GRUID, Option<NodeBlueprint>>, // All known alive & dead nodes at the snapshot tick
+    pub nodes: NodeMap, // All known alive & dead nodes at the snapshot tick
     pub impulse_joints: ImpulseJointSet,
     pub multibody_joints: MultibodyJointSet,
 }
 
 impl WorldSnapshot {
     pub fn from_world(world: &World) -> Self {
-        let nodes = get_snapshottable_nodes(world);
-        let colliders = get_snapshottable_colliders(world, &nodes);
-
         Self {
             tick: world.time.tick,
             broad_phase: world.physics.broad_phase.clone(),
             narrow_phase: world.physics.narrow_phase.clone(),
             island_manager: world.physics.islands.clone(),
-            nodes,
+            nodes: world.node_db.nodes.clone(),
             bodies: world.physics.bodies.clone(),
-            colliders,
+            colliders: get_snapshottable_colliders(world),
             impulse_joints: world.physics.impulse_joints.clone(),
             multibody_joints: world.physics.multibody_joints.clone(),
         }
@@ -43,7 +38,6 @@ impl WorldSnapshot {
         // Overwrite world and node_db tick if requested
         if overwrite_tick {
             world.time.tick = self.tick;
-            world.node_db.rollback_to_tick(self.tick); // Rollback node database to the snapshot tick
         }
 
         // Overwrite world physics data
@@ -63,8 +57,8 @@ impl WorldSnapshot {
             }
         }
 
-        // Insert nodes in the snapshot into the node database
-        world.node_db.set_nodes(self.nodes.clone(), self.tick);
+        // Overwrite node database with all nodes in the snapshot
+        world.node_db.nodes = self.nodes.clone();
     }
 
     pub fn try_to_bytes(&self) -> Option<Vec<u8>> {
@@ -97,39 +91,16 @@ fn decode_snapshot_from_bytes(bytes: &Vec<u8>) -> Option<WorldSnapshot> {
     }
 }
 
-/// Returns all nodes available on the given tick that can be included in snapshots.
-/// Note that despawn markers are included in the result. We only want to exclude expensive colliders.
-pub fn get_snapshottable_nodes(world: &World) -> HashMap<GRUID, Option<NodeBlueprint>> {
-    let mut map = world.node_db.get_nodes(world.time.tick);
-    map.retain(|_, node_blueprint| {
-        if let Some(node_blueprint) = node_blueprint {
-            return node_blueprint.snapshottable;
-        }
-        true
-    });
-    map
-}
-
 /// Returns the list of current colliders that can be included in snapshots
-fn get_snapshottable_colliders(
-    world: &World,
-    snapshottable_nodes: &HashMap<GRUID, Option<NodeBlueprint>>,
-) -> ColliderSet {
+fn get_snapshottable_colliders(world: &World) -> ColliderSet {
     let mut colliders = ColliderSet::new();
-    for (_, blueprint) in snapshottable_nodes {
-        if let Some(blueprint) = blueprint {
-            match blueprint.rapier_builder {
-                RapierBuilder::Collider(_) => {
-                    let handle = ColliderHandle::from_raw_parts(
-                        blueprint.rapier_handle.0,
-                        blueprint.rapier_handle.1,
-                    );
-                    if let Some(collider) = world.physics.colliders.get(handle) {
-                        colliders.insert(collider.clone());
-                    }
-                }
-                _ => {}
-            }
+    for (_, node_data) in world.node_db.nodes.iter() {
+        if !node_data.blueprint.snapshottable {
+            continue;
+        }
+
+        if let Some(collider) = node_data.get_collider(world) {
+            colliders.insert(collider.clone());
         }
     }
     colliders

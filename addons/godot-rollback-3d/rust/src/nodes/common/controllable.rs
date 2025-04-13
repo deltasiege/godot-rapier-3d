@@ -1,7 +1,7 @@
 use crate::nodes::*;
 use godot::prelude::*;
 
-pub trait Controllable: HasBlueprint + RollbackNode {
+pub trait Controllable: HasNodeData + RollbackNode {
     fn on_move_by_amount(&self, amount: Vector3) {
         if amount == Vector3::ZERO {
             return;

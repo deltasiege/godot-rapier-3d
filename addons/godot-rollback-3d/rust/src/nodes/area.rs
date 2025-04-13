@@ -2,11 +2,12 @@ use godot::classes::notify::Node3DNotification;
 use godot::classes::{INode3D, Node3D};
 use godot::prelude::*;
 
-use crate::nodes::{NodeBlueprint, RollbackNode};
+use crate::nodes::common::*;
 
 #[derive(GodotClass)]
 #[class(tool, base=Node3D)]
 pub struct RollbackArea3D {
+    pub node_data: Option<NodeData>,
     pub blueprint: Option<NodeBlueprint>,
     base: Base<Node3D>,
 }
@@ -15,6 +16,7 @@ pub struct RollbackArea3D {
 impl INode3D for RollbackArea3D {
     fn init(base: Base<Node3D>) -> Self {
         Self {
+            node_data: None,
             blueprint: None,
             base,
         }

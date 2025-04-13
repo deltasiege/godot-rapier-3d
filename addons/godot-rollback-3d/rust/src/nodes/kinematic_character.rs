@@ -17,6 +17,7 @@ use crate::utils::vector_to_godot;
 #[derive(GodotClass)]
 #[class(tool, base=Node3D)]
 pub struct RollbackKinematicCharacter3D {
+    pub node_data: Option<NodeData>,
     pub blueprint: Option<NodeBlueprint>,
 
     // bool floor_block_on_wall = true
@@ -53,6 +54,7 @@ pub struct RollbackKinematicCharacter3D {
 impl INode3D for RollbackKinematicCharacter3D {
     fn init(base: Base<Node3D>) -> Self {
         Self {
+            node_data: None,
             blueprint: None,
             floor_max_angle: 0.7853982,       // (45 degrees in radians)
             floor_min_slide_angle: 0.7853982, // (45 degrees in radians)

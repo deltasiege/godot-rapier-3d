@@ -3,6 +3,8 @@ use rapier3d::parry::utils::hashmap::HashMap;
 use rapier3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::nodes::NodeData;
+
 // Indices
 pub type Tick = usize; // Current timestep of the simulation
 pub type GRUID = (u8, u32); // Godot Rollback unique identifier (peer_index, generation)
@@ -19,6 +21,8 @@ pub type TickData = PackedByteArray; // Serialized tick data sent via NetworkAda
 pub type UnixEpoch = u128; // Unix epoch in milliseconds
 
 // Nodes
+pub type NodeMap = HashMap<GRUID, NodeData>; // Map of all nodes that have been spawned and despawned into Rapier + Godot.
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum RollbackNodeClass {
     RollbackArea3D,

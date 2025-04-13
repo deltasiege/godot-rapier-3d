@@ -1,24 +1,16 @@
 use godot::classes::Engine;
 use godot::obj::WithBaseField;
 use godot::prelude::*;
-use rapier3d::prelude::*;
 
 use crate::impl_trait_for_all_nodes;
 use crate::interface::get_gr3d;
-use crate::nodes::{HasBlueprint, NodeBlueprint};
+use crate::nodes::{HasBlueprint, HasNodeData};
 use crate::types::RollbackNodeClass;
 use crate::utils::isometry_to_transform;
 
-pub trait RollbackNode: HasBlueprint + WithBaseField + GodotClass<Base = Node3D> {
-    pub fn define_blueprint(&mut self) {
-        let bp = NodeBlueprint::new();
-
-        // UP TO write function to define and create a node in rapier, and optionally in godot all at once
-        // 1. see what we can read before spawning from resource path - class? godot exported stuff?
-        // 2. create in rapier based on stuff read in 1
-        // 3. optionally create in godot based on passed in stuff
-    }
-
+pub trait RollbackNode:
+    HasNodeData + HasBlueprint + WithBaseField + GodotClass<Base = Node3D>
+{
     fn on_enter_tree(&mut self) {
         match Engine::singleton().is_editor_hint() {
             true => self.on_enter_editor_tree(),
@@ -57,32 +49,32 @@ pub trait RollbackNode: HasBlueprint + WithBaseField + GodotClass<Base = Node3D>
         }
     }
 
-    /// Sync Godot transform with Rapier transform
+    /// Sync Godot transform with Rapier transform. Returns silently if:
+    /// - node_data not available
+    /// - the node is not a rigid body
+    /// - the node is not active in the Rapier physics world
     fn sync(&mut self) {
-        if let Some(gr3d) = get_gr3d() {
-            if let Some(bp) = self.get_blueprint() {
-                let physics = &gr3d.bind().world.physics;
-                match bp.class {
-                    RollbackNodeClass::RollbackRigidBody3D
-                    | RollbackNodeClass::RollbackKinematicCharacter3D
-                    | RollbackNodeClass::RollbackPIDCharacter3D => {
-                        let handle =
-                            RigidBodyHandle::from_raw_parts(bp.rapier_handle.0, bp.rapier_handle.1);
-                        let dynamics = physics.islands.active_dynamic_bodies();
-                        let kinematics = physics.islands.active_kinematic_bodies();
-                        let active_bodies = [dynamics, kinematics].concat();
-                        if !&active_bodies.contains(&handle) {
-                            return;
-                        }
-                        let body = &physics.bodies[handle];
+        self.try_sync();
+    }
 
-                        self.base_mut()
-                            .set_global_transform(isometry_to_transform(body.position()));
-                    }
-                    _ => {}
-                }
-            }
+    fn try_sync(&mut self) -> Option<()> {
+        let gr3d = get_gr3d()?;
+        let node_data = self.get_node_data()?;
+        let physics = &gr3d.bind().world.physics;
+        let handle = node_data.get_rapier_handle().left()?;
+
+        let dynamics = physics.islands.active_dynamic_bodies();
+        let kinematics = physics.islands.active_kinematic_bodies();
+        let active_bodies = [dynamics, kinematics].concat();
+        if !&active_bodies.contains(&handle) {
+            return Some(());
         }
+        let body = &physics.bodies[handle];
+
+        self.base_mut()
+            .set_global_transform(isometry_to_transform(body.position()));
+
+        Some(())
     }
 
     fn get_rollback_class(&self) -> Option<RollbackNodeClass> {
