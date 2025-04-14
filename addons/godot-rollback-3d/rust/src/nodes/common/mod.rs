@@ -5,7 +5,7 @@ mod identifiable;
 mod node_data;
 mod rollback_node;
 
-pub use blueprint::{HasBlueprint, NodeBlueprint};
+pub use blueprint::*;
 pub use controllable::Controllable;
 pub use forceable::Forceable;
 pub use identifiable::Identifiable;

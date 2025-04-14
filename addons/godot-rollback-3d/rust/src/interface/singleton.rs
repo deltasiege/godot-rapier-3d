@@ -4,7 +4,6 @@ use godot::prelude::*;
 use crate::adapters::*;
 use crate::interface::*;
 use crate::network::*;
-use crate::nodes::RollbackNode;
 use crate::types::*;
 use crate::utils::try_wrap_bytes;
 use crate::world::*;
@@ -59,12 +58,13 @@ impl GR3D {
     #[func]
     fn spawn(
         &mut self,
+        spawner: Gd<Node>,
         name: String,
         parent_path: String,
         resource_path: String,
+        transform: Transform3D,
     ) -> Option<Gd<Node3D>> {
-        // spawn_node(self, name, parent_path, resource_path);
-        None
+        spawn(self, spawner, name, parent_path, resource_path, transform)
     }
 
     #[func]

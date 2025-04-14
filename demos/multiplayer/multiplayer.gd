@@ -31,4 +31,5 @@ func start():
 	if !multiplayer.is_server(): return
 	NetworkManager.start_sync(self)
 	await get_tree().create_timer(2.0).timeout
-	# TODO spawn players
+	var xform = Transform3D.IDENTITY
+	GR3D.spawn(self, "test", ".", "res://demo_assets/entities/primitives/ball.tscn", xform)

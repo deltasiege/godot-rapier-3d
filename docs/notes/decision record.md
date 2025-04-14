@@ -32,3 +32,7 @@ Ambient editor nodes will not have a blueprint until game runtime starts and the
 Spawned projectiles etc. will immediately have a blueprint via GR3D.spawn.
 
 We do it this way so that actual spawning of the godot nodes can be skipped during rollbacks (via GR3D.spawn).
+
+## Why must we instantiate when extracting blueprints from GR3D.spawn( resource_path ) ?
+
+It would be nice if we could construct blueprints purely from SceneState - which is available without instantiating the provided resource, but SceneState does not contain Transform data - which we need when creating the objects in Rapier.

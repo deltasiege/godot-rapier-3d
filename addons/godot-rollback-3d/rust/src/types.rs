@@ -23,7 +23,7 @@ pub type UnixEpoch = u128; // Unix epoch in milliseconds
 // Nodes
 pub type NodeMap = HashMap<GRUID, NodeData>; // Map of all nodes that have been spawned and despawned into Rapier + Godot.
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum RollbackNodeClass {
     RollbackArea3D,
     RollbackCollisionShape3D,
@@ -33,16 +33,31 @@ pub enum RollbackNodeClass {
     RollbackStaticBody3D,
 }
 
+impl std::fmt::Display for RollbackNodeClass {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum RapierBuilder {
     RigidBody(RigidBody),
     Collider(ColliderBuilder),
 }
 
-impl TryFrom<GString> for RollbackNodeClass {
+impl std::fmt::Display for RapierBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RapierBuilder::RigidBody(_) => write!(f, "RigidBody(_)"),
+            RapierBuilder::Collider(_) => write!(f, "Collider(_)"),
+        }
+    }
+}
+
+impl TryFrom<&GString> for RollbackNodeClass {
     type Error = &'static str;
 
-    fn try_from(value: GString) -> Result<Self, Self::Error> {
+    fn try_from(value: &GString) -> Result<Self, Self::Error> {
         match value.to_string().as_str() {
             "RollbackArea3D" => Ok(RollbackNodeClass::RollbackArea3D),
             "RollbackCollisionShape3D" => Ok(RollbackNodeClass::RollbackCollisionShape3D),
@@ -51,6 +66,21 @@ impl TryFrom<GString> for RollbackNodeClass {
             "RollbackRigidBody3D" => Ok(RollbackNodeClass::RollbackRigidBody3D),
             "RollbackStaticBody3D" => Ok(RollbackNodeClass::RollbackStaticBody3D),
             _ => Err("Unknown RollbackNode class"),
+        }
+    }
+}
+
+impl RollbackNodeClass {
+    pub fn try_from_pointer(pointer: &Gd<impl Inherits<Object>>, silent: bool) -> Option<Self> {
+        let class_name = pointer.upcast_ref::<Object>().get_class();
+        match RollbackNodeClass::try_from(&class_name) {
+            Ok(class) => Some(class),
+            Err(_) => {
+                if !silent {
+                    log::error!("Unknown RollbackNode class: {}", class_name);
+                }
+                None
+            }
         }
     }
 }

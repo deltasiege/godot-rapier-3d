@@ -108,6 +108,8 @@ pub fn step(gr3d: &mut GR3D, count: i64) {
         // TODO execute all inputs
         // log::trace!("Applied inputs for tick {}: {:?}", tick, inputs);
 
+        // TODO spawn/despawn
+
         if let Some(snapshot) = gr3d.world.step() {
             gr3d.network
                 .local_peer

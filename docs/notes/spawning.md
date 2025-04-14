@@ -1,3 +1,43 @@
+# Flows
+
+We MUST instance at the time of spawning in order to get transforms =<
+
+## Spawning
+
+1. GDScript `GR3D.spawn()`
+2. Check ResourceCache if resource path has been mapped to Vec<NodeBlueprint> previously
+
+If not:
+
+1. Instantiate provided resource path (gives Gd<Node>)
+2. Iterate and interrogate that instantiated tree to build a Vec<NodeBlueprint> tree. Collision shapes/areas as children of rigidbodies is supported. Nested rbs -> rbs or colliders -> colliders is not supported.
+3. Add the resulting Vec<NodeBlueprint> to the ResourceCache
+4. `queue_free` the interrogated tree - it will be recreated by Godot later if necessary
+
+If it is, just use cached Vec<NodeBlueprint>
+
+3. Push Spawn(Vec<NodeBlueprint>) into `awaiting_rapier` queue
+4. During `GR3D.step()`, iterate + drain `awaiting_rapier` queue:
+
+   - Iterate the Vec<NodeBlueprint> tree and insert Rapier objects into the Rapier world for each entry and collider children
+   - Set resulting RapierHandles + blueprint on a new `NodeData` object
+   - set the spawn_tick in the `NodeData` object to the current tick
+   - insert `NodeData` object into node_db `nodes`
+   - Add `Spawn(NodeData)` to `awaiting_godot` queue
+
+5. During Godot physics process, iterate + drain `awaiting_godot` queue:
+   - create Godot node from NodeData
+   - set node_data property on the created node
+
+## Despawning
+
+## Ambiently enter_tree
+
+1. Rust node `enter_tree`
+2. Somehow construct NodeBlueprint
+
+---
+
 ## FAQ
 
 Why do we need GR3D.spawn? Cleaner if just listen to instantiate()? - A: No we don't always want to create the Godot node, so we need GR3D.spawn

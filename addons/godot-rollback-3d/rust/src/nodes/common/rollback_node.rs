@@ -76,20 +76,6 @@ pub trait RollbackNode:
 
         Some(())
     }
-
-    fn get_rollback_class(&self) -> Option<RollbackNodeClass> {
-        match RollbackNodeClass::try_from(self.base().get_class()) {
-            Ok(class) => Some(class),
-            Err(e) => {
-                log::error!(
-                    "Failed to get rollback class for node '{}': {}",
-                    self.base().get_path(),
-                    e
-                );
-                None
-            }
-        }
-    }
 }
 
 impl_trait_for_all_nodes!(RollbackNode, {});

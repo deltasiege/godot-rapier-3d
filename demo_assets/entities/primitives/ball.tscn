@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://dm2ht6p7jq1bb"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_gyiem"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_gyiem"]
+
+[node name="Ball" type="RollbackRigidBody3D"]
+
+[node name="RollbackCollisionShape3D" type="RollbackCollisionShape3D" parent="." node_paths=PackedStringArray("col_shape")]
+col_shape = NodePath("../CollisionShape3D")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_gyiem")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_gyiem")
