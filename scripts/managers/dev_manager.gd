@@ -5,6 +5,7 @@ extends Node
 
 func _ready():
 	position_windows()
+	clear_log_files()
 	connect_to_network()
 
 func position_windows():
@@ -24,6 +25,10 @@ func position_windows():
 	elif "--client" in OS.get_cmdline_args():
 		if SPLIT_SCREEN_STYLE == HORIZONTAL: get_window().position.x = screen_rect.size.x / 2
 		else: get_window().position.y = screen_rect.size.y / 2
+
+func clear_log_files():
+	var dir = DirAccess.open(GR3D._get_log_file_dir())
+	for file in dir.get_files(): dir.remove(file)
 
 func connect_to_network():
 	await get_tree().create_timer(0.05).timeout

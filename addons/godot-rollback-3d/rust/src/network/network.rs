@@ -6,6 +6,7 @@ use crate::network::*;
 use crate::types::*;
 use crate::utils::decode_from_packed_byte_array;
 use crate::utils::encode_to_packed_byte_array;
+use crate::world::process_godot_spawns_despawns;
 use crate::world::step;
 
 #[derive(Debug)]
@@ -27,6 +28,16 @@ impl Network {
             peer_map: None,
             local_peer: LocalPeer::new(),
             remote_peers: Vec::new(),
+        }
+    }
+
+    pub fn get_local_peer_index(&self) -> Option<PeerIndex> {
+        match self.local_peer.metadata {
+            Some(ref metadata) => Some(metadata.idx?),
+            None => {
+                log::error!("Local peer metadata is not set");
+                None
+            }
         }
     }
 
@@ -106,7 +117,7 @@ impl Network {
     }
 }
 
-pub fn on_physics_process(gr3d: &mut GR3D, step_world: bool) {
+pub fn on_physics_process(gr3d: &mut GR3D, runtime: Gd<Node>, step_world: bool) {
     if !gr3d.network.started {
         return;
     }
@@ -122,6 +133,7 @@ pub fn on_physics_process(gr3d: &mut GR3D, step_world: bool) {
         step(gr3d, 1);
     }
 
+    process_godot_spawns_despawns(gr3d, runtime);
     gr3d.network.send_updates_to_all_remote_peers(tick);
     gr3d.network.log_buffer_holes();
 }

@@ -10,8 +10,7 @@ pub struct Logger {
 
 impl Logger {
     pub fn new() -> Self {
-        let user_data_dir = Os::singleton().get_user_data_dir();
-        let log_file_path = format!("{}/godot-rollback-3d_logs/unconnected.log", user_data_dir);
+        let log_file_path = format!("{}/unconnected.log", get_log_file_dir());
         let file_spec = FileSpec::try_from(log_file_path).expect("Failed to initialize logger");
 
         let handle = FlexiLogger::with(LogSpecification::from(LevelFilter::Trace))
@@ -20,16 +19,11 @@ impl Logger {
             .expect("Failed to initialize logger");
 
         log::debug!("Logger initialized");
-
         Self { handle }
     }
 
     pub fn set_peer_id(&mut self, peer_id: i64) {
-        let user_data_dir = Os::singleton().get_user_data_dir();
-        let log_file_path = format!(
-            "{}/godot-rollback-3d_logs/peer_{}.log",
-            user_data_dir, peer_id
-        );
+        let log_file_path = format!("{}/peer_{}.log", get_log_file_dir(), peer_id);
         self._update_log_file_path(&log_file_path);
     }
 
@@ -53,6 +47,11 @@ impl Logger {
             log::debug!("Log file path updated to: {}", new_path);
         }
     }
+}
+
+pub fn get_log_file_dir() -> String {
+    let user_data_dir = Os::singleton().get_user_data_dir();
+    format!("{}/godot-rollback-3d_logs", user_data_dir)
 }
 
 struct GodotConsoleWriter;

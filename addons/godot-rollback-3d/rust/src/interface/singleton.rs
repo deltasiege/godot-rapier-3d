@@ -49,8 +49,8 @@ impl GR3D {
     }
 
     #[func]
-    fn _on_physics_process(&mut self, step_world: bool) {
-        on_physics_process(self, step_world);
+    fn _on_physics_process(&mut self, runtime: Gd<Node>, step_world: bool) {
+        on_physics_process(self, runtime, step_world);
     }
 
     // Nodes ---------------------------------
@@ -63,7 +63,7 @@ impl GR3D {
         parent_path: String,
         resource_path: String,
         transform: Transform3D,
-    ) -> Option<Gd<Node3D>> {
+    ) -> Array<GString> {
         spawn(self, spawner, name, parent_path, resource_path, transform)
     }
 
@@ -180,5 +180,10 @@ impl GR3D {
     /// Draw lines representing the current state of the world according to Rapier
     fn _get_debug_lines(&mut self) -> Array<Array<Variant>> {
         self.world.debugger.render(&self.world.physics)
+    }
+
+    #[func]
+    fn _get_log_file_dir(&mut self) -> GString {
+        crate::interface::logger::get_log_file_dir().into()
     }
 }

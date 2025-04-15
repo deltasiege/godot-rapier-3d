@@ -30,7 +30,7 @@ func _process(_delta):
 
 func _physics_process(_delta):
 	if Engine.is_editor_hint(): return
-	GR3D._on_physics_process(playing and !paused)
+	GR3D._on_physics_process(self, playing and !paused)
 
 func play():
 	playing = true

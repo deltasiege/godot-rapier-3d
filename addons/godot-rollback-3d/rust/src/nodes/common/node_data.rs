@@ -13,10 +13,24 @@ pub struct NodeData {
     pub spawn_tick: Tick,
     pub despawn_tick: Option<Tick>,
     pub blueprint: NodeBlueprint,
-    // pub child_colliders: Vec<GRUID>,
 }
 
 impl NodeData {
+    pub fn new(
+        gruid: GRUID,
+        rapier_handle: RapierHandle,
+        spawn_tick: Tick,
+        blueprint: NodeBlueprint,
+    ) -> Self {
+        Self {
+            gruid,
+            rapier_handle,
+            spawn_tick,
+            despawn_tick: None,
+            blueprint,
+        }
+    }
+
     pub fn get_rapier_handle(&self) -> Either<RigidBodyHandle, ColliderHandle> {
         match self.blueprint.rapier_builder {
             RapierBuilder::RigidBody(_) => Either::Left(RigidBodyHandle::from_raw_parts(

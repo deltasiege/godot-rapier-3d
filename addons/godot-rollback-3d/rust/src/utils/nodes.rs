@@ -8,6 +8,30 @@ use crate::nodes::RollbackCollisionShape3D;
 use crate::types::*;
 use crate::utils::*;
 
+/// Spawns a node into the Godot scene tree and returns it.
+pub fn spawn_into_godot(
+    other_node: &Gd<Node>,
+    name: &String,
+    parent_path: &String,
+    resource_path: &String,
+    transform: Transform3D,
+) -> Option<Gd<Node3D>> {
+    let mut parent = match get_node_by_path(other_node, parent_path) {
+        Some(node) => node,
+        None => {
+            log::error!("Parent node '{}' not found", parent_path);
+            return None;
+        }
+    };
+
+    let mut spawned_node = instantiate_resource_as::<Node3D>(resource_path)?;
+    parent.add_child(&spawned_node);
+    spawned_node.set_name(name);
+    spawned_node.set_transform(transform);
+
+    Some(spawned_node)
+}
+
 /// Recursively returns all child under the given root that match the given class.
 pub fn get_children_with_class(root: &Gd<Node>, class: RollbackNodeClass) -> Array<Gd<Node>> {
     root.find_children_ex("*")

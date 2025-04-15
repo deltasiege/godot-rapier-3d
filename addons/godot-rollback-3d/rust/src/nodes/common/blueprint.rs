@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::impl_trait_for_all_nodes;
 use crate::types::*;
 use crate::utils::*;
+use crate::world::SpawnRequest;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 /// Information known at the time of the initial spawn request.
@@ -24,6 +25,22 @@ pub struct NodeBlueprint {
 }
 
 impl NodeBlueprint {
+    pub fn get_node_name(&self) -> String {
+        let mut name = self.tree_path.clone();
+        if let Some(last_slash) = name.rfind('/') {
+            name = name[last_slash + 1..].to_string();
+        }
+        name
+    }
+
+    pub fn get_parent_path(&self) -> String {
+        let mut path = self.tree_path.clone();
+        if let Some(last_slash) = path.rfind('/') {
+            path = path[..last_slash].to_string();
+        }
+        path
+    }
+
     pub fn to_variant(&self) -> Variant {
         let mut dict = Dictionary::new();
         dict.set("class", to_string_variant(&self.class));
@@ -35,23 +52,18 @@ impl NodeBlueprint {
         dict.to_variant()
     }
 
-    pub fn from_spawn_request(
-        spawner: &Gd<Node>,
-        resource_path: &String,
-        parent_path: &String,
-    ) -> Option<Vec<Self>> {
-        let mut parent = match get_node_by_path(spawner, &parent_path) {
-            Some(node) => node,
-            None => {
-                log::error!("Parent node '{}' not found", parent_path);
-                return None;
-            }
-        };
+    pub fn from_spawn_request(spawn_request: SpawnRequest) -> Option<Vec<Self>> {
+        let mut spawned_node = spawn_into_godot(
+            &spawn_request.spawner,
+            &spawn_request.name,
+            &spawn_request.parent_path,
+            &spawn_request.resource_path,
+            spawn_request.transform,
+        )?;
 
-        let mut node = instantiate_resource_as::<Node3D>(resource_path)?;
-        parent.add_child(&node);
-        let blueprints = get_blueprints(&node.clone().upcast(), resource_path);
-        node.queue_free();
+        let blueprints =
+            get_blueprints(&spawned_node.clone().upcast(), &spawn_request.resource_path);
+        spawned_node.queue_free();
         Some(blueprints)
     }
 }

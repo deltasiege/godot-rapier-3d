@@ -1,18 +1,16 @@
-use godot::classes::{
-    BoxShape3D, CapsuleShape3D, ConcavePolygonShape3D, CylinderShape3D, SphereShape3D,
-};
 use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
-use rapier3d::prelude::*;
+use rapier3d::prelude::{ColliderHandle, RigidBodyHandle};
 
 use crate::interface::GR3D;
-use crate::nodes::{NodeBlueprint, NodeData, RollbackCollisionShape3D};
+use crate::nodes::{NodeBlueprint, NodeData};
 use crate::types::*;
-use crate::utils::*;
+use crate::utils::{get_node_by_path, isometry_to_transform, spawn_into_godot};
+use crate::world::PhysicsState;
 
 #[derive(Debug)]
 pub struct NodeDatabase {
-    pub nodes: NodeMap, // Map of all nodes that have been spawned and despawned into Rapier + Godot.
+    pub nodes: NodeMap, // Map of all nodes that have been spawned/despawned into Rapier.
 
     // Resource cache.
     // Should NOT be saved/loaded via snapshots. Should never be cleared since resources are expected to be static.
@@ -64,21 +62,210 @@ impl NodeDatabase {
             .collect()
     }
 
-    // Begins the process of fully spawning a node by adding a NodeBlueprint to the rapier_actions queue.
-    // pub fn spawn_node(&mut self, peer_index: PeerIndex, blueprint: NodeBlueprint) {
-    //     let gruid = self.create_gruid(peer_index);
-    //     self.awaiting_rapier
-    //         .insert(gruid, RapierAction::Spawn(blueprint));
-    // }
+    /// Fetches blueprints for the given spawn request and inserts them into the awaiting_rapier queue.
+    /// Returns a vector of stringified GRUIDs for the nodes that are going to be spawned.
+    pub fn on_spawn_request(
+        &mut self,
+        peer_index: PeerIndex,
+        spawn_request: SpawnRequest,
+    ) -> Option<Array<GString>> {
+        let blueprints = self.get_blueprints(spawn_request)?;
+
+        let mut gruids = Array::new();
+        for blueprint in blueprints {
+            let gruid = self.create_gruid(peer_index);
+            self.awaiting_rapier
+                .insert(gruid, RapierAction::Spawn(blueprint));
+            gruids.push(&gruid_to_string(gruid));
+        }
+
+        Some(gruids)
+    }
+
+    /// Returns a vector of NodeBlueprints for the given spawn request.
+    /// If the resource path is already in the cache, it returns the cached blueprints.
+    fn get_blueprints(&mut self, spawn_request: SpawnRequest) -> Option<Vec<NodeBlueprint>> {
+        let res_path = spawn_request.resource_path.clone();
+        match self.resource_cache.get(&res_path) {
+            Some(blueprints) => {
+                log::trace!("Resource path '{}' found in cache", res_path);
+                Some(blueprints.clone())
+            }
+            None => {
+                log::trace!("Resource path '{}' not found in cache", res_path);
+                let bps = NodeBlueprint::from_spawn_request(spawn_request)?;
+                self.resource_cache.insert(res_path, bps.clone());
+                Some(bps)
+            }
+        }
+    }
 }
 
-// FINALLY PLANNED!
-// 1. pub fn spawn_node_in_rapier - add to rapier_acitons quee
-// 2. on_rapier_tick - iterate over rapier_actions and add to rapier world and then create NodeData and push to NodeMap, and push to godot_actions queue
-// 3. on_physics_process - iterate over godot_actions and spawn node in Godot
+/// Iterate over awaiting_godot queue and add/remove to/from the Godot world. Update node_db accordingly as well.
+pub fn process_godot_spawns_despawns(gr3d: &mut GR3D, runtime: Gd<Node>) {
+    for (_, action) in gr3d.world.node_db.awaiting_godot.iter() {
+        match action {
+            GodotAction::Spawn(node_data) => {
+                spawn_into_godot(
+                    &runtime,
+                    &node_data.blueprint.get_node_name(),
+                    &node_data.blueprint.get_parent_path(),
+                    &node_data.blueprint.resource_path,
+                    isometry_to_transform(&node_data.blueprint.spawn_isometry),
+                );
+                log::trace!(
+                    "Spawned Godot node: '{}' under parent: '{}'",
+                    node_data.blueprint.get_node_name(),
+                    node_data.blueprint.get_parent_path()
+                );
+            }
+            GodotAction::Despawn(node_data) => {
+                match get_node_by_path(&runtime, &node_data.blueprint.tree_path) {
+                    Some(mut node) => {
+                        node.queue_free();
+                        log::trace!(
+                            "Despawned Godot node: '{}' under parent: '{}'",
+                            node_data.blueprint.get_node_name(),
+                            node_data.blueprint.get_parent_path()
+                        );
+                    }
+                    None => {
+                        log::error!(
+                            "Cannot despawn missing node at path: '{}'.",
+                            node_data.blueprint.tree_path
+                        );
+                    }
+                }
+            }
+        }
+    }
 
-// UP TO - spawning! UPTO
+    gr3d.world.node_db.awaiting_godot.clear();
+}
 
+/// Iterate over awaiting_rapier queue and add/remove to/from the Rapier world. Update node_db accordingly as well.
+pub fn process_rapier_spawns_despawns(gr3d: &mut GR3D) {
+    let mut sorted = gr3d
+        .world
+        .node_db
+        .awaiting_rapier
+        .iter()
+        .map(|(gruid, action)| (gruid, action))
+        .collect::<Vec<_>>();
+
+    sorted.sort_by(|(gruid_a, _), (gruid_b, _)| {
+        let (peer_a, gen_a) = gruid_a;
+        let (peer_b, gen_b) = gruid_b;
+        if peer_a == peer_b {
+            gen_a.cmp(gen_b)
+        } else {
+            peer_a.cmp(peer_b)
+        }
+    });
+
+    for (gruid, action) in sorted {
+        match action {
+            RapierAction::Spawn(bp) => {
+                let handle = rapier_spawn_from_blueprint(bp.clone(), &mut gr3d.world.physics);
+                let node_data = NodeData::new(*gruid, handle, gr3d.world.time.tick, bp.clone());
+                gr3d.world.node_db.nodes.insert(*gruid, node_data.clone());
+                gr3d.world
+                    .node_db
+                    .awaiting_godot
+                    .insert(*gruid, GodotAction::Spawn(node_data));
+            }
+            RapierAction::Despawn(node_data) => {
+                rapier_despawn_from_node_data(node_data.clone(), &mut gr3d.world.physics);
+                gr3d.world.node_db.nodes.swap_remove(&node_data.gruid);
+                gr3d.world
+                    .node_db
+                    .awaiting_godot
+                    .insert(*gruid, GodotAction::Despawn(node_data.clone()));
+            }
+        }
+    }
+
+    gr3d.world.node_db.awaiting_rapier.clear();
+}
+
+/// Creates appropriate Rapier object from the given blueprint and adds it to the Rapier world.
+/// Returns the created RapierHandle
+fn rapier_spawn_from_blueprint(
+    blueprint: NodeBlueprint,
+    physics: &mut PhysicsState,
+) -> RapierHandle {
+    let node_name = blueprint.get_node_name();
+    match blueprint.rapier_builder {
+        RapierBuilder::RigidBody(rb) => {
+            let handle = physics.bodies.insert(rb);
+            let num_child_colliders = blueprint.child_colliders.len();
+
+            for collider in blueprint.child_colliders {
+                match collider.rapier_builder {
+                    RapierBuilder::Collider(collider) => {
+                        physics
+                            .colliders
+                            .insert_with_parent(collider, handle, &mut physics.bodies);
+                    }
+                    _ => {
+                        log::error!(
+                            "Child collider {} does not have a collider builder",
+                            collider
+                        );
+                    }
+                }
+            }
+
+            let raw_parts = handle.into_raw_parts();
+
+            log::trace!(
+                "Spawned Rapier RigidBody: '{}' {:?} with {} child colliders",
+                node_name,
+                raw_parts,
+                num_child_colliders
+            );
+
+            raw_parts
+        }
+        RapierBuilder::Collider(collider) => {
+            let handle = physics.colliders.insert(collider);
+            let raw_parts = handle.into_raw_parts();
+            log::trace!("Spawned Rapier Collider: '{}' {:?}", node_name, raw_parts);
+            raw_parts
+        }
+    }
+}
+
+/// Removes the rapier_handle specified in given node_data from the Rapier world.
+fn rapier_despawn_from_node_data(node_data: NodeData, physics: &mut PhysicsState) {
+    match node_data.blueprint.rapier_builder {
+        RapierBuilder::RigidBody(_) => {
+            let handle = RigidBodyHandle::from_raw_parts(
+                node_data.rapier_handle.0,
+                node_data.rapier_handle.1,
+            );
+            physics.bodies.remove(
+                handle,
+                &mut physics.islands,
+                &mut physics.colliders,
+                &mut physics.impulse_joints,
+                &mut physics.multibody_joints,
+                true,
+            );
+        }
+        RapierBuilder::Collider(_) => {
+            let handle = ColliderHandle::from_raw_parts(
+                node_data.rapier_handle.0,
+                node_data.rapier_handle.1,
+            );
+            physics
+                .colliders
+                .remove(handle, &mut physics.islands, &mut physics.bodies, false);
+        }
+    }
+}
+
+/// Begins spawn process and returns stringified GRUIDs of the nodes that will be spawned.
 pub fn spawn(
     gr3d: &mut GR3D,
     spawner: Gd<Node>,
@@ -86,28 +273,56 @@ pub fn spawn(
     parent_path: String,
     resource_path: String,
     transform: Transform3D,
-) -> Option<Gd<Node3D>> {
+) -> Array<GString> {
+    let spawn_request = SpawnRequest::new(spawner, name, parent_path, resource_path, transform);
+    match try_spawn(gr3d, spawn_request) {
+        Some(gruid_strings) => gruid_strings,
+        None => Array::new(),
+    }
+}
+
+/// Option compatible version of spawn function.
+fn try_spawn(gr3d: &mut GR3D, spawn_request: SpawnRequest) -> Option<Array<GString>> {
     if !gr3d.network.started {
-        log::error!("Cannot spawn node '{}' before network has started", name);
+        log::error!(
+            "Cannot spawn node '{}' before network has started",
+            spawn_request.name
+        );
         return None;
     }
 
-    let scene = load_scene(&resource_path)?;
-    let blueprints = NodeBlueprint::from_spawn_request(&spawner, &resource_path, &parent_path)?;
+    let peer_index = gr3d.network.get_local_peer_index()?;
+    let gruids = gr3d
+        .world
+        .node_db
+        .on_spawn_request(peer_index, spawn_request)?;
 
-    for bp in blueprints {
-        godot_print!("AAAAAAAAAAAAAAA bp: {}", bp);
+    Some(gruids)
+}
+
+/// Collection of arguments needed to spawn a node.
+pub struct SpawnRequest {
+    pub spawner: Gd<Node>,
+    pub name: String,
+    pub parent_path: String,
+    pub resource_path: String,
+    pub transform: Transform3D,
+}
+
+impl SpawnRequest {
+    pub fn new(
+        spawner: Gd<Node>,
+        name: String,
+        parent_path: String,
+        resource_path: String,
+        transform: Transform3D,
+    ) -> Self {
+        Self {
+            spawner,
+            name,
+            parent_path,
+            resource_path,
+            transform,
+        }
     }
-
-    // UP TO - record blueprints in node_db
-
-    // self.world.node_db.spawn_node(peer_index, blueprint);
-
-    // let peer_index = gr3d.network.local_peer.metadata.clone()?.idx?;
-    // let gruid = gr3d.world.node_db.create_gruid(peer_index);
-    // let packed_scene = load_scene(&resource_path)?;
-
-    // let foo = PackedScene::instantiate(&packed_scene);
-
-    None
 }
