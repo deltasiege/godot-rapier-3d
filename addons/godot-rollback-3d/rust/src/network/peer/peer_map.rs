@@ -10,7 +10,6 @@ pub fn get_peer_map(network: &Network) -> Result<PeerMap, ()> {
             let mut peer_map = Array::new();
 
             let local_id = adapter.bind().get_unique_id();
-
             peer_map.push(local_id);
 
             for peer in network.remote_peers.iter() {
@@ -35,10 +34,11 @@ pub fn apply_peer_map_to_network(network: &mut Network, peer_map: PeerMap) -> Re
 
     for (idx, peer_id) in peer_map.iter_shared().enumerate() {
         if peer_id == local_id {
-            network.local_peer.metadata = Some(PeerMetadata::new_with_idx(peer_id, idx as u8));
+            network.local_peer.metadata =
+                Some(PeerMetadata::new_with_idx(peer_id, (idx + 1) as u8));
         } else if let Some(peer) = network.get_remote_peer_mut(peer_id) {
             peer.metadata.id = peer_id;
-            peer.metadata.idx = Some(idx as u8);
+            peer.metadata.idx = Some((idx + 1) as u8);
         } else {
             log::error!("Local/remote peer with ID {} not found", peer_id);
         }

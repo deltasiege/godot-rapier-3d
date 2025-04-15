@@ -1,0 +1,22 @@
+[gd_scene load_steps=5 format=3 uid="uid://djymtxaix01u"]
+
+[ext_resource type="Script" uid="uid://b5t6hhjqx3oav" path="res://demo_assets/entities/characters/mp_player.gd" id="1_5855m"]
+[ext_resource type="PackedScene" uid="uid://prh35jb6tjtd" path="res://addons/gdquest_sophia/sophia_skin.tscn" id="1_r0lgw"]
+[ext_resource type="PackedScene" uid="uid://f23w6gp3k6eh" path="res://demo_assets/entities/cameras/3rd_person_cam/3rd_person_cam.tscn" id="2_x2toq"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_nv40x"]
+
+[node name="Player" type="RollbackKinematicCharacter3D"]
+script = ExtResource("1_5855m")
+
+[node name="3rdPersonCam" parent="." instance=ExtResource("2_x2toq")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+
+[node name="RollbackCollisionShape3D" type="RollbackCollisionShape3D" parent="." node_paths=PackedStringArray("col_shape")]
+col_shape = NodePath("../CollisionShape3D")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_nv40x")
+
+[node name="SophiaSkin" parent="." instance=ExtResource("1_r0lgw")]

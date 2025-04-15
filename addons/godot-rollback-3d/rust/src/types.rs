@@ -31,7 +31,7 @@ pub type InputMap = HashMap<GString, Variant>; // Input keys+values for a single
 // Network
 pub type PeerId = i64; // Godot peer ID
 pub type PeerIndex = u8; // Index of the peer in the host's list of peers
-pub type PeerMap = Array<PeerId>; // List of peers_ids in order of peer index
+pub type PeerMap = Array<PeerId>; // List of peers_ids in order of peer index. 0 = ambient, 1 = host, 2+ = client
 pub type TickData = PackedByteArray; // Serialized tick data sent via NetworkAdapter
 pub type UnixEpoch = u128; // Unix epoch in milliseconds
 

@@ -58,13 +58,13 @@ impl GR3D {
     #[func]
     fn spawn(
         &mut self,
-        spawner: Gd<Node>,
+        peer_index: PeerIndex,
         name: String,
-        parent_path: String,
+        parent: Gd<Node>,
         resource_path: String,
         transform: Transform3D,
     ) -> Array<GString> {
-        spawn(self, spawner, name, parent_path, resource_path, transform)
+        spawn(self, peer_index, name, parent, resource_path, transform)
     }
 
     #[func]
@@ -114,6 +114,30 @@ impl GR3D {
     #[func]
     fn remove_peer(&mut self, peer_id: i64) {
         self.network.remove_remote_peer(peer_id);
+    }
+    #[func]
+    fn get_local_peer_index(&mut self) -> i64 {
+        match self.network.get_local_peer_index() {
+            Some(index) => index as i64,
+            None => -1,
+        }
+    }
+    #[func]
+    fn get_remote_peer_index(&mut self, peer_id: i64) -> i64 {
+        match self.network.get_remote_peer_index(peer_id) {
+            Some(index) => index as i64,
+            None => -1,
+        }
+    }
+    #[func]
+    fn get_peer_map(&mut self) -> PeerMap {
+        match self.network.peer_map {
+            Some(ref peer_map) => peer_map.clone(),
+            None => {
+                log::error!("Peer map is not set. Has sync started yet?");
+                PeerMap::new()
+            }
+        }
     }
 
     #[func]

@@ -18,7 +18,7 @@ pub struct NodeBlueprint {
 
     // Godot specific
     pub tree_path: String,
-    pub resource_path: String,
+    pub resource_path: String, // Note: always refers to the root spawned node, even for children.
 
     // Rapier specific
     pub rapier_builder: RapierBuilder,
@@ -54,9 +54,9 @@ impl NodeBlueprint {
 
     pub fn from_spawn_request(spawn_request: SpawnRequest) -> Option<Vec<Self>> {
         let mut spawned_node = spawn_into_godot(
-            &spawn_request.spawner,
+            &spawn_request.parent,
             &spawn_request.name,
-            &spawn_request.parent_path,
+            &spawn_request.parent.get_path().to_string(),
             &spawn_request.resource_path,
             spawn_request.transform,
         )?;
@@ -128,7 +128,7 @@ fn node_to_blueprint(
         spawn_isometry,
         child_colliders,
         tree_path: node.get_path().to_string(),
-        resource_path: resource_path.clone(), // Note: always points to the root spawned node, even for children.
+        resource_path: resource_path.clone(),
         rapier_builder,
     })
 }

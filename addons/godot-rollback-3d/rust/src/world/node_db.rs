@@ -5,7 +5,9 @@ use rapier3d::prelude::{ColliderHandle, RigidBodyHandle};
 use crate::interface::GR3D;
 use crate::nodes::{NodeBlueprint, NodeData};
 use crate::types::*;
-use crate::utils::{get_node_by_path, isometry_to_transform, spawn_into_godot};
+use crate::utils::{
+    get_node_by_path, isometry_to_transform, spawn_into_godot, transform_to_isometry,
+};
 use crate::world::PhysicsState;
 
 #[derive(Debug)]
@@ -64,16 +66,13 @@ impl NodeDatabase {
 
     /// Fetches blueprints for the given spawn request and inserts them into the awaiting_rapier queue.
     /// Returns a vector of stringified GRUIDs for the nodes that are going to be spawned.
-    pub fn on_spawn_request(
-        &mut self,
-        peer_index: PeerIndex,
-        spawn_request: SpawnRequest,
-    ) -> Option<Array<GString>> {
+    pub fn on_spawn_request(&mut self, spawn_request: SpawnRequest) -> Option<Array<GString>> {
+        let peer_idx = spawn_request.peer_index;
         let blueprints = self.get_blueprints(spawn_request)?;
 
         let mut gruids = Array::new();
         for blueprint in blueprints {
-            let gruid = self.create_gruid(peer_index);
+            let gruid = self.create_gruid(peer_idx);
             self.awaiting_rapier
                 .insert(gruid, RapierAction::Spawn(blueprint));
             gruids.push(&gruid_to_string(gruid));
@@ -89,7 +88,17 @@ impl NodeDatabase {
         match self.resource_cache.get(&res_path) {
             Some(blueprints) => {
                 log::trace!("Resource path '{}' found in cache", res_path);
-                Some(blueprints.clone())
+
+                // TODO Overriding blueprint properties here probably won't work for a Godot scene containing multiple sibling Rollback nodes.
+                // Need to somehow deal with that without making cache useless.
+                let mut bps = blueprints.clone();
+                for bp in bps.iter_mut() {
+                    bp.spawn_isometry = transform_to_isometry(spawn_request.transform);
+                    bp.tree_path =
+                        format!("{}/{}", spawn_request.parent.get_path(), spawn_request.name);
+                }
+
+                Some(bps)
             }
             None => {
                 log::trace!("Resource path '{}' not found in cache", res_path);
@@ -106,18 +115,32 @@ pub fn process_godot_spawns_despawns(gr3d: &mut GR3D, runtime: Gd<Node>) {
     for (_, action) in gr3d.world.node_db.awaiting_godot.iter() {
         match action {
             GodotAction::Spawn(node_data) => {
-                spawn_into_godot(
+                if let Some(mut spawned_node) = spawn_into_godot(
                     &runtime,
                     &node_data.blueprint.get_node_name(),
                     &node_data.blueprint.get_parent_path(),
                     &node_data.blueprint.resource_path,
                     isometry_to_transform(&node_data.blueprint.spawn_isometry),
-                );
-                log::trace!(
-                    "Spawned Godot node: '{}' under parent: '{}'",
-                    node_data.blueprint.get_node_name(),
-                    node_data.blueprint.get_parent_path()
-                );
+                ) {
+                    let gruid_str = gruid_to_string(node_data.gruid);
+                    let peer_id = gr3d.network.get_peer_id(node_data.gruid.0);
+                    spawned_node.set_meta("gruid", &gruid_str.to_variant());
+                    spawned_node.set_multiplayer_authority(peer_id as i32);
+
+                    if spawned_node.has_method("on_network_spawn") {
+                        let mut spawn_data = Dictionary::new();
+                        spawn_data.set("gruid", gruid_str);
+                        spawn_data.set("peer_id", peer_id);
+                        spawn_data.set("is_local", gr3d.network.is_local(node_data.gruid));
+                        spawned_node.call_deferred("on_network_spawn", &[spawn_data.to_variant()]);
+                    }
+
+                    log::trace!(
+                        "Spawned Godot node: '{}' under parent: '{}'",
+                        node_data.blueprint.get_node_name(),
+                        node_data.blueprint.get_parent_path()
+                    );
+                }
             }
             GodotAction::Despawn(node_data) => {
                 match get_node_by_path(&runtime, &node_data.blueprint.tree_path) {
@@ -268,13 +291,19 @@ fn rapier_despawn_from_node_data(node_data: NodeData, physics: &mut PhysicsState
 /// Begins spawn process and returns stringified GRUIDs of the nodes that will be spawned.
 pub fn spawn(
     gr3d: &mut GR3D,
-    spawner: Gd<Node>,
+    peer_index: PeerIndex,
     name: String,
-    parent_path: String,
+    parent: Gd<Node>,
     resource_path: String,
     transform: Transform3D,
 ) -> Array<GString> {
-    let spawn_request = SpawnRequest::new(spawner, name, parent_path, resource_path, transform);
+    let spawn_request = SpawnRequest {
+        peer_index,
+        name,
+        parent,
+        resource_path,
+        transform,
+    };
     match try_spawn(gr3d, spawn_request) {
         Some(gruid_strings) => gruid_strings,
         None => Array::new(),
@@ -291,38 +320,24 @@ fn try_spawn(gr3d: &mut GR3D, spawn_request: SpawnRequest) -> Option<Array<GStri
         return None;
     }
 
-    let peer_index = gr3d.network.get_local_peer_index()?;
-    let gruids = gr3d
-        .world
-        .node_db
-        .on_spawn_request(peer_index, spawn_request)?;
+    if spawn_request.peer_index == 0 {
+        log::error!(
+            "Cannot spawn node '{}' under ambient peer (0). peer_index must be 1 or greater.",
+            spawn_request.name
+        );
+        return None;
+    }
+
+    let gruids = gr3d.world.node_db.on_spawn_request(spawn_request)?;
 
     Some(gruids)
 }
 
 /// Collection of arguments needed to spawn a node.
 pub struct SpawnRequest {
-    pub spawner: Gd<Node>,
+    pub peer_index: PeerIndex,
     pub name: String,
-    pub parent_path: String,
+    pub parent: Gd<Node>,
     pub resource_path: String,
     pub transform: Transform3D,
-}
-
-impl SpawnRequest {
-    pub fn new(
-        spawner: Gd<Node>,
-        name: String,
-        parent_path: String,
-        resource_path: String,
-        transform: Transform3D,
-    ) -> Self {
-        Self {
-            spawner,
-            name,
-            parent_path,
-            resource_path,
-            transform,
-        }
-    }
 }

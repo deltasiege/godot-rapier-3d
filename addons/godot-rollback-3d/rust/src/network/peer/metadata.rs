@@ -4,7 +4,7 @@ use crate::types::*;
 #[derive(Debug, Clone)]
 pub struct PeerMetadata {
     pub id: PeerId,             // The unique identifier for this peer (peer_id in Godot)
-    pub idx: Option<PeerIndex>, // The unique index of this peer in the host peer's list of peers
+    pub idx: Option<PeerIndex>, // The unique index of this peer in the host peer's list of peers. Only set once sync starts.
     pub is_spectator: bool,     // Whether this peer is a spectator
 }
 

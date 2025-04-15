@@ -31,6 +31,12 @@ impl Network {
         }
     }
 
+    /// Returns true if the provided GRUID refers to a local rollback node.
+    pub fn is_local(&self, gruid: GRUID) -> bool {
+        self.get_local_peer_index() == Some(gruid.0)
+    }
+
+    /// Returns the peer index of the local peer.
     pub fn get_local_peer_index(&self) -> Option<PeerIndex> {
         match self.local_peer.metadata {
             Some(ref metadata) => Some(metadata.idx?),
@@ -41,13 +47,50 @@ impl Network {
         }
     }
 
-    pub fn add_remote_peer(&mut self, peer_id: i64) {
+    /// Returns the peer index of the remote peer with the given PeerId.
+    pub fn get_remote_peer_index(&self, peer_id: PeerId) -> Option<PeerIndex> {
+        match self
+            .remote_peers
+            .iter()
+            .find(|peer| peer.metadata.id == peer_id)
+        {
+            Some(peer) => Some(peer.metadata.idx?),
+            None => {
+                log::error!("Remote peer with ID {} not found", peer_id);
+                None
+            }
+        }
+    }
+
+    /// Returns the PeerId of the peer that has the given PeerIndex.
+    /// Returns -1 if the peer index is invalid or if the network has not started.
+    pub fn get_peer_id(&self, peer_index: PeerIndex) -> PeerId {
+        if peer_index == 0 || !self.started {
+            return -1;
+        }
+
+        if let Some(local_meta) = &self.local_peer.metadata {
+            if peer_index == local_meta.idx.unwrap() {
+                return local_meta.id;
+            }
+        }
+
+        for remote_peer in &self.remote_peers {
+            if remote_peer.metadata.idx == Some(peer_index) {
+                return remote_peer.metadata.id;
+            }
+        }
+
+        -1
+    }
+
+    pub fn add_remote_peer(&mut self, peer_id: PeerId) {
         self.remote_peers
             .push(RemotePeer::new(PeerMetadata::new(peer_id)));
         log::debug!("Added peer: {}", peer_id);
     }
 
-    pub fn remove_remote_peer(&mut self, peer_id: i64) {
+    pub fn remove_remote_peer(&mut self, peer_id: PeerId) {
         self.remote_peers.retain(|peer| peer.metadata.id != peer_id);
         log::debug!("Removed peer: {}", peer_id);
     }
@@ -102,7 +145,7 @@ impl Network {
         }
     }
 
-    pub fn get_remote_peer_mut(&mut self, peer_id: i64) -> Option<&mut RemotePeer> {
+    pub fn get_remote_peer_mut(&mut self, peer_id: PeerId) -> Option<&mut RemotePeer> {
         match self
             .remote_peers
             .iter_mut()
@@ -138,7 +181,11 @@ pub fn on_physics_process(gr3d: &mut GR3D, runtime: Gd<Node>, step_world: bool) 
     gr3d.network.log_buffer_holes();
 }
 
-pub fn on_received_tick_data(gr3d: &mut GR3D, peer_id: i64, data: PackedByteArray) -> Option<()> {
+pub fn on_received_tick_data(
+    gr3d: &mut GR3D,
+    peer_id: PeerId,
+    data: PackedByteArray,
+) -> Option<()> {
     let update_message = decode_from_packed_byte_array::<UpdateMessage>(&data)?;
     let mut input_adapter = gr3d.network.local_peer.input_adapter.clone()?;
     let peer = gr3d.network.get_remote_peer_mut(peer_id)?;

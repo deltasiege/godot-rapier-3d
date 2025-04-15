@@ -7,8 +7,9 @@ pub trait Controllable: HasNodeData + RollbackNode {
             return;
         }
 
+        // UPTO - add rapier actions? or just move the node right now and hope for determinism?
+
         // TODO - move my rapier object by checking blueprint for handle ? or do I need queuing ?
-        // I dont think so, inputs must be replayed in deterministic order instead
     }
 
     fn on_teleport_to_position(&self, position: Vector3) {
