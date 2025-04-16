@@ -1,8 +1,9 @@
 use godot::prelude::*;
+use rapier3d::control::KinematicCharacterController;
 use rapier3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::impl_trait_for_all_nodes;
+use crate::nodes::*;
 use crate::types::*;
 use crate::utils::*;
 use crate::world::SpawnRequest;
@@ -22,6 +23,8 @@ pub struct NodeBlueprint {
 
     // Rapier specific
     pub rapier_builder: RapierBuilder,
+    pub rapier_pid_controller: Option<PDControllerSettings>,
+    pub rapier_kinematic_controller: Option<KinematicCharacterController>,
 }
 
 impl NodeBlueprint {
@@ -122,6 +125,25 @@ fn node_to_blueprint(
         true => get_collider_blueprints(node, resource_path),
         false => Vec::new(),
     };
+
+    let rapier_pid_controller = match class {
+        RollbackNodeClass::RollbackPIDCharacter3D => {
+            let casted = node.clone().cast::<RollbackPIDCharacter3D>();
+            let settings = casted.bind().get_controller_settings();
+            Some(settings)
+        }
+        _ => None,
+    };
+
+    let rapier_kinematic_controller = match class {
+        RollbackNodeClass::RollbackKinematicCharacter3D => {
+            let casted = node.clone().cast::<RollbackKinematicCharacter3D>();
+            let controller = casted.bind().get_controller();
+            Some(controller)
+        }
+        _ => None,
+    };
+
     Some(NodeBlueprint {
         class,
         snapshottable: true,
@@ -130,32 +152,10 @@ fn node_to_blueprint(
         tree_path: node.get_path().to_string(),
         resource_path: resource_path.clone(),
         rapier_builder,
+        rapier_pid_controller,
+        rapier_kinematic_controller,
     })
 }
-
-pub trait HasBlueprint {
-    fn get_blueprint(&self) -> Option<NodeBlueprint>;
-    fn set_blueprint(&mut self, blueprint: NodeBlueprint);
-
-    // TODO set blueprint from Gd<Rollback node>.
-
-    fn get_blueprint_variant(&self) -> Variant {
-        match self.get_blueprint() {
-            Some(blueprint) => blueprint.to_variant(),
-            None => Dictionary::new().to_variant(),
-        }
-    }
-}
-
-impl_trait_for_all_nodes!(HasBlueprint, {
-    fn get_blueprint(&self) -> Option<NodeBlueprint> {
-        self.blueprint.clone()
-    }
-
-    fn set_blueprint(&mut self, blueprint: NodeBlueprint) {
-        self.blueprint = Some(blueprint);
-    }
-});
 
 impl std::fmt::Display for NodeBlueprint {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

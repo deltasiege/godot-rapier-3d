@@ -46,14 +46,18 @@ impl GR3DInputAdapter {
         Variant::nil()
     }
 
+    #[func(virtual)]
+    /// Must be provided. Returns a default variant value for every possible action specified in all_inputs.
+    fn get_default(&self, _input_key: GString) -> Variant {
+        log::error!(
+            "UNIMPLEMENTED: get_default on InputAdapter: {:?}",
+            self.base().get_name()
+        );
+        Variant::nil()
+    }
+
     /// Returns all current inputs as an InputMap.
     pub fn get_inputs(&mut self) -> InputMap {
-        // Doesnt call overriden func
-        // self.get_input_list()
-        //     .iter()
-        //     .map(|input_key| (input_key.clone(), self.get_input(input_key.clone())))
-        //     .collect();
-
         let input_list = self
             .base_mut()
             .call("get_input_list", &[])

@@ -38,10 +38,10 @@ func on_sync_start():
 func spawn_players():
 	var peer_map = GR3D.get_peer_map()
 	var xform = Transform3D.IDENTITY
+	xform.origin.y = 2
 	var offset = 5
 	for idx in peer_map.size():
 		var player_idx = idx + 1
-		xform.origin.x += offset
 		GR3D.spawn(
 			player_idx,
 			"Player " + str(player_idx),
@@ -49,3 +49,4 @@ func spawn_players():
 			"res://demo_assets/entities/characters/mp_player.tscn",
 			xform
 		)
+		xform.origin.x += offset

@@ -6,24 +6,9 @@ use serde::{Deserialize, Serialize};
 use crate::nodes::NodeData;
 
 // Indices
-pub type Tick = usize; // Current timestep of the simulation
+pub type Tick = u64; // Current timestep of the simulation
 pub type GRUID = (u8, u32); // Godot Rollback unique identifier (peer_index, generation)
 pub type RapierHandle = (u32, u32); // Rapier unique identifier (id, generation)
-
-pub fn gruid_to_string(gruid: GRUID) -> GString {
-    format!("{}-{}", gruid.0, gruid.1).into()
-}
-
-pub fn gruid_from_string(gruid: &GString) -> GRUID {
-    let str = gruid.to_string();
-    let parts: Vec<&str> = str.split('-').collect();
-    if parts.len() != 2 {
-        panic!("Invalid GRUID format: {}", gruid);
-    }
-    let peer_index = parts[0].parse::<u8>().unwrap_or(0);
-    let generation = parts[1].parse::<u32>().unwrap_or(0);
-    (peer_index, generation)
-}
 
 // Input
 pub type InputMap = HashMap<GString, Variant>; // Input keys+values for a single tick

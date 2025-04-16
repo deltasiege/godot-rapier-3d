@@ -1,8 +1,11 @@
+use godot::obj::WithBaseField;
+use godot::prelude::*;
 use rapier3d::{parry::either::Either, prelude::*};
 use serde::{Deserialize, Serialize};
 
 use crate::nodes::NodeBlueprint;
 use crate::types::*;
+use crate::utils::*;
 use crate::{impl_trait_for_all_nodes, World};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -62,11 +65,48 @@ impl NodeData {
         let collider = world.physics.colliders.get(handle)?;
         Some(collider.clone())
     }
+
+    pub fn serialize(&self) -> PackedByteArray {
+        encode_to_packed_byte_array(self)
+    }
+
+    pub fn from_packed_byte_array(data: PackedByteArray) -> Option<Self> {
+        decode_from_packed_byte_array(&data)
+    }
+
+    pub fn get_from_node(node: &Gd<Node3D>) -> Option<Self> {
+        let packed_byte_array = Self::get_ser_from_node(node);
+        Self::from_packed_byte_array(packed_byte_array)
+    }
+
+    pub fn get_ser_from_node(node: &Gd<Node3D>) -> PackedByteArray {
+        if !node.has_meta("gr3d_data") {
+            return PackedByteArray::new();
+        }
+        let variant = node.get_meta("gr3d_data");
+        match variant.try_to::<PackedByteArray>().ok() {
+            Some(packed_byte_array) => packed_byte_array,
+            None => PackedByteArray::new(),
+        }
+    }
+
+    pub fn set_on_node(&self, node: &mut Gd<Node3D>) {
+        node.set_meta("gr3d_data", &self.serialize().to_variant());
+    }
 }
 
-pub trait HasNodeData {
-    fn get_node_data(&self) -> Option<NodeData>;
-    fn set_node_data(&mut self, node_data: NodeData);
+pub trait HasNodeData: WithBaseField + GodotClass<Base = Node3D> {
+    fn get_node_data(&self) -> Option<NodeData> {
+        NodeData::get_from_node(&self.base())
+    }
+
+    fn get_ser_node_data(&self) -> PackedByteArray {
+        NodeData::get_ser_from_node(&self.base())
+    }
+
+    fn set_node_data(&mut self, node_data: NodeData) {
+        node_data.set_on_node(&mut self.base_mut())
+    }
 
     fn get_rigid_body(&self, world: &World) -> Option<RigidBody> {
         let node_data = self.get_node_data()?;
@@ -79,12 +119,4 @@ pub trait HasNodeData {
     }
 }
 
-impl_trait_for_all_nodes!(HasNodeData, {
-    fn get_node_data(&self) -> Option<NodeData> {
-        self.node_data.clone()
-    }
-
-    fn set_node_data(&mut self, node_data: NodeData) {
-        self.node_data = Some(node_data);
-    }
-});
+impl_trait_for_all_nodes!(HasNodeData, {});

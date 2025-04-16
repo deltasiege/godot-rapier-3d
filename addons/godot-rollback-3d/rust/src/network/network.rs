@@ -1,13 +1,11 @@
 use godot::prelude::*;
 
 use crate::adapters::GR3DNetworkAdapter;
-use crate::interface::GR3D;
+use crate::interface::*;
 use crate::network::*;
 use crate::types::*;
-use crate::utils::decode_from_packed_byte_array;
-use crate::utils::encode_to_packed_byte_array;
-use crate::world::process_godot_spawns_despawns;
-use crate::world::step;
+use crate::utils::*;
+use crate::world::*;
 
 #[derive(Debug)]
 pub struct Network {
@@ -29,59 +27,6 @@ impl Network {
             local_peer: LocalPeer::new(),
             remote_peers: Vec::new(),
         }
-    }
-
-    /// Returns true if the provided GRUID refers to a local rollback node.
-    pub fn is_local(&self, gruid: GRUID) -> bool {
-        self.get_local_peer_index() == Some(gruid.0)
-    }
-
-    /// Returns the peer index of the local peer.
-    pub fn get_local_peer_index(&self) -> Option<PeerIndex> {
-        match self.local_peer.metadata {
-            Some(ref metadata) => Some(metadata.idx?),
-            None => {
-                log::error!("Local peer metadata is not set");
-                None
-            }
-        }
-    }
-
-    /// Returns the peer index of the remote peer with the given PeerId.
-    pub fn get_remote_peer_index(&self, peer_id: PeerId) -> Option<PeerIndex> {
-        match self
-            .remote_peers
-            .iter()
-            .find(|peer| peer.metadata.id == peer_id)
-        {
-            Some(peer) => Some(peer.metadata.idx?),
-            None => {
-                log::error!("Remote peer with ID {} not found", peer_id);
-                None
-            }
-        }
-    }
-
-    /// Returns the PeerId of the peer that has the given PeerIndex.
-    /// Returns -1 if the peer index is invalid or if the network has not started.
-    pub fn get_peer_id(&self, peer_index: PeerIndex) -> PeerId {
-        if peer_index == 0 || !self.started {
-            return -1;
-        }
-
-        if let Some(local_meta) = &self.local_peer.metadata {
-            if peer_index == local_meta.idx.unwrap() {
-                return local_meta.id;
-            }
-        }
-
-        for remote_peer in &self.remote_peers {
-            if remote_peer.metadata.idx == Some(peer_index) {
-                return remote_peer.metadata.id;
-            }
-        }
-
-        -1
     }
 
     pub fn add_remote_peer(&mut self, peer_id: PeerId) {
@@ -145,6 +90,20 @@ impl Network {
         }
     }
 
+    pub fn get_remote_peer(&self, peer_id: PeerId) -> Option<&RemotePeer> {
+        match self
+            .remote_peers
+            .iter()
+            .find(|peer| peer.metadata.id == peer_id)
+        {
+            Some(peer) => Some(peer),
+            None => {
+                log::error!("Remote peer with ID {} not found", peer_id);
+                None
+            }
+        }
+    }
+
     pub fn get_remote_peer_mut(&mut self, peer_id: PeerId) -> Option<&mut RemotePeer> {
         match self
             .remote_peers
@@ -157,6 +116,57 @@ impl Network {
                 None
             }
         }
+    }
+
+    /// Returns a specific input made by the remote peer with the given PeerId at the given tick.
+    pub fn get_remote_input(
+        &self,
+        peer_id: PeerId,
+        tick: Tick,
+        input_key: GString,
+    ) -> Option<Variant> {
+        self.get_remote_inputs(peer_id, tick)?
+            .get(&input_key)
+            .cloned()
+    }
+
+    /// Returns all inputs made by the remote peer with the given PeerId at the given tick.
+    fn get_remote_inputs(&self, peer_id: PeerId, tick: Tick) -> Option<InputMap> {
+        self.get_remote_peer(peer_id)?
+            .buffers
+            .inputs
+            .get(&tick)
+            .cloned()
+    }
+
+    /// Returns the PeerIndex of the given PeerId.
+    pub fn get_peer_index(&self, peer_id: PeerId) -> Option<PeerIndex> {
+        if self.local_peer.get_peer_id() == Some(peer_id) {
+            return self.local_peer.get_peer_index();
+        }
+
+        for remote_peer in &self.remote_peers {
+            if remote_peer.metadata.id == peer_id {
+                return remote_peer.metadata.idx;
+            }
+        }
+
+        None
+    }
+
+    /// Returns the PeerId of the given PeerIndex.
+    pub fn get_peer_id(&self, peer_index: PeerIndex) -> Option<PeerId> {
+        if self.local_peer.get_peer_index() == Some(peer_index) {
+            return self.local_peer.get_peer_id();
+        }
+
+        for remote_peer in &self.remote_peers {
+            if remote_peer.metadata.idx == Some(peer_index) {
+                return Some(remote_peer.metadata.id);
+            }
+        }
+
+        None
     }
 }
 
@@ -176,7 +186,7 @@ pub fn on_physics_process(gr3d: &mut GR3D, runtime: Gd<Node>, step_world: bool) 
         step(gr3d, 1);
     }
 
-    process_godot_spawns_despawns(gr3d, runtime);
+    process_godot_actions(gr3d, runtime);
     gr3d.network.send_updates_to_all_remote_peers(tick);
     gr3d.network.log_buffer_holes();
 }

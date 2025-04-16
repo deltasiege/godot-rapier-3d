@@ -18,3 +18,12 @@ func get_input(input_key: String) -> Variant:
 		"move": return Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 		"jump": return Input.is_action_just_pressed("jump")
 		_: push_error("Unknown input_key: ", input_key); return null
+
+## Required!
+## A function that returns a default value for every possible
+## action specified in all_inputs (passed in as input_key).
+func get_default(input_key: String) -> Variant:
+	match input_key:
+		"move": return Vector2.ZERO
+		"jump": return false
+		_: push_error("Unknown input_key: ", input_key); return null

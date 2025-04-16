@@ -1,6 +1,7 @@
+use crate::types::*;
 #[derive(Debug)]
 pub struct TimeState {
-    pub tick: usize,
+    pub tick: Tick,
     pub secs: f32,
 }
 

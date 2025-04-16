@@ -5,23 +5,13 @@ use godot::prelude::*;
 use crate::nodes::common::*;
 
 #[derive(GodotClass)]
-#[class(tool, base=Node3D)]
+#[class(tool, init, base=Node3D)]
 pub struct RollbackArea3D {
-    pub node_data: Option<NodeData>,
-    pub blueprint: Option<NodeBlueprint>,
     base: Base<Node3D>,
 }
 
 #[godot_api]
 impl INode3D for RollbackArea3D {
-    fn init(base: Base<Node3D>) -> Self {
-        Self {
-            node_data: None,
-            blueprint: None,
-            base,
-        }
-    }
-
     fn enter_tree(&mut self) {
         self.on_enter_tree();
     }

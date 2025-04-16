@@ -1,8 +1,8 @@
 use godot::classes::notify::Node3DNotification;
 use godot::classes::{INode3D, Node3D};
 use godot::prelude::*;
-use rapier3d::control::PidController;
 use rapier3d::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::interface::*;
 use crate::nodes::common::*;
@@ -12,58 +12,42 @@ use crate::utils::{vector_to_godot, vector_to_point};
 #[class(tool, base=Node3D)]
 /// Description of the RollbackPIDCharacter3D class.
 pub struct RollbackPIDCharacter3D {
-    pub node_data: Option<NodeData>,
-    pub blueprint: Option<NodeBlueprint>,
     #[export]
     /// The Proportional gain applied to the instantaneous linear position errors.
     /// This is usually set to a multiple of the inverse of simulation step time
     /// (e.g. `60` if the delta-time is `1.0 / 60.0`).
-    pub lin_kp: f32,
+    pub kp: f32,
     #[export]
     /// The linear gain applied to the Integral part of the PID controller.
-    pub lin_ki: f32,
+    pub ki: f32,
     #[export]
     /// The Derivative gain applied to the instantaneous linear velocity errors.
     /// This is usually set to a value in `[0.0, 1.0]` where `0.0` implies no damping
     /// (no correction of velocity errors) and `1.0` implies complete damping (velocity errors
     /// are corrected in a single simulation step).
-    pub lin_kd: f32,
-    #[export]
-    /// The Proportional gain applied to the instantaneous angular position errors.
-    /// This is usually set to a multiple of the inverse of simulation step time
-    /// (e.g. `60` if the delta-time is `1.0 / 60.0`).
-    pub ang_kp: f32,
-    #[export]
-    /// The angular gain applied to the Integral part of the PID controller.
-    pub ang_ki: f32,
-    #[export]
-    /// The Derivative gain applied to the instantaneous angular velocity errors.
-    /// This is usually set to a value in `[0.0, 1.0]` where `0.0` implies no damping
-    /// (no correction of velocity errors) and `1.0` implies complete damping (velocity errors
-    /// are corrected in a single simulation step).
-    pub ang_kd: f32,
+    pub kd: f32,
 
     #[export]
     pub floor_check_ray_length: f32,
 
-    pub controller: PidController,
     base: Base<Node3D>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PDControllerSettings {
+    pub kp: f32,
+    pub ki: f32,
+    pub kd: f32,
 }
 
 #[godot_api]
 impl INode3D for RollbackPIDCharacter3D {
     fn init(base: Base<Node3D>) -> Self {
         Self {
-            node_data: None,
-            blueprint: None,
-            lin_kp: 60.0,
-            lin_ki: 1.0,
-            lin_kd: 0.8,
-            ang_kp: 60.0,
-            ang_ki: 1.0,
-            ang_kd: 0.8,
+            kp: 60.0,
+            ki: 1.0,
+            kd: 0.8,
             floor_check_ray_length: 0.1,
-            controller: PidController::default(),
             base,
         }
     }
@@ -86,6 +70,14 @@ impl INode3D for RollbackPIDCharacter3D {
 
 #[godot_api]
 impl RollbackPIDCharacter3D {
+    pub fn get_controller_settings(&self) -> PDControllerSettings {
+        PDControllerSettings {
+            kp: self.kp,
+            ki: self.ki,
+            kd: self.kd,
+        }
+    }
+
     #[func]
     fn move_by_amount(&self, amount: Vector3) {
         self.on_move_by_amount(amount);

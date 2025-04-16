@@ -1,4 +1,5 @@
-use crate::{interface::GR3D, world::*};
+use crate::interface::GR3D;
+use crate::world::*;
 
 pub struct World {
     pub time: TimeState,
@@ -107,7 +108,7 @@ pub fn step(gr3d: &mut GR3D, count: i64) {
 
         // TODO execute all inputs
         // log::trace!("Applied inputs for tick {}: {:?}", tick, inputs);
-        process_rapier_spawns_despawns(gr3d);
+        process_rapier_actions(gr3d);
 
         if let Some(snapshot) = gr3d.world.step() {
             gr3d.network

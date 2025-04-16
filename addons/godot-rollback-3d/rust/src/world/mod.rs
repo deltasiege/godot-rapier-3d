@@ -1,3 +1,4 @@
+mod actions;
 mod debug_visualizer;
 mod node_db;
 mod physics_state;
@@ -5,6 +6,7 @@ mod snapshot;
 mod time_state;
 mod world;
 
+pub use actions::*;
 pub use debug_visualizer::DebugVisualizer;
 pub use node_db::*;
 pub use physics_state::PhysicsState;

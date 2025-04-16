@@ -13,10 +13,10 @@ script = ExtResource("1_5855m")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
 
 [node name="RollbackCollisionShape3D" type="RollbackCollisionShape3D" parent="." node_paths=PackedStringArray("col_shape")]
-col_shape = NodePath("../CollisionShape3D")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+col_shape = NodePath("CollisionShape3D")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RollbackCollisionShape3D"]
 shape = SubResource("CapsuleShape3D_nv40x")
 
 [node name="SophiaSkin" parent="." instance=ExtResource("1_r0lgw")]

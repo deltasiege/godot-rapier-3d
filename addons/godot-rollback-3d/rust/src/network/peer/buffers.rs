@@ -2,7 +2,7 @@ use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
 use crate::adapters::GR3DInputAdapter;
-use crate::network::{UpdateFrame, UpdateMessage};
+use crate::network::UpdateFrame;
 use crate::types::*;
 use crate::utils::get_hash;
 
@@ -89,28 +89,6 @@ impl PeerBuffers {
             .deserialize_inputs(&frame.ser_inputs);
 
         self.inputs.insert(frame.tick, inputs);
-    }
-}
-
-/// Store current inputs in the input buffer.
-pub fn capture_current_inputs(
-    buffers: &mut PeerBuffers,
-    current_tick: Tick,
-    adapter: &mut Option<Gd<GR3DInputAdapter>>,
-) {
-    match adapter {
-        Some(adapter) => {
-            let input_map = adapter.bind_mut().get_inputs();
-            let serialized_inputs = adapter.bind_mut().get_ser_inputs();
-            let input_hash = get_hash(&serialized_inputs);
-
-            buffers.inputs.insert(current_tick, input_map);
-            buffers.ser_inputs.insert(current_tick, serialized_inputs);
-            buffers.input_hashes.insert(current_tick, input_hash);
-        }
-        None => {
-            log::error!("capture_current_inputs failed: input adapter is not set");
-        }
     }
 }
 

@@ -52,6 +52,24 @@ impl GR3D {
     fn _on_physics_process(&mut self, runtime: Gd<Node>, step_world: bool) {
         on_physics_process(self, runtime, step_world);
     }
+    #[func]
+    fn _ingest_modify_action(
+        &mut self,
+        ser_node_data: PackedByteArray,
+        operation: i64,
+        data: Array<Variant>,
+    ) {
+        self.world
+            .node_db
+            .ingest_modify_action(ser_node_data, operation, data);
+    }
+
+    // Input ---------------------------------
+
+    #[func]
+    fn get_input(&mut self, input_key: GString, node: Gd<Node>) -> Variant {
+        get_input(self, input_key, node)
+    }
 
     // Nodes ---------------------------------
 
@@ -68,19 +86,19 @@ impl GR3D {
     }
 
     #[func]
-    fn _node_editor_enter(&mut self, blueprint: Dictionary) {
+    fn _node_editor_enter(&mut self) {
         // TODO
     }
     #[func]
-    fn _node_runtime_enter(&mut self, blueprint: Dictionary) {
+    fn _node_runtime_enter(&mut self) {
         // TODO
     }
     #[func]
-    fn _node_editor_exit(&mut self, blueprint: Dictionary) {
+    fn _node_editor_exit(&mut self) {
         // TODO
     }
     #[func]
-    fn _node_runtime_exit(&mut self, blueprint: Dictionary) {
+    fn _node_runtime_exit(&mut self) {
         // TODO
     }
 
@@ -117,14 +135,14 @@ impl GR3D {
     }
     #[func]
     fn get_local_peer_index(&mut self) -> i64 {
-        match self.network.get_local_peer_index() {
+        match self.network.local_peer.get_peer_index() {
             Some(index) => index as i64,
             None => -1,
         }
     }
     #[func]
-    fn get_remote_peer_index(&mut self, peer_id: i64) -> i64 {
-        match self.network.get_remote_peer_index(peer_id) {
+    fn get_peer_index(&mut self, peer_id: i64) -> i64 {
+        match self.network.get_peer_index(peer_id) {
             Some(index) => index as i64,
             None => -1,
         }

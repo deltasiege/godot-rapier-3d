@@ -2,11 +2,12 @@ use godot::classes::notify::Node3DNotification;
 use godot::classes::{INode3D, Node3D};
 use godot::prelude::*;
 use rapier3d::control::{
-    CharacterCollision, EffectiveCharacterMovement, KinematicCharacterController,
+    CharacterCollision, CharacterLength, EffectiveCharacterMovement, KinematicCharacterController,
 };
+use rapier3d::math::UnitVector;
 
 use crate::nodes::common::*;
-use crate::utils::vector_to_godot;
+use crate::utils::{vector_to_godot, vector_to_rapier};
 
 /*
     I had some issues with jittering when desired_movement is pushing into the floor.
@@ -17,9 +18,6 @@ use crate::utils::vector_to_godot;
 #[derive(GodotClass)]
 #[class(tool, base=Node3D)]
 pub struct RollbackKinematicCharacter3D {
-    pub node_data: Option<NodeData>,
-    pub blueprint: Option<NodeBlueprint>,
-
     // bool floor_block_on_wall = true
     // bool floor_constant_speed = false // IMPORTANT
     #[export]
@@ -43,7 +41,6 @@ pub struct RollbackKinematicCharacter3D {
 
     pub last_movement: Option<EffectiveCharacterMovement>,
     pub last_collisions: Vec<CharacterCollision>,
-    pub controller: KinematicCharacterController,
 
     // rapier specific settings
     // autostep: Option<CharacterAutostep> nice to have but expensive performance apparently
@@ -54,8 +51,6 @@ pub struct RollbackKinematicCharacter3D {
 impl INode3D for RollbackKinematicCharacter3D {
     fn init(base: Base<Node3D>) -> Self {
         Self {
-            node_data: None,
-            blueprint: None,
             floor_max_angle: 0.7853982,       // (45 degrees in radians)
             floor_min_slide_angle: 0.7853982, // (45 degrees in radians)
             floor_snap_length: 0.2,
@@ -65,7 +60,6 @@ impl INode3D for RollbackKinematicCharacter3D {
             slide: true,
             last_movement: None,
             last_collisions: Vec::new(),
-            controller: KinematicCharacterController::default(),
             base,
         }
     }
@@ -88,6 +82,19 @@ impl INode3D for RollbackKinematicCharacter3D {
 
 #[godot_api]
 impl RollbackKinematicCharacter3D {
+    pub fn get_controller(&self) -> KinematicCharacterController {
+        KinematicCharacterController {
+            up: UnitVector::new_normalize(vector_to_rapier(self.get_up_direction())),
+            offset: CharacterLength::Relative(self.get_safe_margin()),
+            slide: self.get_slide(),
+            autostep: None, // TODO
+            max_slope_climb_angle: self.get_floor_max_angle(),
+            min_slope_slide_angle: self.get_floor_min_slide_angle(),
+            snap_to_ground: Some(CharacterLength::Relative(self.get_floor_snap_length())),
+            normal_nudge_factor: self.get_normal_nudge_factor(),
+        }
+    }
+
     #[func]
     fn move_by_amount(&self, amount: Vector3) {
         self.on_move_by_amount(amount);

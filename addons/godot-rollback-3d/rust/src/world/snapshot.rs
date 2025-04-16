@@ -8,7 +8,7 @@ use crate::World;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct WorldSnapshot {
-    pub tick: usize,
+    pub tick: Tick,
     pub broad_phase: DefaultBroadPhase,
     pub narrow_phase: NarrowPhase,
     pub island_manager: IslandManager,
