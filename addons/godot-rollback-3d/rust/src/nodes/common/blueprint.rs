@@ -23,8 +23,8 @@ pub struct NodeBlueprint {
 
     // Rapier specific
     pub rapier_builder: RapierBuilder,
-    pub rapier_pid_controller: Option<PDControllerSettings>,
-    pub rapier_kinematic_controller: Option<KinematicCharacterController>,
+    pub rapier_pid_controller: Option<PDControllerSettings>, // TODO: potentially stateful
+    pub rapier_kinematic_controller: Option<KinematicCharacterController>, // TODO: potentially stateful
 }
 
 impl NodeBlueprint {

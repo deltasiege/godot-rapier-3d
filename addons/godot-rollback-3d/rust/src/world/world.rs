@@ -106,8 +106,7 @@ pub fn step(gr3d: &mut GR3D, count: i64) {
         let tick = gr3d.world.time.tick.clone();
         log::trace!("Executing tick: {}", tick);
 
-        // TODO execute all inputs
-        // log::trace!("Applied inputs for tick {}: {:?}", tick, inputs);
+        // process_node_tick_functions(gr3d); // UP TO
         process_rapier_actions(gr3d);
 
         if let Some(snapshot) = gr3d.world.step() {

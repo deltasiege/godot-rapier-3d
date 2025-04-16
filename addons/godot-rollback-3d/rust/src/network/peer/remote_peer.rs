@@ -68,7 +68,7 @@ impl RemotePeer {
         }
 
         // Remove any requested_frames records that are earlier than the earliest requested tick of the current message
-        // (the remote peer is no longer interested in them)
+        // (because the remote peer is no longer interested in them)
         let earliest_requested_tick = update_message
             .requested_frames
             .iter()
@@ -84,6 +84,7 @@ impl RemotePeer {
             self.metadata.id,
             update_message.requested_frames
         );
+
         for tick in &update_message.requested_frames {
             if !self.requested_frames.contains(tick) {
                 self.requested_frames.push(*tick);

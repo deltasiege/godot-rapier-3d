@@ -10,6 +10,10 @@ use crate::world::actions::*;
 pub struct NodeDatabase {
     pub nodes: NodeMap, // Map of all nodes that have been spawned/despawned into Rapier.
 
+    // Map of all `on_tick` functions that have been registered for each node.
+    // Cannot be serialized into snapshots. Must be cleared and then repopulated when nodes are spawned via GR3D.spawn()
+    pub node_tick_functions: HashMap<GRUID, Callable>,
+
     // Resource cache.
     // Should NOT be saved/loaded via snapshots. Should never be cleared since resources are expected to be static.
     pub resource_cache: HashMap<String, Vec<NodeBlueprint>>, // Cache of resource node paths -> blueprints. Used to avoid instantiating Godot nodes during rollback unnecessarily.
@@ -20,10 +24,13 @@ pub struct NodeDatabase {
     pub awaiting_godot: HashMap<GRUID, GodotAction>, // Iterated and drained at the end of every **Godot physics_process tick**. Used to ensure Godot matches up with what already exists in Rapier.
 }
 
+pub fn process_node_tick_functions() {}
+
 impl NodeDatabase {
     pub fn new() -> Self {
         Self {
             nodes: HashMap::default(),
+            node_tick_functions: HashMap::default(),
             resource_cache: HashMap::default(),
             awaiting_rapier: HashMap::default(),
             awaiting_godot: HashMap::default(),
@@ -101,6 +108,7 @@ impl NodeDatabase {
     /// If the resource path is already in the cache, it returns the cached blueprints.
     fn get_blueprints(&mut self, spawn_request: SpawnRequest) -> Option<Vec<NodeBlueprint>> {
         let res_path = spawn_request.resource_path.clone();
+
         match self.resource_cache.get(&res_path) {
             Some(blueprints) => {
                 log::trace!("Resource path '{}' found in cache", res_path);
@@ -123,5 +131,11 @@ impl NodeDatabase {
                 Some(bps)
             }
         }
+
+        // UP TO
+        // // Register on_physics_tick if it exists
+        // if spawned_node.has_method("on_physics_tick") {
+        //     let callable = Callable::from_object_method(&spawned_node, "on_physics_tick");
+        // }
     }
 }

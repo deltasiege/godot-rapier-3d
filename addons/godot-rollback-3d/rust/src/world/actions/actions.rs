@@ -1,7 +1,7 @@
 use godot::prelude::*;
 
 use crate::interface::GR3D;
-use crate::nodes::{rapier_move_node, rapier_teleport_node, NodeBlueprint, NodeData, RollbackNode};
+use crate::nodes::{rapier_move_node, rapier_teleport_node, NodeBlueprint, NodeData};
 use crate::utils::*;
 use crate::world::actions::*;
 
@@ -89,6 +89,7 @@ pub fn process_godot_actions(gr3d: &mut GR3D, runtime: Gd<Node>) {
                         spawned_node.set_meta("gruid", &gruid_str.to_variant());
                         spawned_node.set_multiplayer_authority(peer_id as i32);
 
+                        // Call on_network_spawn if it exists
                         if spawned_node.has_method("on_network_spawn") {
                             let mut spawn_data = Dictionary::new();
                             spawn_data.set("gruid", gruid_str);
