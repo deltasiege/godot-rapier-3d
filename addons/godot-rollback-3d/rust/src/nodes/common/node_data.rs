@@ -16,6 +16,26 @@ pub struct NodeData {
     pub spawn_tick: Tick,
     pub despawn_tick: Option<Tick>,
     pub blueprint: NodeBlueprint,
+    pub node_state: Vector3,
+}
+
+// UP TO - need to allow saving arbitrary node state into node data from GDScript
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SerializableEntry {
+    pub key: String,
+    pub value: SerializableVariant,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum SerializableVariant {
+    Int(i64),
+    Float(f64),
+    String(String),
+    Bool(bool),
+    Color(Color),
+    Vector2(Vector2),
+    Vector3(Vector3),
 }
 
 impl NodeData {
@@ -31,19 +51,14 @@ impl NodeData {
             spawn_tick,
             despawn_tick: None,
             blueprint,
+            node_state: Vector3::ZERO,
         }
     }
 
     pub fn get_rapier_handle(&self) -> Either<RigidBodyHandle, ColliderHandle> {
         match self.blueprint.rapier_builder {
-            RapierBuilder::RigidBody(_) => Either::Left(RigidBodyHandle::from_raw_parts(
-                self.rapier_handle.0,
-                self.rapier_handle.1,
-            )),
-            RapierBuilder::Collider(_) => Either::Right(ColliderHandle::from_raw_parts(
-                self.rapier_handle.0,
-                self.rapier_handle.1,
-            )),
+            RapierBuilder::RigidBody(_) => Either::Left(self.rapier_handle.to_rigid_body_handle()),
+            RapierBuilder::Collider(_) => Either::Right(self.rapier_handle.to_collider_handle()),
         }
     }
 

@@ -1,5 +1,4 @@
 use godot::prelude::*;
-use rapier3d::prelude::*;
 
 use crate::interface::GR3D;
 use crate::nodes::{NodeBlueprint, NodeData};
@@ -88,23 +87,20 @@ pub fn rapier_spawn_from_blueprint(
                 }
             }
 
-            let raw_parts = handle.into_raw_parts();
-
             log::trace!(
                 "Spawned Rapier RigidBody: '{}' {:?} with {} child colliders at {}",
                 node_name,
-                raw_parts,
+                handle,
                 num_child_colliders,
                 blueprint.spawn_isometry.translation,
             );
 
-            raw_parts
+            RapierHandle::from_rigid_body_handle(handle)
         }
         RapierBuilder::Collider(collider) => {
             let handle = physics.colliders.insert(collider);
-            let raw_parts = handle.into_raw_parts();
-            log::trace!("Spawned Rapier Collider: '{}' {:?}", node_name, raw_parts);
-            raw_parts
+            log::trace!("Spawned Rapier Collider: '{}' {:?}", node_name, handle);
+            RapierHandle::from_collider_handle(handle)
         }
     }
 }
@@ -113,10 +109,7 @@ pub fn rapier_spawn_from_blueprint(
 pub fn rapier_despawn_from_node_data(node_data: NodeData, physics: &mut PhysicsState) {
     match node_data.blueprint.rapier_builder {
         RapierBuilder::RigidBody(_) => {
-            let handle = RigidBodyHandle::from_raw_parts(
-                node_data.rapier_handle.0,
-                node_data.rapier_handle.1,
-            );
+            let handle = node_data.rapier_handle.to_rigid_body_handle();
             physics.bodies.remove(
                 handle,
                 &mut physics.islands,
@@ -127,10 +120,7 @@ pub fn rapier_despawn_from_node_data(node_data: NodeData, physics: &mut PhysicsS
             );
         }
         RapierBuilder::Collider(_) => {
-            let handle = ColliderHandle::from_raw_parts(
-                node_data.rapier_handle.0,
-                node_data.rapier_handle.1,
-            );
+            let handle = node_data.rapier_handle.to_collider_handle();
             physics
                 .colliders
                 .remove(handle, &mut physics.islands, &mut physics.bodies, false);

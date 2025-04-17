@@ -26,7 +26,7 @@ impl LocalPeer {
 
     /// Returns true if the provided GRUID refers to a local rollback node.
     pub fn is_local_gruid(&self, gruid: GRUID) -> bool {
-        self.is_local_peer_idx(gruid.0)
+        self.is_local_peer_idx(gruid.peer_index)
     }
 
     /// Returns true if the provided PeerIndex matches the local PeerIndex.

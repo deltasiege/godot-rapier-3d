@@ -79,11 +79,6 @@ impl RollbackPIDCharacter3D {
     }
 
     #[func]
-    fn move_by_amount(&self, amount: Vector3) {
-        self.on_move_by_amount(amount);
-    }
-
-    #[func]
     fn get_real_velocity(&self) -> Vector3 {
         vector_to_godot(self.get_body_state().linvel)
     }

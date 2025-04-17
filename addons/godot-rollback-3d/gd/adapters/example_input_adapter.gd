@@ -6,6 +6,7 @@ extends GR3DInputAdapter
 func get_input_list() -> Array[String]:
 	return \
 	[
+		"mouse_motion",
 		"move",
 		"jump"
 	]
@@ -15,6 +16,7 @@ func get_input_list() -> Array[String]:
 ## action specified in all_inputs (passed in as input_key).
 func get_input(input_key: String) -> Variant:
 	match input_key:
+		"mouse_motion": return Input.get_last_mouse_velocity()
 		"move": return Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 		"jump": return Input.is_action_just_pressed("jump")
 		_: push_error("Unknown input_key: ", input_key); return null
@@ -24,6 +26,7 @@ func get_input(input_key: String) -> Variant:
 ## action specified in all_inputs (passed in as input_key).
 func get_default(input_key: String) -> Variant:
 	match input_key:
+		"mouse_motion": return Vector2.ZERO
 		"move": return Vector2.ZERO
 		"jump": return false
 		_: push_error("Unknown input_key: ", input_key); return null

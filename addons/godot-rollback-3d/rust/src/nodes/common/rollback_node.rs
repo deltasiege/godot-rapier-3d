@@ -6,7 +6,6 @@ use crate::impl_trait_for_all_nodes;
 use crate::interface::get_gr3d;
 use crate::nodes::HasNodeData;
 use crate::utils::isometry_to_transform;
-use crate::world::NodeOperation;
 
 pub trait RollbackNode: HasNodeData + WithBaseField + GodotClass<Base = Node3D> {
     fn on_enter_tree(&mut self) {
@@ -74,17 +73,6 @@ pub trait RollbackNode: HasNodeData + WithBaseField + GodotClass<Base = Node3D> 
             .set_global_transform(isometry_to_transform(body.position()));
 
         Some(())
-    }
-
-    /// Send a local rapier action from a RollbackNode to the GR3D singleton.
-    fn ingest_modify_action(&self, operation: NodeOperation, var_args: &[Variant]) {
-        if let Some(mut gr3d) = get_gr3d() {
-            let mut args = Vec::new();
-            args.push(self.get_ser_node_data().to_variant());
-            args.push(operation.to_variant());
-            args.push(var_args.to_variant());
-            gr3d.call_deferred("_ingest_modify_action", &args);
-        }
     }
 }
 

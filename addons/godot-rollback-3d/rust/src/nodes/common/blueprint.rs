@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use crate::nodes::*;
 use crate::types::*;
 use crate::utils::*;
-use crate::world::SpawnRequest;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 /// Information known at the time of the initial spawn request.
@@ -54,107 +53,6 @@ impl NodeBlueprint {
         dict.set("rapier_builder", to_string_variant(&self.rapier_builder));
         dict.to_variant()
     }
-
-    pub fn from_spawn_request(spawn_request: SpawnRequest) -> Option<Vec<Self>> {
-        let mut spawned_node = spawn_into_godot(
-            &spawn_request.parent,
-            &spawn_request.name,
-            &spawn_request.parent.get_path().to_string(),
-            &spawn_request.resource_path,
-            spawn_request.transform,
-        )?;
-
-        let blueprints =
-            get_blueprints(&spawned_node.clone().upcast(), &spawn_request.resource_path);
-        spawned_node.queue_free();
-        Some(blueprints)
-    }
-}
-
-/// Recursively returns a vector of NodeBlueprints for all rollback nodes under and including the given node.
-fn get_blueprints(root: &Gd<Node>, resource_path: &String) -> Vec<NodeBlueprint> {
-    let rigidbodies = get_children_with_class(root, RollbackNodeClass::RollbackRigidBody3D);
-    let kin_chars = get_children_with_class(root, RollbackNodeClass::RollbackKinematicCharacter3D);
-    let pid_chars = get_children_with_class(root, RollbackNodeClass::RollbackPIDCharacter3D);
-    let combined = rigidbodies
-        .iter_shared()
-        .chain(kin_chars.iter_shared())
-        .chain(pid_chars.iter_shared());
-
-    let mut blueprints = Vec::new();
-    let root_bp = node_to_blueprint(root, resource_path, true);
-    let child_bps = iter_to_blueprints(combined, resource_path, true);
-
-    blueprints.extend(root_bp);
-    blueprints.extend(child_bps);
-    blueprints
-}
-
-/// Recursively returns a vector of NodeBlueprints for all colliders under the given node.
-fn get_collider_blueprints(root: &Gd<Node>, resource_path: &String) -> Vec<NodeBlueprint> {
-    let colliders = get_children_with_class(root, RollbackNodeClass::RollbackCollisionShape3D);
-    iter_to_blueprints(colliders.iter_shared(), resource_path, false)
-}
-
-/// Returns a vector of NodeBlueprints for all nodes in the given iterator.
-fn iter_to_blueprints(
-    iter: impl Iterator<Item = Gd<Node>>,
-    resource_path: &String,
-    get_child_colliders: bool,
-) -> Vec<NodeBlueprint> {
-    let mut blueprints = Vec::new();
-    for node in iter {
-        if let Some(blueprint) = node_to_blueprint(&node, resource_path, get_child_colliders) {
-            blueprints.push(blueprint);
-        }
-    }
-    blueprints
-}
-
-/// Returns a NodeBlueprint for the given node, without attempting to get child colliders.
-fn node_to_blueprint(
-    node: &Gd<Node>,
-    resource_path: &String,
-    get_child_colliders: bool,
-) -> Option<NodeBlueprint> {
-    let casted = &node.clone().try_cast::<Node3D>().ok()?;
-    let class = RollbackNodeClass::try_from_pointer(node, true)?;
-    let spawn_isometry = get_spawn_isometry(casted, &class);
-    let rapier_builder = get_rapier_builder(casted, &class)?;
-    let child_colliders = match get_child_colliders {
-        true => get_collider_blueprints(node, resource_path),
-        false => Vec::new(),
-    };
-
-    let rapier_pid_controller = match class {
-        RollbackNodeClass::RollbackPIDCharacter3D => {
-            let casted = node.clone().cast::<RollbackPIDCharacter3D>();
-            let settings = casted.bind().get_controller_settings();
-            Some(settings)
-        }
-        _ => None,
-    };
-
-    let rapier_kinematic_controller = match class {
-        RollbackNodeClass::RollbackKinematicCharacter3D => {
-            let casted = node.clone().cast::<RollbackKinematicCharacter3D>();
-            let controller = casted.bind().get_controller();
-            Some(controller)
-        }
-        _ => None,
-    };
-
-    Some(NodeBlueprint {
-        class,
-        snapshottable: true,
-        spawn_isometry,
-        child_colliders,
-        tree_path: node.get_path().to_string(),
-        resource_path: resource_path.clone(),
-        rapier_builder,
-        rapier_pid_controller,
-        rapier_kinematic_controller,
-    })
 }
 
 impl std::fmt::Display for NodeBlueprint {

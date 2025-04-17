@@ -7,30 +7,42 @@ use crate::types::*;
 use crate::utils::get_hash;
 
 /// Return the input value for the given input key from either the local peer's input adapter or the
-/// remote peer's buffer, depending on the multiplayer authority of the given node.
-pub fn get_input(gr3d: &mut GR3D, input_key: GString, node: Gd<Node>) -> Variant {
-    let authority = node.get_multiplayer_authority() as PeerId;
-    let tick = gr3d.world.time.tick.clone();
+/// remote peer's buffer, depending on the peer_index of the provided GRUID.
+pub fn get_input(gr3d: &mut GR3D, gruid: String, input_key: GString) -> Variant {
+    match try_get_input(gr3d, gruid, input_key) {
+        Some(input) => input,
+        None => Variant::nil(),
+    }
+}
 
-    match gr3d.network.local_peer.is_local_peer_id(authority) {
+/// Option compatible version of get_input.
+fn try_get_input(gr3d: &mut GR3D, gruid: String, input_key: GString) -> Option<Variant> {
+    let tick = gr3d.world.time.tick.clone();
+    let gruid = GRUID::try_from_string(&gruid)?;
+
+    match gr3d.network.local_peer.is_local_gruid(gruid) {
         true => {
-            if let Some(adapter) = gr3d.network.local_peer.get_adapter_mut() {
-                return get_input_from_adapter(adapter, input_key.clone()); // Local peer, get input from the local adapter
-            }
+            // Local peer, get input from the local adapter
+            let adapter = gr3d.network.local_peer.get_adapter_mut()?;
+            Some(get_input_from_adapter(adapter, input_key.clone()))
         }
         false => {
-            if let Some(input) = gr3d
-                .network
-                .get_remote_input(authority, tick, input_key.clone())
-            {
-                return input; // Remote peer, get input from the remote peer's buffer
-            } else if let Some(adapter) = gr3d.network.local_peer.get_adapter_mut() {
-                return get_default_from_adapter(adapter, input_key.clone()); // Fallback to default from the local adapter
+            // Remote peer, get input from the remote peer's buffer,
+            // or fall back to default value from the local adapter
+            let remote_input = gr3d.network.get_remote_input(
+                gruid.get_peer_id(&gr3d.network)?,
+                tick,
+                input_key.clone(),
+            );
+            match remote_input {
+                Some(input) => Some(input),
+                None => {
+                    let adapter = gr3d.network.local_peer.get_adapter_mut()?;
+                    Some(get_default_from_adapter(adapter, input_key.clone()))
+                }
             }
         }
     }
-
-    Variant::nil()
 }
 
 fn get_input_from_adapter(adapter: &mut Gd<GR3DInputAdapter>, input_key: GString) -> Variant {

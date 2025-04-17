@@ -3,33 +3,44 @@ use rapier3d::control::{KinematicCharacterController, PdController};
 use rapier3d::parry::either::Either::{Left, Right};
 use rapier3d::prelude::{AxesMask, QueryFilter, RigidBodyHandle, RigidBodyVelocity};
 
-use crate::types::RollbackNodeClass;
+use crate::interface::GR3D;
+use crate::nodes::*;
+use crate::types::*;
 use crate::utils::vector_to_rapier;
 use crate::world::{NodeOperation, PhysicsState};
-use crate::{impl_trait_for_nodes, nodes::*};
 
-pub trait Controllable: HasNodeData + RollbackNode {
-    fn on_move_by_amount(&self, amount: Vector3) {
-        if amount == Vector3::ZERO {
+/// Adds a new modify action to the node_db, referring to the given GRUID node.
+pub fn move_by_amount(gr3d: &mut GR3D, gruid: String, amount: Vector3) {
+    if amount == Vector3::ZERO {
+        return;
+    }
+
+    let gruid = match GRUID::try_from_string(&gruid) {
+        Some(gruid) => gruid,
+        None => return,
+    };
+
+    let node_data = match gr3d.world.node_db.nodes.get(&gruid) {
+        Some(node_data) => node_data,
+        None => {
+            log::error!("Cannot move node '{}' - not found in node_db.", gruid);
             return;
         }
-        self.ingest_modify_action(NodeOperation::MoveByAmount, &[amount.to_variant()]);
-    }
+    };
 
-    fn on_teleport_to_position(&self, position: Vector3) {
-        self.ingest_modify_action(NodeOperation::TeleportToPosition, &[position.to_variant()]);
-    }
+    gr3d.world.node_db.ingest_modify_action(
+        node_data.clone(),
+        NodeOperation::MoveByAmount,
+        vec![amount.to_variant()],
+    );
 }
 
-impl_trait_for_nodes!(
-    Controllable,
-    {},
-    RollbackKinematicCharacter3D,
-    RollbackPIDCharacter3D
-);
-
 /// Move a node by a given amount in the Rapier world.
-pub fn rapier_move_node(node_data: &NodeData, amount: Option<Variant>, physics: &mut PhysicsState) {
+pub fn rapier_move_node(
+    node_data: &NodeData,
+    amount: Option<&Variant>,
+    physics: &mut PhysicsState,
+) {
     let amount = amount
         .and_then(|v| v.try_to::<Vector3>().ok())
         .unwrap_or_default();
@@ -93,7 +104,7 @@ pub fn rapier_move_node(node_data: &NodeData, amount: Option<Variant>, physics: 
 /// Teleport a node to a given position in the Rapier world.
 pub fn rapier_teleport_node(
     node_data: &NodeData,
-    position: Option<Variant>,
+    position: Option<&Variant>,
     physics: &mut PhysicsState,
 ) {
     let position = match position.clone().and_then(|v| v.try_to::<Vector3>().ok()) {

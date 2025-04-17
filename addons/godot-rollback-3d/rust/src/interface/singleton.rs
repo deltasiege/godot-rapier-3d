@@ -4,6 +4,7 @@ use godot::prelude::*;
 use crate::adapters::*;
 use crate::interface::*;
 use crate::network::*;
+use crate::nodes::move_by_amount;
 use crate::types::*;
 use crate::utils::try_wrap_bytes;
 use crate::world::*;
@@ -52,23 +53,12 @@ impl GR3D {
     fn _on_physics_process(&mut self, runtime: Gd<Node>, step_world: bool) {
         on_physics_process(self, runtime, step_world);
     }
-    #[func]
-    fn _ingest_modify_action(
-        &mut self,
-        ser_node_data: PackedByteArray,
-        operation: i64,
-        data: Array<Variant>,
-    ) {
-        self.world
-            .node_db
-            .ingest_modify_action(ser_node_data, operation, data);
-    }
 
     // Input ---------------------------------
 
     #[func]
-    fn get_input(&mut self, input_key: GString, node: Gd<Node>) -> Variant {
-        get_input(self, input_key, node)
+    fn get_input(&mut self, gruid: String, input_key: GString) -> Variant {
+        get_input(self, gruid, input_key)
     }
 
     // Nodes ---------------------------------
@@ -83,6 +73,11 @@ impl GR3D {
         transform: Transform3D,
     ) -> Array<GString> {
         spawn(self, peer_index, name, parent, resource_path, transform)
+    }
+
+    #[func]
+    fn move_by_amount(&mut self, gruid: String, amount: Vector3) {
+        move_by_amount(self, gruid, amount);
     }
 
     #[func]

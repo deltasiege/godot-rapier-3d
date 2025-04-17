@@ -10,7 +10,7 @@ use crate::world::actions::*;
 pub enum RapierAction {
     Spawn(NodeBlueprint),
     Despawn(NodeData),
-    Modify(NodeData, NodeOperation, Array<Variant>),
+    Modify(NodeData, NodeOperation, Vec<Variant>),
 }
 
 #[derive(Debug, Clone)]
@@ -21,25 +21,10 @@ pub enum GodotAction {
 
 /// Iterate over awaiting_rapier queue and add/remove to/from the Rapier world. Update node_db accordingly as well.
 pub fn process_rapier_actions(gr3d: &mut GR3D) {
-    let mut sorted = gr3d
-        .world
-        .node_db
-        .awaiting_rapier
-        .iter()
-        .map(|(gruid, action)| (gruid, action))
-        .collect::<Vec<_>>();
+    let queue = &mut gr3d.world.node_db.awaiting_rapier;
+    queue.sort_unstable_keys();
 
-    sorted.sort_by(|(gruid_a, _), (gruid_b, _)| {
-        let (peer_a, gen_a) = gruid_a;
-        let (peer_b, gen_b) = gruid_b;
-        if peer_a == peer_b {
-            gen_a.cmp(gen_b)
-        } else {
-            peer_a.cmp(peer_b)
-        }
-    });
-
-    for (gruid, action) in sorted {
+    for (gruid, action) in queue {
         match action {
             RapierAction::Spawn(bp) => {
                 let handle = rapier_spawn_from_blueprint(bp.clone(), &mut gr3d.world.physics);
@@ -84,15 +69,14 @@ pub fn process_godot_actions(gr3d: &mut GR3D, runtime: Gd<Node>) {
                     &node_data.blueprint.resource_path,
                     isometry_to_transform(&node_data.blueprint.spawn_isometry),
                 ) {
-                    let gruid_str = gruid_to_string(node_data.gruid);
-                    if let Some(peer_id) = gr3d.network.get_peer_id(node_data.gruid.0) {
-                        spawned_node.set_meta("gruid", &gruid_str.to_variant());
+                    if let Some(peer_id) = gr3d.network.get_peer_id(node_data.gruid.peer_index) {
+                        spawned_node.set_meta("gruid", &node_data.gruid.to_variant());
                         spawned_node.set_multiplayer_authority(peer_id as i32);
 
                         // Call on_network_spawn if it exists
                         if spawned_node.has_method("on_network_spawn") {
                             let mut spawn_data = Dictionary::new();
-                            spawn_data.set("gruid", gruid_str);
+                            spawn_data.set("gruid", node_data.gruid.to_string());
                             spawn_data.set("peer_id", peer_id);
                             spawn_data.set(
                                 "is_local",
