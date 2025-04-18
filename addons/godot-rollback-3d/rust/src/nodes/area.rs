@@ -27,3 +27,11 @@ impl INode3D for RollbackArea3D {
         }
     }
 }
+
+#[godot_api]
+impl RollbackArea3D {
+    #[func]
+    fn get_gruid(&self) -> Variant {
+        self.on_get_gruid()
+    }
+}

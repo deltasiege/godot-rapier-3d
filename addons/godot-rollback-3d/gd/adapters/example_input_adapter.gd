@@ -6,7 +6,6 @@ extends GR3DInputAdapter
 func get_input_list() -> Array[String]:
 	return \
 	[
-		"mouse_motion",
 		"move",
 		"jump"
 	]
@@ -16,7 +15,6 @@ func get_input_list() -> Array[String]:
 ## action specified in all_inputs (passed in as input_key).
 func get_input(input_key: String) -> Variant:
 	match input_key:
-		"mouse_motion": return Input.get_last_mouse_velocity()
 		"move": return Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 		"jump": return Input.is_action_just_pressed("jump")
 		_: push_error("Unknown input_key: ", input_key); return null
@@ -26,7 +24,20 @@ func get_input(input_key: String) -> Variant:
 ## action specified in all_inputs (passed in as input_key).
 func get_default(input_key: String) -> Variant:
 	match input_key:
-		"mouse_motion": return Vector2.ZERO
 		"move": return Vector2.ZERO
+		"jump": return false
+		_: push_error("Unknown input_key: ", input_key); return null
+
+## Optional
+## Given a previous known input, what should we predict the next input to be?
+## If this function does not return any value for a specific input_key, the prediction
+## will default to repeating the previous known input.
+##
+## This might make sense for e.g. movement inputs, but for button presses like jump,
+## it makes more sense to assume a player will not press + repress the jump input
+## immediately on the next frame
+func get_predicted_input(input_key: String, previous_input: Variant) -> Variant:
+	match input_key:
+		"move": return previous_input
 		"jump": return false
 		_: push_error("Unknown input_key: ", input_key); return null

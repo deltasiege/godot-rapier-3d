@@ -1,12 +1,14 @@
 use godot::obj::WithBaseField;
 use godot::prelude::*;
-use rapier3d::{parry::either::Either, prelude::*};
+use rapier3d::parry::either::Either;
+use rapier3d::parry::utils::hashmap::HashMap;
+use rapier3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::nodes::NodeBlueprint;
+use crate::nodes::{impl_trait_for_all_nodes, NodeBlueprint};
 use crate::types::*;
 use crate::utils::*;
-use crate::{impl_trait_for_all_nodes, World};
+use crate::World;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 /// Information known about a node once it has been spawned in both Godot and Rapier.
@@ -16,26 +18,7 @@ pub struct NodeData {
     pub spawn_tick: Tick,
     pub despawn_tick: Option<Tick>,
     pub blueprint: NodeBlueprint,
-    pub node_state: Vector3,
-}
-
-// UP TO - need to allow saving arbitrary node state into node data from GDScript
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SerializableEntry {
-    pub key: String,
-    pub value: SerializableVariant,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum SerializableVariant {
-    Int(i64),
-    Float(f64),
-    String(String),
-    Bool(bool),
-    Color(Color),
-    Vector2(Vector2),
-    Vector3(Vector3),
+    pub node_state: HashMap<GString, SerdeVar>,
 }
 
 impl NodeData {
@@ -51,7 +34,7 @@ impl NodeData {
             spawn_tick,
             despawn_tick: None,
             blueprint,
-            node_state: Vector3::ZERO,
+            node_state: HashMap::default(),
         }
     }
 
@@ -67,6 +50,14 @@ impl NodeData {
             return self.spawn_tick <= tick && tick < despawn_tick;
         }
         self.spawn_tick <= tick
+    }
+
+    pub fn get_state_dictionary(&self) -> Dictionary {
+        let mut dict = Dictionary::new();
+        for (key, value) in &self.node_state {
+            dict.set(key.clone(), value.to_variant());
+        }
+        dict
     }
 
     pub fn get_rigid_body(&self, world: &World) -> Option<RigidBody> {
@@ -99,7 +90,7 @@ impl NodeData {
             return PackedByteArray::new();
         }
         let variant = node.get_meta("gr3d_data");
-        match variant.try_to::<PackedByteArray>().ok() {
+        match variant_to::<PackedByteArray>(&variant) {
             Some(packed_byte_array) => packed_byte_array,
             None => PackedByteArray::new(),
         }

@@ -70,6 +70,11 @@ impl INode3D for RollbackPIDCharacter3D {
 
 #[godot_api]
 impl RollbackPIDCharacter3D {
+    #[func]
+    fn get_gruid(&self) -> Variant {
+        self.on_get_gruid()
+    }
+
     pub fn get_controller_settings(&self) -> PDControllerSettings {
         PDControllerSettings {
             kp: self.kp,

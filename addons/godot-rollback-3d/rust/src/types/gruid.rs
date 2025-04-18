@@ -1,5 +1,4 @@
-use godot::builtin::Variant;
-use godot::meta::ToGodot;
+use godot::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::utils::try_parse;
@@ -43,6 +42,10 @@ impl GRUID {
                 None
             }
         }
+    }
+
+    pub fn set_on_node(&self, node: &mut Gd<Node3D>) {
+        node.set_meta("gruid", &self.to_variant());
     }
 
     pub fn to_variant(&self) -> Variant {

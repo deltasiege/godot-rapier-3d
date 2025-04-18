@@ -2,6 +2,7 @@ use godot::prelude::*;
 
 use crate::interface::GR3D;
 use crate::nodes::{rapier_move_node, rapier_teleport_node, NodeBlueprint, NodeData};
+use crate::types::GRUID;
 use crate::utils::*;
 use crate::world::actions::*;
 
@@ -70,7 +71,8 @@ pub fn process_godot_actions(gr3d: &mut GR3D, runtime: Gd<Node>) {
                     isometry_to_transform(&node_data.blueprint.spawn_isometry),
                 ) {
                     if let Some(peer_id) = gr3d.network.get_peer_id(node_data.gruid.peer_index) {
-                        spawned_node.set_meta("gruid", &node_data.gruid.to_variant());
+                        GRUID::set_on_node(&node_data.gruid, &mut spawned_node);
+                        NodeData::set_on_node(node_data, &mut spawned_node);
                         spawned_node.set_multiplayer_authority(peer_id as i32);
 
                         // Call on_network_spawn if it exists
@@ -85,8 +87,6 @@ pub fn process_godot_actions(gr3d: &mut GR3D, runtime: Gd<Node>) {
                             spawned_node
                                 .call_deferred("on_network_spawn", &[spawn_data.to_variant()]);
                         }
-
-                        NodeData::set_on_node(node_data, &mut spawned_node);
 
                         log::trace!(
                             "Spawned Godot node: '{}' under parent: '{}'",

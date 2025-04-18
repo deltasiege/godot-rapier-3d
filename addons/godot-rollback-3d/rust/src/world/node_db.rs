@@ -1,6 +1,8 @@
+use godot::classes::Script;
 use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
+use crate::interface::GR3D;
 use crate::nodes::NodeData;
 use crate::types::*;
 use crate::utils::*;
@@ -12,7 +14,7 @@ pub struct NodeDatabase {
 
     // Map of all `on_physics_tick` functions that have been registered for each node.
     // Cannot be serialized into snapshots. Must be cleared and then repopulated after snapshots are loaded.
-    pub node_tick_functions: HashMap<GRUID, Callable>,
+    pub node_scripts: HashMap<GRUID, Gd<Script>>,
 
     // Cache of resource node paths -> blueprints. Used to avoid instantiating Godot nodes during rollback unnecessarily.
     // Should NOT be saved/loaded via snapshots. Should never be cleared since spawned resources are expected to be static.
@@ -28,7 +30,7 @@ impl NodeDatabase {
     pub fn new() -> Self {
         Self {
             nodes: HashMap::default(),
-            node_tick_functions: HashMap::default(),
+            node_scripts: HashMap::default(),
             spawn_cache: HashMap::default(),
             awaiting_rapier: HashMap::default(),
             awaiting_godot: HashMap::default(),
@@ -37,16 +39,22 @@ impl NodeDatabase {
 
     /// Iterate through sorted node_tick_functions and call them, providing relevant NodeData.
     pub fn process_node_tick_functions(&mut self) {
-        self.node_tick_functions.sort_unstable_keys();
+        log::trace!("Processing {} node tick functions", self.node_scripts.len());
 
-        for (gruid, callable) in self.node_tick_functions.iter() {
+        self.node_scripts.sort_unstable_keys();
+
+        for (gruid, script) in self.node_scripts.iter_mut() {
             if let Some(node_data) = self.nodes.get(gruid) {
-                let args = VariantArray::new();
-                args.push(node_data.to_variant());
-                callable.call(&args);
+                script.call_deferred(
+                    "on_physics_tick",
+                    &[
+                        node_data.gruid.to_variant(),
+                        node_data.get_state_dictionary().to_variant(),
+                    ],
+                );
             } else {
-                log::warn!(
-                    "NodeData missing for node_tick_function recorded for: {}",
+                log::trace!(
+                    "NodeData missing for {} node tick function. Call skipped.",
                     gruid
                 );
             }
@@ -90,15 +98,17 @@ impl NodeDatabase {
         let spawn_records = self.get_spawn_records(spawn_request)?;
 
         let mut gruids = Array::new();
-        for (blueprint, tick_function) in spawn_records {
+        for (blueprint, script) in spawn_records {
             let gruid = self.create_gruid(peer_idx);
             gruids.push(&gruid.to_string());
 
             self.awaiting_rapier
                 .insert(gruid, RapierAction::Spawn(blueprint));
 
-            if let Some(tick_function) = tick_function {
-                self.node_tick_functions.insert(gruid, tick_function);
+            if let Some(script) = script {
+                if script.has_method("on_physics_tick") {
+                    self.node_scripts.insert(gruid, script);
+                }
             }
         }
 
@@ -133,4 +143,59 @@ impl NodeDatabase {
             }
         }
     }
+}
+
+/// Returns the given key's state on a node's NodeData.
+pub fn get_state(gr3d: &mut GR3D, gruid: String, key: String) -> Variant {
+    match try_get_state(gr3d, gruid, key) {
+        Some(result) => result,
+        None => Variant::nil(),
+    }
+}
+
+fn try_get_state(gr3d: &mut GR3D, gruid: String, key: String) -> Option<Variant> {
+    let gruid = GRUID::try_from_string(&gruid)?;
+    let node_data = match gr3d.world.node_db.nodes.get(&gruid) {
+        Some(node) => node,
+        None => {
+            log::error!(
+                "Can't get state ({}). Node {} not found in node_db.",
+                key,
+                gruid
+            );
+            return None;
+        }
+    };
+
+    let value = node_data.node_state.get(&GString::from(key))?;
+    Some(value.to_variant())
+}
+
+/// Sets the given key=value state on a node's NodeData.
+pub fn set_state(gr3d: &mut GR3D, gruid: String, key: String, value: Variant) -> Variant {
+    match try_set_state(gr3d, gruid, key, value) {
+        Some(result) => result,
+        None => Variant::nil(),
+    }
+}
+
+fn try_set_state(gr3d: &mut GR3D, gruid: String, key: String, value: Variant) -> Option<Variant> {
+    let gruid = GRUID::try_from_string(&gruid)?;
+    let node_data = match gr3d.world.node_db.nodes.get_mut(&gruid) {
+        Some(node) => node,
+        None => {
+            log::error!(
+                "Can't set state ({}). Node {} not found in node_db.",
+                key,
+                gruid
+            );
+            return None;
+        }
+    };
+
+    let previous_value = node_data
+        .node_state
+        .insert(key.into(), SerdeVar::from_variant(value)?);
+
+    Some(previous_value?.to_variant())
 }

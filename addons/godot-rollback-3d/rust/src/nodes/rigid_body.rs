@@ -36,6 +36,11 @@ impl INode3D for RollbackRigidBody3D {
 #[godot_api]
 impl RollbackRigidBody3D {
     #[func]
+    fn get_gruid(&self) -> Variant {
+        self.on_get_gruid()
+    }
+
+    #[func]
     fn get_real_velocity(&self) -> Vector3 {
         vector_to_godot(self.get_body_state().linvel)
     }

@@ -81,3 +81,20 @@ pub fn try_parse<T: std::str::FromStr>(value: &str) -> Option<T> {
         }
     }
 }
+
+pub fn variant_to<T>(variant: &Variant) -> Option<T>
+where
+    T: FromGodot,
+{
+    match variant.try_to::<T>() {
+        Ok(value) => Some(value),
+        Err(err) => {
+            log::error!(
+                "Failed to convert Variant to {}: {}",
+                std::any::type_name::<T>(),
+                err
+            );
+            None
+        }
+    }
+}

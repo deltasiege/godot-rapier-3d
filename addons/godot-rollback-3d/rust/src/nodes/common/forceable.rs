@@ -25,9 +25,13 @@ pub trait Forceable: HasNodeData + RollbackNode {
     // TODO ability to apply impulses, forces etc.
 }
 
-impl Forceable for RollbackKinematicCharacter3D {}
-impl Forceable for RollbackPIDCharacter3D {}
-impl Forceable for RollbackRigidBody3D {}
+impl_trait_for_nodes!(
+    Forceable,
+    {},
+    RollbackKinematicCharacter3D,
+    RollbackPIDCharacter3D,
+    RollbackRigidBody3D
+);
 
 pub struct BodyState {
     pub linvel: Vector3<Real>,

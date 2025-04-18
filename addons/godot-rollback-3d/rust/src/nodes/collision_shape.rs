@@ -40,6 +40,11 @@ impl INode3D for RollbackCollisionShape3D {
 #[godot_api]
 impl RollbackCollisionShape3D {
     #[func]
+    fn get_gruid(&self) -> Variant {
+        self.on_get_gruid()
+    }
+
+    #[func]
     pub fn get_shape(&self) -> Option<Gd<Shape3D>> {
         self.col_shape.as_ref()?.get_shape()
     }

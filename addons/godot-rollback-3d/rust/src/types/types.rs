@@ -1,3 +1,4 @@
+use godot::classes::Script;
 use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 use rapier3d::prelude::*;
@@ -21,7 +22,7 @@ pub type UnixEpoch = u128; // Unix epoch in milliseconds
 
 // Nodes
 pub type NodeMap = HashMap<GRUID, NodeData>; // Map of all nodes that have been spawned and despawned into Rapier + Godot.
-pub type SpawnRecord = (NodeBlueprint, Option<Callable>);
+pub type SpawnRecord = (NodeBlueprint, Option<Gd<Script>>);
 pub type SpawnRecords = Vec<SpawnRecord>;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]

@@ -64,6 +64,16 @@ impl GR3D {
     // Nodes ---------------------------------
 
     #[func]
+    fn get_state(&mut self, gruid: String, key: String) -> Variant {
+        get_state(self, gruid, key)
+    }
+
+    #[func]
+    fn set_state(&mut self, gruid: String, key: String, value: Variant) -> Variant {
+        set_state(self, gruid, key, value)
+    }
+
+    #[func]
     fn spawn(
         &mut self,
         peer_index: PeerIndex,

@@ -6,7 +6,7 @@ use rapier3d::prelude::{AxesMask, QueryFilter, RigidBodyHandle, RigidBodyVelocit
 use crate::interface::GR3D;
 use crate::nodes::*;
 use crate::types::*;
-use crate::utils::vector_to_rapier;
+use crate::utils::{variant_to, vector_to_rapier};
 use crate::world::{NodeOperation, PhysicsState};
 
 /// Adds a new modify action to the node_db, referring to the given GRUID node.
@@ -42,7 +42,7 @@ pub fn rapier_move_node(
     physics: &mut PhysicsState,
 ) {
     let amount = amount
-        .and_then(|v| v.try_to::<Vector3>().ok())
+        .and_then(|v| variant_to::<Vector3>(v))
         .unwrap_or_default();
 
     if amount == Vector3::ZERO {
@@ -107,7 +107,7 @@ pub fn rapier_teleport_node(
     position: Option<&Variant>,
     physics: &mut PhysicsState,
 ) {
-    let position = match position.clone().and_then(|v| v.try_to::<Vector3>().ok()) {
+    let position = match position.clone().and_then(|v| variant_to::<Vector3>(v)) {
         Some(position) => position,
         None => {
             log::error!("Cannot teleport node - invalid position: {:?}.", position);

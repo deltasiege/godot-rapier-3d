@@ -2,12 +2,25 @@ use godot::classes::Engine;
 use godot::obj::WithBaseField;
 use godot::prelude::*;
 
-use crate::impl_trait_for_all_nodes;
 use crate::interface::get_gr3d;
+use crate::nodes::impl_trait_for_all_nodes;
 use crate::nodes::HasNodeData;
 use crate::utils::isometry_to_transform;
 
 pub trait RollbackNode: HasNodeData + WithBaseField + GodotClass<Base = Node3D> {
+    fn on_get_gruid(&self) -> Variant {
+        match self.base().has_meta("gruid") {
+            true => self.base().get_meta("gruid"),
+            false => {
+                log::error!(
+                    "Node {} has no gruid stored in meta",
+                    self.base().get_path()
+                );
+                Variant::nil()
+            }
+        }
+    }
+
     fn on_enter_tree(&mut self) {
         match Engine::singleton().is_editor_hint() {
             true => self.on_enter_editor_tree(),

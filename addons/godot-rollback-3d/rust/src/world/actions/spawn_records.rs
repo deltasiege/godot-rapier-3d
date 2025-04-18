@@ -1,3 +1,4 @@
+use godot::classes::Script;
 use godot::prelude::*;
 
 use crate::nodes::*;
@@ -109,18 +110,28 @@ fn node_to_records(
         rapier_kinematic_controller,
     };
 
-    let tick_function = get_tick_function(node);
-
-    Some((bp, tick_function))
+    let script = get_root_script(node);
+    Some((bp, script))
 }
 
-fn get_tick_function(node: &Gd<Node>) -> Option<Callable> {
-    get_node_callable(node, "on_physics_tick")
+fn get_root_script(node: &Gd<Node>) -> Option<Gd<Script>> {
+    get_node_script(node)
 }
 
-fn get_node_callable(node: &Gd<Node>, method_name: &str) -> Option<Callable> {
-    match node.has_method(method_name) {
-        true => Some(Callable::from_object_method(node, method_name)),
-        false => None,
+fn get_node_script(node: &Gd<Node>) -> Option<Gd<Script>> {
+    let variant = node.get_script();
+    if variant.is_nil() {
+        return None;
+    }
+    match variant.try_to::<Gd<Script>>() {
+        Ok(script) => Some(script),
+        Err(e) => {
+            log::error!(
+                "Failed to get script from node: {}. Error: {}",
+                node.get_name(),
+                e
+            );
+            None
+        }
     }
 }

@@ -65,7 +65,7 @@ impl PeerBuffers {
         let overriden_world_hash = self.world_hashes.insert(frame.tick, frame.world_hash);
 
         if overriden_input_hash.is_some() && overriden_input_hash != Some(input_hash) {
-            log::warn!(
+            log::error!(
                 "Conflicting remote input hashes received for tick {}: {} != {}",
                 frame.tick,
                 overriden_input_hash.unwrap(),
@@ -74,7 +74,7 @@ impl PeerBuffers {
         }
 
         if overriden_world_hash.is_some() && overriden_world_hash != Some(frame.world_hash) {
-            log::warn!(
+            log::error!(
                 "Conflicting remote world hashes received for tick {}: {} != {}",
                 frame.tick,
                 overriden_world_hash.unwrap(),

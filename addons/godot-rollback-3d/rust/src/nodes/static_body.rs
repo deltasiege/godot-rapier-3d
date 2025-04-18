@@ -37,3 +37,11 @@ impl INode3D for RollbackStaticBody3D {
         }
     }
 }
+
+#[godot_api]
+impl RollbackStaticBody3D {
+    #[func]
+    fn get_gruid(&self) -> Variant {
+        self.on_get_gruid()
+    }
+}

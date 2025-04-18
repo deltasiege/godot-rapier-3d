@@ -82,6 +82,11 @@ impl INode3D for RollbackKinematicCharacter3D {
 
 #[godot_api]
 impl RollbackKinematicCharacter3D {
+    #[func]
+    fn get_gruid(&self) -> Variant {
+        self.on_get_gruid()
+    }
+
     pub fn get_controller(&self) -> KinematicCharacterController {
         KinematicCharacterController {
             up: UnitVector::new_normalize(vector_to_rapier(self.get_up_direction())),

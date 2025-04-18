@@ -3,8 +3,10 @@ use bincode::error::EncodeError;
 use bincode::serde::{decode_from_slice, encode_to_vec};
 use godot::prelude::*;
 use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
+
+use crate::utils::variant_to;
 
 /// Wrapper to abstract away configuration details of bincode.
 pub fn encode(value: &(impl Serialize + Debug)) -> Result<Vec<u8>, EncodeError> {
@@ -122,5 +124,63 @@ pub fn deserialize_variant(data: &[u8], variant_type: VariantType) -> Option<Var
                 None
             }
         },
+    }
+}
+
+/// A subset of Variant types that can be serialized and deserialized.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum SerdeVar {
+    Int(i64),
+    Float(f64),
+    String(GString),
+    Bool(bool),
+    Color(Color),
+    Vector2(Vector2),
+    Vector2i(Vector2i),
+    Vector3(Vector3),
+    Vector3i(Vector3i),
+    Basis(Basis),
+    Transform2D(Transform2D),
+    Transform3D(Transform3D),
+}
+
+impl SerdeVar {
+    pub fn to_variant(&self) -> Variant {
+        match self {
+            SerdeVar::Int(i) => Variant::from(*i),
+            SerdeVar::Float(f) => Variant::from(*f),
+            SerdeVar::String(s) => Variant::from(s.clone()),
+            SerdeVar::Bool(b) => Variant::from(*b),
+            SerdeVar::Color(c) => Variant::from(*c),
+            SerdeVar::Vector2(v) => Variant::from(*v),
+            SerdeVar::Vector2i(v) => Variant::from(*v),
+            SerdeVar::Vector3(v) => Variant::from(*v),
+            SerdeVar::Vector3i(v) => Variant::from(*v),
+            SerdeVar::Basis(b) => Variant::from(*b),
+            SerdeVar::Transform2D(t) => Variant::from(*t),
+            SerdeVar::Transform3D(t) => Variant::from(*t),
+        }
+    }
+
+    pub fn from_variant(v: Variant) -> Option<Self> {
+        match v.get_type() {
+            VariantType::NIL => None,
+            VariantType::INT => Some(SerdeVar::Int(variant_to::<i64>(&v)?)),
+            VariantType::FLOAT => Some(SerdeVar::Float(variant_to::<f64>(&v)?)),
+            VariantType::STRING => Some(SerdeVar::String(variant_to::<GString>(&v)?)),
+            VariantType::BOOL => Some(SerdeVar::Bool(variant_to::<bool>(&v)?)),
+            VariantType::COLOR => Some(SerdeVar::Color(variant_to::<Color>(&v)?)),
+            VariantType::VECTOR2 => Some(SerdeVar::Vector2(variant_to::<Vector2>(&v)?)),
+            VariantType::VECTOR2I => Some(SerdeVar::Vector2i(variant_to::<Vector2i>(&v)?)),
+            VariantType::VECTOR3 => Some(SerdeVar::Vector3(variant_to::<Vector3>(&v)?)),
+            VariantType::VECTOR3I => Some(SerdeVar::Vector3i(variant_to::<Vector3i>(&v)?)),
+            VariantType::BASIS => Some(SerdeVar::Basis(variant_to::<Basis>(&v)?)),
+            VariantType::TRANSFORM2D => Some(SerdeVar::Transform2D(variant_to::<Transform2D>(&v)?)),
+            VariantType::TRANSFORM3D => Some(SerdeVar::Transform3D(variant_to::<Transform3D>(&v)?)),
+            _ => {
+                log::error!("Variant type: {:?} is not serializable", v.get_type());
+                return None;
+            }
+        }
     }
 }

@@ -9,10 +9,20 @@ use crate::utils::get_hash;
 /// Return the input value for the given input key from either the local peer's input adapter or the
 /// remote peer's buffer, depending on the peer_index of the provided GRUID.
 pub fn get_input(gr3d: &mut GR3D, gruid: String, input_key: GString) -> Variant {
-    match try_get_input(gr3d, gruid, input_key) {
+    let result = match try_get_input(gr3d, gruid.clone(), input_key.clone()) {
         Some(input) => input,
         None => Variant::nil(),
-    }
+    };
+
+    godot_print!(
+        "peer: {} get_input: gruid: {}, input_key: {}, result: {}",
+        gr3d.network.local_peer.get_peer_id().unwrap_or(-1),
+        gruid,
+        input_key,
+        result
+    );
+
+    result
 }
 
 /// Option compatible version of get_input.
