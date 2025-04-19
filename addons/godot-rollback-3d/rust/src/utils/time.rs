@@ -27,3 +27,8 @@ pub fn get_earliest_entry<T>(map: &HashMap<Tick, T>) -> Option<(Tick, &T)> {
     }
     earliest_entry
 }
+
+/// Removes entries from the buffer that are older than the given tick.
+pub fn prune_buffer<T>(buffer: &mut HashMap<Tick, T>, tick: Tick) {
+    buffer.retain(|&key, _| key >= tick);
+}

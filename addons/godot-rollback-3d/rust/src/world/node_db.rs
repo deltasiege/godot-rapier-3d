@@ -125,6 +125,7 @@ impl NodeDatabase {
 
     /// Iterate through sorted node_tick_functions and call them, providing relevant NodeData.
     pub fn process_node_tick_functions(&mut self, local_peer_id: PeerId) {
+        let instant = std::time::Instant::now();
         log::trace!("Processing {} node tick functions", self.node_scripts.len());
 
         self.node_scripts.sort_unstable_keys();
@@ -146,6 +147,12 @@ impl NodeDatabase {
                 );
             }
         }
+
+        log::trace!(
+            "Processed {} node tick functions [{} μs]",
+            self.node_scripts.len(),
+            instant.elapsed().as_micros()
+        );
     }
 
     /// Overwrites the node map, clears await queues and repopulates the

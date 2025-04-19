@@ -4,7 +4,7 @@ use rapier3d::parry::utils::hashmap::HashMap;
 use crate::adapters::GR3DInputAdapter;
 use crate::network::UpdateFrame;
 use crate::types::*;
-use crate::utils::get_hash;
+use crate::utils::{get_hash, prune_buffers};
 
 #[derive(Debug, Clone)]
 pub struct PeerBuffers {
@@ -35,6 +35,19 @@ impl PeerBuffers {
         self.ser_inputs.clear();
         self.input_hashes.clear();
         self.world_hashes.clear();
+    }
+
+    /// Removes all buffer entries that are older than the given tick.
+    pub fn prune(&mut self, start_tick: Tick) {
+        prune_buffers(
+            vec![
+                &mut self.inputs,
+                &mut self.ser_inputs,
+                &mut self.input_hashes,
+                &mut self.world_hashes,
+            ],
+            start_tick,
+        );
     }
 
     /// Returns a string containing containing ticks missing between the starts and ends of all buffers.

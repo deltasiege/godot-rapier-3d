@@ -16,6 +16,7 @@ pub struct Network {
     pub peer_map: Option<PeerMap>,
     pub local_peer: LocalPeer,
     pub remote_peers: Vec<RemotePeer>,
+    pub synchronized_tick: Option<Tick>,
 }
 
 impl Network {
@@ -27,6 +28,27 @@ impl Network {
             peer_map: None,
             local_peer: LocalPeer::new(),
             remote_peers: Vec::new(),
+            synchronized_tick: None,
+        }
+    }
+
+    pub fn update_synchronized_tick(&mut self, tick: Option<Tick>) {
+        self.synchronized_tick = tick;
+        log::debug!(
+            "Synchronized tick updated to {}",
+            tick.map(|t| t.to_string()).unwrap_or("None".to_string())
+        );
+
+        if tick.is_some() {}
+    }
+
+    /// Removes all buffer entries that are older than the given tick.
+    fn prune_peer_buffers(&mut self, start_tick: Tick) {
+        self.local_peer.buffers.prune(start_tick);
+        // self.local_peer. // UP TO - also prune other buffers like world hash and combined inputs
+
+        for remote_peer in &mut self.remote_peers {
+            remote_peer.buffers.prune(start_tick);
         }
     }
 
@@ -212,10 +234,49 @@ pub fn on_received_tick_data(
     let predict_until_tick = gr3d.world.time.tick + (MAX_BUFFER_LEN as u64);
     peer.predict_inputs_until_tick(predict_until_tick, &mut input_adapter);
 
+    update_synchronized_tick(gr3d);
+
     // TODO this could potentially happen at the same time if multiple remote peers land packets at same time
     // - calls to input adapter need to be deferred?
 
     Some(())
+}
+
+/// Iterate through all remote & local, input & world buffers to check for matching hashes.
+/// When all peers agree, that tick is synchronized.
+fn update_synchronized_tick(gr3d: &mut GR3D) {
+    let mut new_sync_tick = None;
+    let start_tick = gr3d.network.synchronized_tick.unwrap_or(0);
+    let end_tick = gr3d.world.time.tick;
+
+    for tick in start_tick..=end_tick {
+        let all_remote_inputs_collected = gr3d.network.remote_peers.iter().all(|peer| {
+            peer.buffers.inputs.contains_key(&tick) && peer.buffers.input_hashes.contains_key(&tick)
+        });
+
+        let local_world_hash = gr3d.network.local_peer.buffers.world_hashes.get(&tick);
+        let all_world_hashes_match = match local_world_hash {
+            Some(local_world_hash) => gr3d
+                .network
+                .remote_peers
+                .iter()
+                .all(|peer| peer.buffers.world_hashes.get(&tick) == Some(local_world_hash)),
+            None => false,
+        };
+
+        match all_remote_inputs_collected && all_world_hashes_match {
+            true => {
+                new_sync_tick = Some(tick);
+            }
+            false => {
+                break;
+            }
+        }
+    }
+
+    if new_sync_tick.is_some() {
+        gr3d.network.update_synchronized_tick(new_sync_tick);
+    }
 }
 
 /// Compare dirty version of combined_input_hashes that is yet to be recaculated with freshly known input_hashes of a given remote peer.
