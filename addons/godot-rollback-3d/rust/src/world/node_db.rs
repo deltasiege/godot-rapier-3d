@@ -12,18 +12,21 @@ use crate::world::actions::*;
 pub struct NodeDatabase {
     pub nodes: NodeMap, // Map of all nodes that have been spawned/despawned into Rapier.
 
-    // Map of all `on_physics_tick` functions that have been registered for each node.
-    // Cannot be serialized into snapshots. Must be cleared and then repopulated after snapshots are loaded.
-    pub node_scripts: HashMap<GRUID, Gd<Script>>,
+    // Static spawn-time data.
+    // Should never be cleared since spawned resources are expected to be static.
+    // Populated when nodes are spawned via on_spawn_request, at the same time as insertion into awaiting_rapier.
 
-    // Cache of resource node paths -> blueprints. Used to avoid instantiating Godot nodes during rollback unnecessarily.
-    // Should NOT be saved/loaded via snapshots. Should never be cleared since spawned resources are expected to be static.
-    pub spawn_cache: HashMap<String, SpawnRecords>,
+    // TODO change node_scripts to be referenced by resource path cuz they meant to be static and gruid is not static !!!!!!!
+    // !!
+    pub node_scripts: HashMap<GRUID, Gd<Script>>, // Map of all `on_physics_tick` functions that have been registered for each node.
+    pub spawn_cache: HashMap<String, SpawnRecords>, // Cache of resource node paths -> blueprints. Used to avoid instantiating Godot nodes during rollback unnecessarily.
 
-    // Rapier / Godot queues. Should NOT be saved/loaded via snapshots.
-    // Instead, whenever a snapshot is loaded, `awaiting_rapier` should be cleared. `awaiting_godot` should be repopulated based on Rapier world state.
-    pub awaiting_rapier: HashMap<GRUID, RapierAction>, // Iterated and drained at the end of every **network tick**. Used to ensure Rapier objects are created/removed in deterministic order (sorted by GRUID).
-    pub awaiting_godot: HashMap<GRUID, GodotAction>, // Iterated and drained at the end of every **Godot physics_process tick**. Used to ensure Godot matches up with what already exists in Rapier.
+    // Rapier / Godot queues. Should be cleared whenever snapshots are loaded.
+    // awaiting_rapier is populated whenever nodes are spawned or modified during Godot physics_process.
+    // awaiting_godot is populated whenever nodes are spawned/despawned inside the Rapier world.
+    // awaiting_godot must be manually populated whenever non-rollback snapshots are loaded, or rollbacks finish - in order sync Godot nodes with Rapier world.
+    pub awaiting_rapier: HashMap<GRUID, RapierAction>, // Iterated and drained at the end of every **network tick**. Used to ensure Rapier objects are created/removed/modified in deterministic order (sorted by GRUID).
+    pub awaiting_godot: HashMap<GRUID, GodotAction>, // Iterated and drained at the end of every **Godot physics_process tick**. Used to delay spawning/despawning of Godot nodes until Godot physics_process.
 }
 
 impl NodeDatabase {
@@ -34,30 +37,6 @@ impl NodeDatabase {
             spawn_cache: HashMap::default(),
             awaiting_rapier: HashMap::default(),
             awaiting_godot: HashMap::default(),
-        }
-    }
-
-    /// Iterate through sorted node_tick_functions and call them, providing relevant NodeData.
-    pub fn process_node_tick_functions(&mut self) {
-        log::trace!("Processing {} node tick functions", self.node_scripts.len());
-
-        self.node_scripts.sort_unstable_keys();
-
-        for (gruid, script) in self.node_scripts.iter_mut() {
-            if let Some(node_data) = self.nodes.get(gruid) {
-                script.call_deferred(
-                    "on_physics_tick",
-                    &[
-                        node_data.gruid.to_variant(),
-                        node_data.get_state_dictionary().to_variant(),
-                    ],
-                );
-            } else {
-                log::trace!(
-                    "NodeData missing for {} node tick function. Call skipped.",
-                    gruid
-                );
-            }
         }
     }
 
@@ -142,6 +121,55 @@ impl NodeDatabase {
                 Some(spawn_records)
             }
         }
+    }
+
+    /// Iterate through sorted node_tick_functions and call them, providing relevant NodeData.
+    pub fn process_node_tick_functions(&mut self, local_peer_id: PeerId) {
+        log::trace!("Processing {} node tick functions", self.node_scripts.len());
+
+        self.node_scripts.sort_unstable_keys();
+
+        for (gruid, script) in self.node_scripts.iter_mut() {
+            if let Some(node_data) = self.nodes.get(gruid) {
+                script.call_deferred(
+                    "on_physics_tick",
+                    &[
+                        local_peer_id.to_variant(),
+                        node_data.gruid.to_variant(),
+                        node_data.get_state_dictionary().to_variant(),
+                    ],
+                );
+            } else {
+                log::trace!(
+                    "NodeData missing for {} node tick function. Call skipped.",
+                    gruid
+                );
+            }
+        }
+    }
+
+    /// Overwrites the node map, clears await queues and repopulates the
+    /// awaiting_godot queue based on changes to the node map.
+    pub fn overwrite_nodes(&mut self, new_nodes: NodeMap) {
+        self.awaiting_rapier.clear();
+        self.awaiting_godot.clear();
+
+        let diff = hash_map_diff(&self.nodes, &new_nodes);
+        let additions = diff.added.len();
+        let removals = diff.removed.len();
+
+        for (gruid, node_data) in diff.added {
+            self.awaiting_godot
+                .insert(gruid, GodotAction::Spawn(node_data));
+        }
+
+        for (gruid, node_data) in diff.removed {
+            self.awaiting_godot
+                .insert(gruid, GodotAction::Despawn(node_data));
+        }
+
+        log::trace!("{} nodes added, {} nodes removed.", additions, removals);
+        self.nodes = new_nodes;
     }
 }
 

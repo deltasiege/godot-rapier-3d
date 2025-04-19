@@ -63,10 +63,10 @@ impl World {
     }
 
     /// Convert bytes into a WorldSnapshot and then restore it
-    pub fn load_snapshot(&mut self, snapshot: Vec<u8>) {
+    pub fn load_snapshot(&mut self, snapshot: &Vec<u8>, overwrite_tick: bool) {
         log::trace!("Decoding snapshot of length: {}", snapshot.len());
         if let Some(snapshot) = WorldSnapshot::try_from_bytes(&snapshot) {
-            self.restore_snapshot(snapshot, false);
+            self.restore_snapshot(snapshot, overwrite_tick);
         }
     }
 
@@ -77,7 +77,7 @@ impl World {
             false => "Rolling back",
         };
         log::trace!("{} world: {} -> {}", op, self.time.tick, snapshot.tick);
-        snapshot.apply_to_world(self, overwrite_tick)
+        snapshot.apply_to_world(self, overwrite_tick);
     }
 
     /// Return the amount of bodies, colliders, impulse joints, and multibody joints in the world
@@ -101,12 +101,15 @@ impl std::fmt::Debug for World {
     }
 }
 
-pub fn step(gr3d: &mut GR3D, count: i64) {
+pub fn step(gr3d: &mut GR3D, count: u64) {
     for _ in 0..count {
         let tick = gr3d.world.time.tick.clone();
         log::trace!("Executing tick: {}", tick);
 
-        gr3d.world.node_db.process_node_tick_functions();
+        let local_peer_id = gr3d.network.local_peer.get_peer_id().unwrap_or(-1);
+        gr3d.world
+            .node_db
+            .process_node_tick_functions(local_peer_id);
         process_rapier_actions(gr3d);
 
         if let Some(snapshot) = gr3d.world.step() {

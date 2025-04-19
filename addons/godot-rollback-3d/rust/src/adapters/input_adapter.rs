@@ -13,6 +13,7 @@ use crate::utils::*;
 /// User must define functions:
 /// - get_input_list
 /// - get_input
+/// - get_default
 pub struct GR3DInputAdapter {
     base: Base<Node>,
 }
@@ -36,6 +37,13 @@ impl GR3DInputAdapter {
         Vec::new()
     }
 
+    /// Returns result of potentially overriden get_input_list function.
+    pub fn get_overriden_input_list(&mut self) -> Vec<GString> {
+        self.base_mut()
+            .call("get_input_list", &[])
+            .to::<Vec<GString>>()
+    }
+
     #[func(virtual)]
     /// Must be provided. Returns some variant value for every possible action specified in all_inputs.
     fn get_input(&self, _input_key: GString) -> Variant {
@@ -44,6 +52,11 @@ impl GR3DInputAdapter {
             self.base().get_name()
         );
         Variant::nil()
+    }
+
+    /// Returns result of potentially overriden get_input function.
+    pub fn get_overriden_input(&mut self, input_key: &GString) -> Variant {
+        self.base_mut().call("get_input", &[input_key.to_variant()])
     }
 
     #[func(virtual)]
@@ -56,55 +69,71 @@ impl GR3DInputAdapter {
         Variant::nil()
     }
 
+    #[func(virtual)]
+    /// Optional. Provides a predicted input based on the previous input. Defaults to returning the previous input.
+    fn get_predicted_input(&self, _input_key: GString, previous_input: Variant) -> Variant {
+        previous_input
+    }
+
+    /// Returns result of potentially overriden get_predicted_input function.
+    pub fn get_overriden_predicted_input(
+        &mut self,
+        input_key: &GString,
+        previous_input: Variant,
+    ) -> Variant {
+        self.base_mut().call(
+            "get_predicted_input",
+            &[input_key.to_variant(), previous_input],
+        )
+    }
+
     /// Returns all current inputs as an InputMap.
     pub fn get_inputs(&mut self) -> InputMap {
-        let input_list = self
-            .base_mut()
-            .call("get_input_list", &[])
-            .to::<Vec<GString>>();
-
+        let input_list = self.get_overriden_input_list();
         input_list
             .iter()
-            .map(|input_key| {
-                (
-                    input_key.clone(),
-                    self.base_mut().call("get_input", &[input_key.to_variant()]),
-                )
-            })
+            .map(|input_key| (input_key.clone(), self.get_overriden_input(input_key)))
             .collect()
+    }
+
+    /// Returns all predicted inputs based on a previous InputMap.
+    pub fn get_predicted_inputs(&mut self, previous_inputs: &InputMap) -> InputMap {
+        let mut predicted_inputs: InputMap = HashMap::default();
+
+        for (input_key, previous_input) in previous_inputs.iter() {
+            let predicted_input =
+                self.get_overriden_predicted_input(input_key, previous_input.clone());
+            predicted_inputs.insert(input_key.clone(), predicted_input);
+        }
+
+        previous_inputs.clone()
     }
 
     /// Returns all current inputs as a serialized byte array.
     pub fn get_ser_inputs(&mut self) -> Vec<u8> {
-        let mut sorted_inputs: Vec<_> = self.get_inputs().into_iter().collect();
-        sorted_inputs.sort_by(|a, b| a.0.cmp(&b.0));
-
-        let values: Vec<InputValue> = sorted_inputs
-            .iter()
-            .filter_map(|(_, v)| InputValue::try_from_variant(v))
-            .collect();
-
-        encode_or_none(&values).unwrap_or_default()
+        let inputs = self.get_inputs();
+        serialize_inputs(&inputs)
     }
 
-    /// Deserializes the inputs from a byte array and returns an InputMap.
+    /// Returns a deserialized InputMap from a serialized byte array,
+    /// using a current copy of the input_list.
     pub fn deserialize_inputs(&mut self, ser_inputs: &Vec<u8>) -> InputMap {
-        let mut sorted_inputs: Vec<_> = self.get_inputs().into_iter().collect();
-        sorted_inputs.sort_by(|a, b| a.0.cmp(&b.0));
+        let mut input_keys = self.get_overriden_input_list();
+        input_keys.sort_by(|a, b| a.cmp(b));
 
         let decoded: Vec<InputValue> = decode_or_none(ser_inputs.as_slice()).unwrap_or_default();
         let mut inputs = HashMap::default();
 
         for (i, input) in decoded.iter().enumerate() {
             if let Some(variant) = input.try_to_variant() {
-                let key = match sorted_inputs.get(i).map(|(k, _)| k.clone()) {
-                    Some(k) => k,
+                let key = match input_keys.get(i) {
+                    Some(k) => k.clone(),
                     None => {
                         log::error!(
-                            "Error while deserializing inputs. Key not found for index {}: {:?}",
-                            i,
-                            sorted_inputs
-                        );
+                        "Error while deserializing inputs. Index {} not found. Provided keys: {:?}",
+                        i,
+                        input_keys
+                    );
                         continue;
                     }
                 };
@@ -113,6 +142,25 @@ impl GR3DInputAdapter {
         }
         inputs
     }
+}
+
+/// Returns the given InpuMap as a serialized byte array.
+pub fn serialize_inputs(inputs: &InputMap) -> Vec<u8> {
+    let mut sorted_inputs: Vec<_> = inputs.into_iter().collect();
+    sorted_inputs.sort_by(|a, b| a.0.cmp(&b.0));
+
+    let values: Vec<InputValue> = sorted_inputs
+        .iter()
+        .filter_map(|(_, v)| InputValue::try_from_variant(v))
+        .collect();
+
+    encode_or_none(&values).unwrap_or_default()
+}
+
+/// Returns a hash of the given InputMap.
+pub fn get_input_hash(inputs: &InputMap) -> u64 {
+    let ser_inputs = serialize_inputs(inputs);
+    get_hash(&ser_inputs)
 }
 
 /// Attach a input adapter to the GR3D instance and connect all signals to the GR3D singleton.
@@ -133,56 +181,17 @@ pub fn detach_input_adapter(gr3d: &mut GR3D) {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct InputValue {
     value: Vec<u8>,
-    value_type: SerVariantType,
+    value_type: SerdeVarType,
 }
 
 impl InputValue {
     fn try_from_variant(value: &Variant) -> Option<Self> {
-        let value_type = SerVariantType::try_from(value.get_type()).ok()?;
+        let value_type = SerdeVarType::try_from(value.get_type()).ok()?;
         let value = serialize_variant(&value)?;
         Some(Self { value, value_type })
     }
 
     fn try_to_variant(&self) -> Option<Variant> {
         deserialize_variant(self.value.as_slice(), self.value_type.clone().into())
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-enum SerVariantType {
-    BOOL,
-    INT,
-    FLOAT,
-    VECTOR2,
-    VECTOR3,
-}
-
-impl TryFrom<VariantType> for SerVariantType {
-    type Error = String;
-
-    fn try_from(value: VariantType) -> Result<Self, Self::Error> {
-        match value {
-            VariantType::BOOL => Ok(Self::BOOL),
-            VariantType::INT => Ok(Self::INT),
-            VariantType::FLOAT => Ok(Self::FLOAT),
-            VariantType::VECTOR2 => Ok(Self::VECTOR2),
-            VariantType::VECTOR3 => Ok(Self::VECTOR3),
-            _ => {
-                log::error!("Unsupported variant type: {:?}", value);
-                Err(format!("Unsupported variant type: {:?}", value))
-            }
-        }
-    }
-}
-
-impl Into<VariantType> for SerVariantType {
-    fn into(self) -> VariantType {
-        match self {
-            Self::BOOL => VariantType::BOOL,
-            Self::INT => VariantType::INT,
-            Self::FLOAT => VariantType::FLOAT,
-            Self::VECTOR2 => VariantType::VECTOR2,
-            Self::VECTOR3 => VariantType::VECTOR3,
-        }
     }
 }

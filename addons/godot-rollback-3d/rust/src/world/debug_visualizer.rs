@@ -63,8 +63,8 @@ impl DebugRenderBackend for DebugVisualizerBackend {
                 if let ShapeType::TriMesh = collider.shape().shape_type() {
                     let casted = collider.shape().as_trimesh();
                     if let Some(trimesh) = casted {
-                        let too_many_verts =
-                            trimesh.vertices().len() > crate::config::DEBUG_MAX_VERTEX_COUNT;
+                        let too_many_verts = trimesh.vertices().len()
+                            > crate::config::DEBUG_MAX_VERTEX_COUNT as usize;
                         return !too_many_verts;
                     } else {
                         return true;

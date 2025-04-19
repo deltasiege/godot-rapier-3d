@@ -150,7 +150,7 @@ pub fn shape_to_trimesh(
         }
     }
 
-    if debugging_colliders && vertices.len() > crate::config::DEBUG_MAX_VERTEX_COUNT {
+    if debugging_colliders && vertices.len() > crate::config::DEBUG_MAX_VERTEX_COUNT as usize {
         log::warn!(
             "Debug rendering of collider will be skipped because it has more than {} vertices",
             crate::config::DEBUG_MAX_VERTEX_COUNT

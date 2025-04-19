@@ -1,16 +1,20 @@
 use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
-use crate::adapters::GR3DInputAdapter;
+use crate::adapters::*;
 use crate::config::*;
 use crate::network::*;
 use crate::types::*;
+use crate::utils::get_earliest_entry;
 
 /// A remote peer is a peer in the network that is not us.
 #[derive(Debug, Clone)]
 pub struct RemotePeer {
     pub metadata: PeerMetadata,
     pub buffers: PeerBuffers,
+
+    pub combined_inputs: HashMap<Tick, (InputMap, bool)>, // Map of all known and predicted inputs we have for this remote peer. Bool represents whether the input map was predicted.
+    pub combined_input_hashes: HashMap<Tick, (u64, bool)>, // Map of hashes of this remote peer's combined inputs. Bool represents whether the hash comes from an input map that was predicted.
 
     pub rtt: UnixEpoch,                // Round trip time in milliseconds
     pub last_ping_received: UnixEpoch, // Unix millisecond timestamp of the last ping received
@@ -29,6 +33,9 @@ impl RemotePeer {
         Self {
             metadata,
             buffers: PeerBuffers::default(),
+
+            combined_inputs: HashMap::default(),
+            combined_input_hashes: HashMap::default(),
 
             rtt: 0,
             last_ping_received: 0,
@@ -51,6 +58,50 @@ impl RemotePeer {
         self.received_frames.keys().last().unwrap_or(&0).clone()
     }
 
+    // Predict missing inputs up to the current tick after the most recent input
+    // Silently returns if there are no inputs to predict from
+    pub fn predict_inputs_until_tick(
+        &mut self,
+        until_tick: Tick,
+        input_adapter: &mut Gd<GR3DInputAdapter>,
+    ) {
+        self.combined_inputs.clear();
+        self.combined_input_hashes.clear();
+
+        let mut predictions = 0;
+
+        if let Some((start_tick, start_input)) = get_earliest_entry(&self.buffers.inputs) {
+            for tick in start_tick..=until_tick {
+                if let Some(input) = self.buffers.inputs.get(&tick) {
+                    self.combined_inputs.insert(tick, (input.clone(), false)); // If we have a known input, add it to the combined inputs
+                } else {
+                    // If we don't have a known input, predict it based on the previous input (predicted or not)
+                    let previous_input = match tick == start_tick {
+                        true => start_input,
+                        false => &self.combined_inputs.get(&(tick - 1)).unwrap().0,
+                    };
+                    let predicted_input = input_adapter
+                        .bind_mut()
+                        .get_predicted_inputs(previous_input);
+
+                    self.combined_input_hashes
+                        .insert(tick, (get_input_hash(&predicted_input), true));
+                    self.combined_inputs.insert(tick, (predicted_input, true));
+
+                    predictions += 1;
+                }
+            }
+        }
+
+        log::trace!(
+            "Predicted {}/{} inputs for remote peer: {} until tick: {}",
+            predictions,
+            self.combined_inputs.len(),
+            self.metadata.id,
+            until_tick
+        );
+    }
+
     pub fn record_update_message(
         &mut self,
         update_message: &UpdateMessage,
@@ -62,13 +113,14 @@ impl RemotePeer {
             self.metadata.id
         );
 
+        // Record all relevant buffer data
         for frame in &update_message.frames {
             self.received_frames.insert(frame.tick, frame.clone());
             self.buffers.record_update_frame(frame, input_adapter);
         }
 
         // Remove any requested_frames records that are earlier than the earliest requested tick of the current message
-        // (because the remote peer is no longer interested in them)
+        // (because the remote peer is now confirming that it's no longer interested in them)
         let earliest_requested_tick = update_message
             .requested_frames
             .iter()

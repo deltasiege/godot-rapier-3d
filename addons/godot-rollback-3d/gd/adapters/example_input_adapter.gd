@@ -30,12 +30,11 @@ func get_default(input_key: String) -> Variant:
 
 ## Optional
 ## Given a previous known input, what should we predict the next input to be?
-## If this function does not return any value for a specific input_key, the prediction
-## will default to repeating the previous known input.
+## If not provided, the prediction defaults to repeating the previous known input.
 ##
-## This might make sense for e.g. movement inputs, but for button presses like jump,
-## it makes more sense to assume a player will not press + repress the jump input
-## immediately on the next frame
+## This might make sense for e.g. movement inputs - but for button presses like jump,
+## it makes more sense to assume a player will not press and repress the jump input
+## within a single frame frame, so we predict false instead.
 func get_predicted_input(input_key: String, previous_input: Variant) -> Variant:
 	match input_key:
 		"move": return previous_input

@@ -1,6 +1,7 @@
 use godot::prelude::*;
 
 use crate::adapters::GR3DNetworkAdapter;
+use crate::config::MAX_BUFFER_LEN;
 use crate::interface::*;
 use crate::network::*;
 use crate::types::*;
@@ -175,7 +176,11 @@ pub fn on_physics_process(gr3d: &mut GR3D, runtime: Gd<Node>, step_world: bool) 
         return;
     }
     let tick = gr3d.world.time.tick.clone();
-    record_all_advantages(gr3d, false);
+
+    process_rollbacks(gr3d); // Perform any required rollbacks
+    record_all_advantages(gr3d, false); // Record all peer advantages
+
+    // Capture inputs the local peer is making at the current tick
     capture_current_inputs(
         &mut gr3d.network.local_peer.buffers,
         tick,
@@ -183,10 +188,10 @@ pub fn on_physics_process(gr3d: &mut GR3D, runtime: Gd<Node>, step_world: bool) 
     );
 
     if step_world {
-        step(gr3d, 1);
+        step(gr3d, 1); // Step the world by one tick if requested
     }
 
-    process_godot_actions(gr3d, runtime);
+    process_godot_actions(gr3d, runtime); // Add/remove Godot nodes to ensure sync with Rapier world
     gr3d.network.send_updates_to_all_remote_peers(tick);
     gr3d.network.log_buffer_holes();
 }
@@ -200,5 +205,38 @@ pub fn on_received_tick_data(
     let mut input_adapter = gr3d.network.local_peer.input_adapter.clone()?;
     let peer = gr3d.network.get_remote_peer_mut(peer_id)?;
     peer.record_update_message(&update_message, &mut input_adapter);
+
+    // Compare newly inserted remote_peer.buffers.input_hashes to dirty remote_peer.combined_input_hashes
+    detect_missed_predictions(peer, &mut gr3d.rollback_state.invalid_ticks);
+
+    let predict_until_tick = gr3d.world.time.tick + (MAX_BUFFER_LEN as u64);
+    peer.predict_inputs_until_tick(predict_until_tick, &mut input_adapter);
+
+    // TODO this could potentially happen at the same time if multiple remote peers land packets at same time
+    // - calls to input adapter need to be deferred?
+
     Some(())
+}
+
+/// Compare dirty version of combined_input_hashes that is yet to be recaculated with freshly known input_hashes of a given remote peer.
+/// Raise rollback flags if the hashes differ.
+fn detect_missed_predictions(remote_peer: &RemotePeer, invalid_ticks: &mut Vec<Tick>) {
+    for (tick, (hash, was_predicted)) in remote_peer.combined_input_hashes.iter() {
+        if !*was_predicted {
+            continue;
+        }
+
+        if let Some(input_hash) = remote_peer.buffers.input_hashes.get(tick) {
+            if *hash != *input_hash {
+                log::debug!(
+                    "Missed prediction for peer_id {} at tick {}: {} != {}",
+                    remote_peer.metadata.id,
+                    tick,
+                    hash,
+                    input_hash
+                );
+                invalid_ticks.push(*tick);
+            }
+        }
+    }
 }

@@ -12,10 +12,11 @@ func _physics_process(_delta):
 	var cam_dir = _cam.get_parent().transform.basis
 	GR3D.set_state(get_gruid(), "cam_dir", cam_dir)
 
-static func on_physics_tick(gruid: String, node_state: Dictionary):
-	if !node_state.get("cam_dir"): return
+static func on_physics_tick(peer_id: int, gruid: String, state: Dictionary):
+	if !state.get("cam_dir"): return
 	var input_dir = GR3D.get_input(gruid, "move")
-	var relative_dir = (node_state.cam_dir * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	var relative_dir = (state.cam_dir * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 	
 	var move_amt = relative_dir
+	if move_amt != Vector3.ZERO: print(peer_id, " is moving player " + gruid + " by: ", move_amt)
 	GR3D.move_by_amount(gruid, move_amt)

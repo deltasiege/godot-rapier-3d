@@ -48,6 +48,7 @@ impl PeerBuffers {
         )
     }
 
+    /// Records the given UpdateFrame into all relevant buffers
     pub fn record_update_frame(
         &mut self,
         frame: &UpdateFrame,
@@ -65,8 +66,8 @@ impl PeerBuffers {
         let overriden_world_hash = self.world_hashes.insert(frame.tick, frame.world_hash);
 
         if overriden_input_hash.is_some() && overriden_input_hash != Some(input_hash) {
-            log::error!(
-                "Conflicting remote input hashes received for tick {}: {} != {}",
+            log::trace!(
+                "Received new remote input_hash for tick {}: {} -> {}",
                 frame.tick,
                 overriden_input_hash.unwrap(),
                 input_hash
@@ -74,8 +75,8 @@ impl PeerBuffers {
         }
 
         if overriden_world_hash.is_some() && overriden_world_hash != Some(frame.world_hash) {
-            log::error!(
-                "Conflicting remote world hashes received for tick {}: {} != {}",
+            log::trace!(
+                "Received new remote world_hash for tick {}: {} -> {}",
                 frame.tick,
                 overriden_world_hash.unwrap(),
                 frame.world_hash
@@ -88,7 +89,12 @@ impl PeerBuffers {
             .bind_mut()
             .deserialize_inputs(&frame.ser_inputs);
 
-        self.inputs.insert(frame.tick, inputs);
+        self.inputs.insert(frame.tick, inputs.clone());
+
+        self.inputs.sort_unstable_keys();
+        self.ser_inputs.sort_unstable_keys();
+        self.input_hashes.sort_unstable_keys();
+        self.world_hashes.sort_unstable_keys();
     }
 }
 

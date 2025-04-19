@@ -15,6 +15,7 @@ use crate::world::*;
 pub struct GR3D {
     pub world: World,
     pub network: Network,
+    pub rollback_state: RollbackState,
     pub logger: Logger,
     base: Base<Object>,
 }
@@ -25,6 +26,7 @@ impl IObject for GR3D {
         Self {
             world: World::new(),
             network: Network::new(),
+            rollback_state: RollbackState::new(),
             logger: Logger::new(),
             base,
         }
@@ -37,7 +39,7 @@ impl GR3D {
 
     #[func]
     fn step(&mut self, count: i64) {
-        step(self, count);
+        step(self, count as u64);
     }
 
     #[func]
@@ -46,7 +48,7 @@ impl GR3D {
     }
     #[func]
     fn load_snapshot(&mut self, snapshot: PackedByteArray) {
-        self.world.load_snapshot(snapshot.to_vec());
+        self.world.load_snapshot(&snapshot.to_vec(), false);
     }
 
     #[func]

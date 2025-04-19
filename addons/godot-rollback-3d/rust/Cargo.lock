@@ -450,6 +450,7 @@ dependencies = [
  "flexi_logger",
  "godot",
  "log",
+ "log-reload",
  "rapier3d",
  "serde",
 ]
@@ -570,6 +571,15 @@ name = "log"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
+
+[[package]]
+name = "log-reload"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b93bfeb4c6d2c71cbb9207649217abb48814d88b18ed71c6c647ea5c75cf30fe"
+dependencies = [
+ "log",
+]
 
 [[package]]
 name = "markdown"

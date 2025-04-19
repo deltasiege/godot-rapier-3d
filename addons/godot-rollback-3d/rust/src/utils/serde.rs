@@ -184,3 +184,63 @@ impl SerdeVar {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum SerdeVarType {
+    INT,
+    FLOAT,
+    STRING,
+    BOOL,
+    COLOR,
+    VECTOR2,
+    VECTOR2I,
+    VECTOR3,
+    VECTOR3I,
+    BASIS,
+    TRANSFORM2D,
+    TRANSFORM3D,
+}
+
+impl TryFrom<VariantType> for SerdeVarType {
+    type Error = String;
+
+    fn try_from(value: VariantType) -> Result<Self, Self::Error> {
+        match value {
+            VariantType::INT => Ok(Self::INT),
+            VariantType::FLOAT => Ok(Self::FLOAT),
+            VariantType::STRING => Ok(Self::STRING),
+            VariantType::BOOL => Ok(Self::BOOL),
+            VariantType::COLOR => Ok(Self::COLOR),
+            VariantType::VECTOR2 => Ok(Self::VECTOR2),
+            VariantType::VECTOR2I => Ok(Self::VECTOR2I),
+            VariantType::VECTOR3 => Ok(Self::VECTOR3),
+            VariantType::VECTOR3I => Ok(Self::VECTOR3I),
+            VariantType::BASIS => Ok(Self::BASIS),
+            VariantType::TRANSFORM2D => Ok(Self::TRANSFORM2D),
+            VariantType::TRANSFORM3D => Ok(Self::TRANSFORM3D),
+            _ => {
+                log::error!("Unsupported variant type: {:?}", value);
+                Err(format!("Unsupported variant type: {:?}", value))
+            }
+        }
+    }
+}
+
+impl Into<VariantType> for SerdeVarType {
+    fn into(self) -> VariantType {
+        match self {
+            Self::INT => VariantType::INT,
+            Self::FLOAT => VariantType::FLOAT,
+            Self::STRING => VariantType::STRING,
+            Self::BOOL => VariantType::BOOL,
+            Self::COLOR => VariantType::COLOR,
+            Self::VECTOR2 => VariantType::VECTOR2,
+            Self::VECTOR2I => VariantType::VECTOR2I,
+            Self::VECTOR3 => VariantType::VECTOR3,
+            Self::VECTOR3I => VariantType::VECTOR3I,
+            Self::BASIS => VariantType::BASIS,
+            Self::TRANSFORM2D => VariantType::TRANSFORM2D,
+            Self::TRANSFORM3D => VariantType::TRANSFORM3D,
+        }
+    }
+}

@@ -58,7 +58,7 @@ impl WorldSnapshot {
         }
 
         // Overwrite node database with all nodes in the snapshot
-        world.node_db.nodes = self.nodes.clone();
+        world.node_db.overwrite_nodes(self.nodes.clone());
     }
 
     pub fn try_to_bytes(&self) -> Option<Vec<u8>> {

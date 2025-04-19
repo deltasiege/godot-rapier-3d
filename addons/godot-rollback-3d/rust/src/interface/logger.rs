@@ -56,6 +56,11 @@ pub fn get_log_file_dir() -> String {
 
 struct GodotConsoleWriter;
 
+// let peer_id = match self.peer_id {
+//     Some(peer_id) => format!("[{}]", peer_id),
+//     None => String::new(),
+// };
+
 impl LogWriter for GodotConsoleWriter {
     fn write(&self, _now: &mut DeferredNow, record: &log::Record) -> std::io::Result<()> {
         match record.level() {
