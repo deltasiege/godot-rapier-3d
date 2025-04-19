@@ -57,11 +57,11 @@ pub fn on_received_remote_start(gr3d: &mut GR3D, peer_map: PeerMap) -> Result<()
 
     let adapter = network.adapter.as_ref().unwrap();
     adapter.bind().on_sync_start();
-    gr3d.logger.set_peer_id(adapter.bind().get_unique_id());
 
     network.started = true;
 
-    let _ = apply_peer_map_to_network(network, peer_map.clone());
+    let (local_id, local_idx) = apply_peer_map_to_network(network, peer_map.clone())?;
+    gr3d.logger.set_peer_id(local_id, local_idx);
 
     world.reset();
     world.physics.integration_parameters.dt =

@@ -3,6 +3,11 @@ use flexi_logger::{DeferredNow, FileSpec, LogSpecification, Logger as FlexiLogge
 use godot::classes::Os;
 use godot::prelude::*;
 use log::LevelFilter;
+use std::cell::RefCell;
+
+thread_local! {
+    static LOCAL_PEER_IDX: RefCell<String> = RefCell::new(String::from("?"));
+}
 
 pub struct Logger {
     handle: LoggerHandle,
@@ -22,9 +27,13 @@ impl Logger {
         Self { handle }
     }
 
-    pub fn set_peer_id(&mut self, peer_id: i64) {
+    pub fn set_peer_id(&mut self, peer_id: i64, peer_idx: u8) {
         let log_file_path = format!("{}/peer_{}.log", get_log_file_dir(), peer_id);
         self._update_log_file_path(&log_file_path);
+
+        LOCAL_PEER_IDX.with(|stored_peer_idx| {
+            stored_peer_idx.replace(format!("{}", peer_idx));
+        });
     }
 
     pub fn set_level(&mut self, level: LogLevel) {
@@ -33,7 +42,7 @@ impl Logger {
         log::debug!("Log level updated to: {:?}", level);
     }
 
-    pub fn _update_log_file_path(&mut self, new_path: &String) {
+    fn _update_log_file_path(&mut self, new_path: &String) {
         if let Err(e) = self.handle.reset_flw(
             &FileLogWriter::builder(
                 FileSpec::try_from(new_path)
@@ -56,18 +65,16 @@ pub fn get_log_file_dir() -> String {
 
 struct GodotConsoleWriter;
 
-// let peer_id = match self.peer_id {
-//     Some(peer_id) => format!("[{}]", peer_id),
-//     None => String::new(),
-// };
-
 impl LogWriter for GodotConsoleWriter {
     fn write(&self, _now: &mut DeferredNow, record: &log::Record) -> std::io::Result<()> {
         match record.level() {
             log::Level::Error => godot_error!("[GR3D]: {}", record.args()),
             log::Level::Warn => godot_warn!("[GR3D]: {}", record.args()),
             log::Level::Info | log::Level::Debug => {
-                godot_print!("[GR3D][{}]: {}", record.level(), record.args())
+                LOCAL_PEER_IDX.with(|idx| {
+                    let idx = idx.borrow();
+                    godot_print!("[GR3D][{}][{}]: {}", *idx, record.level(), record.args())
+                });
             }
             _ => {}
         }
