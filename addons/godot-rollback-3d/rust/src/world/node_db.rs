@@ -134,11 +134,7 @@ impl NodeDatabase {
             if let Some(node_data) = self.nodes.get(gruid) {
                 script.call_deferred(
                     "on_physics_tick",
-                    &[
-                        local_peer_id.to_variant(),
-                        node_data.gruid.to_variant(),
-                        node_data.get_state_dictionary().to_variant(),
-                    ],
+                    &[local_peer_id.to_variant(), node_data.gruid.to_variant()],
                 );
             } else {
                 log::trace!(
@@ -178,6 +174,19 @@ impl NodeDatabase {
         log::trace!("{} nodes added, {} nodes removed.", additions, removals);
         self.nodes = new_nodes;
     }
+
+    /// Returns the state of a node as a Dictionary.
+    pub fn get_node_state(&self, gruid: GRUID) -> Dictionary {
+        let node_data = match self.nodes.get(&gruid) {
+            Some(node) => node,
+            None => {
+                log::error!("Node {} not found in node_db.", gruid);
+                return Dictionary::new();
+            }
+        };
+
+        node_data.get_state_dictionary()
+    }
 }
 
 /// Returns the given key's state on a node's NodeData.
@@ -188,6 +197,7 @@ pub fn get_state(gr3d: &mut GR3D, gruid: String, key: String) -> Variant {
     }
 }
 
+/// Returns a single state value from given nodes NodeState.
 fn try_get_state(gr3d: &mut GR3D, gruid: String, key: String) -> Option<Variant> {
     let gruid = GRUID::try_from_string(&gruid)?;
     let node_data = match gr3d.world.node_db.nodes.get(&gruid) {
@@ -202,8 +212,7 @@ fn try_get_state(gr3d: &mut GR3D, gruid: String, key: String) -> Option<Variant>
         }
     };
 
-    let value = node_data.node_state.get(&GString::from(key))?;
-    Some(value.to_variant())
+    Some(node_data.get_state(key.into())?)
 }
 
 /// Sets the given key=value state on a node's NodeData.
@@ -228,9 +237,5 @@ fn try_set_state(gr3d: &mut GR3D, gruid: String, key: String, value: Variant) ->
         }
     };
 
-    let previous_value = node_data
-        .node_state
-        .insert(key.into(), SerdeVar::from_variant(value)?);
-
-    Some(previous_value?.to_variant())
+    Some(node_data.set_state(key.into(), value)?)
 }

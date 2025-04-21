@@ -28,7 +28,7 @@ impl World {
 
     /// Advance the simulation by one step
     /// Return the resulting world snapshot after stepping
-    pub fn step(&mut self) -> Option<Vec<u8>> {
+    pub fn step(&mut self) -> WorldSnapshot {
         log::trace!("Stepping world at tick: {}", self.time.tick);
 
         self.physics.pipeline.step(
@@ -47,7 +47,7 @@ impl World {
             &(),
         );
 
-        let snap = self.save_snapshot();
+        let snap = self.save_de_snapshot();
 
         self.time.secs += self.physics.integration_parameters.dt as f32;
         self.time.tick += 1;
@@ -56,22 +56,28 @@ impl World {
         snap
     }
 
-    /// Retrieve the current snapshot
+    /// Get a serialized version of the current world snapshot
     pub fn save_snapshot(&self) -> Option<Vec<u8>> {
-        log::trace!("Taking snapshot of world at tick: {}", self.time.tick);
-        WorldSnapshot::from_world(self).try_to_bytes()
+        log::trace!("Encoding snapshot of world at tick: {}", self.time.tick);
+        self.save_de_snapshot().try_to_bytes()
     }
 
-    /// Convert bytes into a WorldSnapshot and then restore it
+    /// Get a snapshot of the current world state
+    pub fn save_de_snapshot(&self) -> WorldSnapshot {
+        log::trace!("Getting snapshot of world at tick: {}", self.time.tick);
+        WorldSnapshot::from_world(self)
+    }
+
+    /// Load a serialized WorldSnapshot
     pub fn load_snapshot(&mut self, snapshot: &Vec<u8>, overwrite_tick: bool) {
         log::trace!("Decoding snapshot of length: {}", snapshot.len());
         if let Some(snapshot) = WorldSnapshot::try_from_bytes(&snapshot) {
-            self.restore_snapshot(snapshot, overwrite_tick);
+            self.load_de_snapshot(snapshot, overwrite_tick);
         }
     }
 
-    /// Overwrite the current state of the world to the given snapshot state
-    pub fn restore_snapshot(&mut self, snapshot: WorldSnapshot, overwrite_tick: bool) {
+    /// Load a WorldSnapshot, optionally overwriting the tick
+    pub fn load_de_snapshot(&mut self, snapshot: WorldSnapshot, overwrite_tick: bool) {
         let op = match overwrite_tick {
             true => "Restoring",
             false => "Rolling back",
@@ -112,11 +118,10 @@ pub fn step(gr3d: &mut GR3D, count: u64) {
             .process_node_tick_functions(local_peer_id);
         process_rapier_actions(gr3d);
 
-        if let Some(snapshot) = gr3d.world.step() {
-            gr3d.network
-                .local_peer
-                .record_world_snapshot(tick, snapshot);
-        }
+        let snapshot = gr3d.world.step();
+        gr3d.network
+            .local_peer
+            .record_world_snapshot(tick, snapshot);
 
         log::trace!("Tick finished: {}", tick);
     }

@@ -13,9 +13,12 @@ func get_input_list() -> Array[String]:
 ## Required!
 ## A function that returns some value for every possible
 ## action specified in all_inputs (passed in as input_key).
-func get_input(input_key: String) -> Variant:
+func get_input(input_key: String, node_state: Dictionary) -> Variant:
 	match input_key:
-		"move": return Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
+		"move": 
+			var input_dir = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
+			var cam_relative_dir = (node_state.cam_dir * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+			return cam_relative_dir
 		"jump": return Input.is_action_just_pressed("jump")
 		_: push_error("Unknown input_key: ", input_key); return null
 

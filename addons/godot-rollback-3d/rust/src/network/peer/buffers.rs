@@ -4,9 +4,11 @@ use rapier3d::parry::utils::hashmap::HashMap;
 use crate::adapters::GR3DInputAdapter;
 use crate::network::UpdateFrame;
 use crate::types::*;
-use crate::utils::{get_hash, prune_buffers};
+use crate::utils::{get_hash, prune_buffer};
 
 #[derive(Debug, Clone)]
+/// Buffers that are common between local and remote peers.
+/// Each buffer is sorted by tick whenever update frames are ingested.
 pub struct PeerBuffers {
     pub inputs: HashMap<Tick, InputMap>,
     pub ser_inputs: HashMap<Tick, Vec<u8>>,
@@ -37,17 +39,16 @@ impl PeerBuffers {
         self.world_hashes.clear();
     }
 
+    pub fn get_latest_world_hash(&self) -> Option<u64> {
+        self.world_hashes.values().last().cloned()
+    }
+
     /// Removes all buffer entries that are older than the given tick.
     pub fn prune(&mut self, start_tick: Tick) {
-        prune_buffers(
-            vec![
-                &mut self.inputs,
-                &mut self.ser_inputs,
-                &mut self.input_hashes,
-                &mut self.world_hashes,
-            ],
-            start_tick,
-        );
+        prune_buffer(&mut self.inputs, start_tick);
+        prune_buffer(&mut self.ser_inputs, start_tick);
+        prune_buffer(&mut self.input_hashes, start_tick);
+        prune_buffer(&mut self.world_hashes, start_tick);
     }
 
     /// Returns a string containing containing ticks missing between the starts and ends of all buffers.
@@ -61,7 +62,7 @@ impl PeerBuffers {
         )
     }
 
-    /// Records the given UpdateFrame into all relevant buffers
+    /// Records the given UpdateFrame into all relevant buffers and sorts all buffers by tick.
     pub fn record_update_frame(
         &mut self,
         frame: &UpdateFrame,

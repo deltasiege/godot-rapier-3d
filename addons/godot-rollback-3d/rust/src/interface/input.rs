@@ -2,7 +2,7 @@ use godot::prelude::*;
 
 use crate::adapters::GR3DInputAdapter;
 use crate::interface::GR3D;
-use crate::network::{PeerBuffers, RemotePeer};
+use crate::network::PeerBuffers;
 use crate::types::*;
 use crate::utils::get_hash;
 
@@ -14,14 +14,6 @@ pub fn get_input(gr3d: &mut GR3D, gruid: String, input_key: GString) -> Variant 
         None => Variant::nil(),
     };
 
-    // godot_print!(
-    //     "peer: {} get_input: gruid: {}, input_key: {}, result: {}",
-    //     gr3d.network.local_peer.get_peer_id().unwrap_or(-1),
-    //     gruid,
-    //     input_key,
-    //     result
-    // );
-
     result
 }
 
@@ -32,9 +24,16 @@ fn try_get_input(gr3d: &mut GR3D, gruid: String, input_key: GString) -> Option<V
 
     match gr3d.network.local_peer.is_local_gruid(gruid) {
         true => {
-            // Local peer, get input from the local adapter
+            // Local peer, get local node_state and then use it
+            // to get input from the local adapter
+
+            let node_state = gr3d.world.node_db.get_node_state(gruid);
             let adapter = gr3d.network.local_peer.get_adapter_mut()?;
-            Some(get_input_from_adapter(adapter, input_key.clone()))
+            Some(get_input_from_adapter(
+                adapter,
+                input_key.clone(),
+                node_state,
+            ))
         }
         false => {
             // Remote peer, get input from the remote peer's buffer,
@@ -77,8 +76,15 @@ pub fn capture_current_inputs(
     }
 }
 
-fn get_input_from_adapter(adapter: &mut Gd<GR3DInputAdapter>, input_key: GString) -> Variant {
-    adapter.call("get_input", &[input_key.to_variant()])
+fn get_input_from_adapter(
+    adapter: &mut Gd<GR3DInputAdapter>,
+    input_key: GString,
+    node_state: Dictionary,
+) -> Variant {
+    adapter.call(
+        "get_input",
+        &[input_key.to_variant(), node_state.to_variant()],
+    )
 }
 
 fn get_default_from_adapter(adapter: &mut Gd<GR3DInputAdapter>, input_key: GString) -> Variant {

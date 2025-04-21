@@ -39,16 +39,21 @@ impl Network {
             tick.map(|t| t.to_string()).unwrap_or("None".to_string())
         );
 
-        if tick.is_some() {}
+        if tick.is_some() {
+            self.prune_peer_buffers(tick.unwrap() + 1);
+        }
     }
 
     /// Removes all buffer entries that are older than the given tick.
     fn prune_peer_buffers(&mut self, start_tick: Tick) {
         self.local_peer.buffers.prune(start_tick);
-        // self.local_peer. // UP TO - also prune other buffers like world hash and combined inputs
+        prune_buffer(&mut self.local_peer.world_snapshots, start_tick);
+        prune_buffer(&mut self.local_peer.world_snapshots, start_tick);
 
         for remote_peer in &mut self.remote_peers {
             remote_peer.buffers.prune(start_tick);
+            prune_buffer(&mut remote_peer.combined_inputs, start_tick);
+            prune_buffer(&mut remote_peer.combined_input_hashes, start_tick);
         }
     }
 
@@ -224,6 +229,7 @@ pub fn on_received_tick_data(
     data: PackedByteArray,
 ) -> Option<()> {
     let update_message = decode_from_packed_byte_array::<UpdateMessage>(&data)?;
+    let synchronized_tick = gr3d.network.synchronized_tick.clone().unwrap_or(0);
     let mut input_adapter = gr3d.network.local_peer.input_adapter.clone()?;
     let peer = gr3d.network.get_remote_peer_mut(peer_id)?;
     peer.record_update_message(&update_message, &mut input_adapter);
@@ -232,7 +238,7 @@ pub fn on_received_tick_data(
     detect_missed_predictions(peer, &mut gr3d.rollback_state.invalid_ticks);
 
     let predict_until_tick = gr3d.world.time.tick + (MAX_BUFFER_LEN as u64);
-    peer.predict_inputs_until_tick(predict_until_tick, &mut input_adapter);
+    peer.predict_inputs_until_tick(synchronized_tick, predict_until_tick, &mut input_adapter);
 
     update_synchronized_tick(gr3d);
 
@@ -250,6 +256,12 @@ fn update_synchronized_tick(gr3d: &mut GR3D) {
     let end_tick = gr3d.world.time.tick;
 
     for tick in start_tick..=end_tick {
+        let all_remote_peers_have_acknowledged_tick = gr3d
+            .network
+            .remote_peers
+            .iter()
+            .all(|peer| tick < peer.get_earliest_requested_tick().unwrap_or(0));
+
         let all_remote_inputs_collected = gr3d.network.remote_peers.iter().all(|peer| {
             peer.buffers.inputs.contains_key(&tick) && peer.buffers.input_hashes.contains_key(&tick)
         });
@@ -264,11 +276,17 @@ fn update_synchronized_tick(gr3d: &mut GR3D) {
             None => false,
         };
 
-        match all_remote_inputs_collected && all_world_hashes_match {
+        match all_remote_peers_have_acknowledged_tick
+            && all_remote_inputs_collected
+            && all_world_hashes_match
+        {
             true => {
                 new_sync_tick = Some(tick);
             }
             false => {
+                log::trace!("Synchronized tick check stopped at tick {}. all_remote_peers_have_acknowledged_tick: {}, all_remote_inputs_collected: {}, all_world_hashes_match: {}", 
+                
+                tick, all_remote_peers_have_acknowledged_tick, all_remote_inputs_collected, all_world_hashes_match);
                 break;
             }
         }

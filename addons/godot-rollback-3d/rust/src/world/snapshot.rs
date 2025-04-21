@@ -4,11 +4,17 @@ use rapier3d::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::types::*;
+use crate::utils::{encode_or_none, get_hash};
 use crate::World;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct WorldSnapshot {
     pub tick: Tick,
+    pub world_state: WorldState,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct WorldState {
     pub broad_phase: DefaultBroadPhase,
     pub narrow_phase: NarrowPhase,
     pub island_manager: IslandManager,
@@ -19,19 +25,44 @@ pub struct WorldSnapshot {
     pub multibody_joints: MultibodyJointSet,
 }
 
+impl std::fmt::Display for WorldState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "WorldState {{ island_manager: {:?}, bodies: {:?}, colliders: {:?}, nodes: {:?}, impulse_joints: {:?}, multibody_joints: {:?} }}",
+            self.island_manager.active_kinematic_bodies().len() + self.island_manager.active_dynamic_bodies().len(),
+            self.bodies.len(),
+            self.colliders.len(),
+            self.nodes.len(),
+            self.impulse_joints.len(),
+            self.multibody_joints.multibodies().count()
+        )
+    }
+}
+
 impl WorldSnapshot {
     pub fn from_world(world: &World) -> Self {
         Self {
             tick: world.time.tick,
-            broad_phase: world.physics.broad_phase.clone(),
-            narrow_phase: world.physics.narrow_phase.clone(),
-            island_manager: world.physics.islands.clone(),
-            nodes: world.node_db.nodes.clone(),
-            bodies: world.physics.bodies.clone(),
-            colliders: get_snapshottable_colliders(world),
-            impulse_joints: world.physics.impulse_joints.clone(),
-            multibody_joints: world.physics.multibody_joints.clone(),
+
+            world_state: WorldState {
+                broad_phase: world.physics.broad_phase.clone(),
+                narrow_phase: world.physics.narrow_phase.clone(),
+                island_manager: world.physics.islands.clone(),
+                nodes: world.node_db.nodes.clone(),
+                bodies: world.physics.bodies.clone(),
+                colliders: get_snapshottable_colliders(world),
+                impulse_joints: world.physics.impulse_joints.clone(),
+                multibody_joints: world.physics.multibody_joints.clone(),
+            },
         }
+    }
+
+    // Hash all fields except tick
+    pub fn get_hash(&self) -> Option<u64> {
+        let ser = encode_or_none(&self.world_state)?;
+        log::debug!("Hashing: {}", self.world_state);
+        Some(get_hash(&ser))
     }
 
     pub fn apply_to_world(&self, world: &mut World, overwrite_tick: bool) {
@@ -41,15 +72,15 @@ impl WorldSnapshot {
         }
 
         // Overwrite world physics data
-        world.physics.broad_phase = self.broad_phase.clone();
-        world.physics.narrow_phase = self.narrow_phase.clone();
-        world.physics.islands = self.island_manager.clone();
-        world.physics.bodies = self.bodies.clone();
-        world.physics.impulse_joints = self.impulse_joints.clone();
-        world.physics.multibody_joints = self.multibody_joints.clone();
+        world.physics.broad_phase = self.world_state.broad_phase.clone();
+        world.physics.narrow_phase = self.world_state.narrow_phase.clone();
+        world.physics.islands = self.world_state.island_manager.clone();
+        world.physics.bodies = self.world_state.bodies.clone();
+        world.physics.impulse_joints = self.world_state.impulse_joints.clone();
+        world.physics.multibody_joints = self.world_state.multibody_joints.clone();
 
         // Don't overwrite colliders excluded from snapshots
-        for (handle, collider) in self.colliders.iter() {
+        for (handle, collider) in self.world_state.colliders.iter() {
             if let Some(collider) = world.physics.colliders.get_mut(handle) {
                 *collider = collider.clone();
             } else {
@@ -58,7 +89,9 @@ impl WorldSnapshot {
         }
 
         // Overwrite node database with all nodes in the snapshot
-        world.node_db.overwrite_nodes(self.nodes.clone());
+        world
+            .node_db
+            .overwrite_nodes(self.world_state.nodes.clone());
     }
 
     pub fn try_to_bytes(&self) -> Option<Vec<u8>> {

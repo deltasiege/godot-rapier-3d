@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::nodes::{NodeBlueprint, NodeData};
 use crate::types::*;
+use crate::utils::SerdeVar;
 
 // Indices
 pub type Tick = u64; // Current timestep of the simulation
@@ -22,6 +23,7 @@ pub type UnixEpoch = u128; // Unix epoch in milliseconds
 
 // Nodes
 pub type NodeMap = HashMap<GRUID, NodeData>; // Map of all nodes that have been spawned and despawned into Rapier + Godot.
+pub type NodeState = HashMap<GString, SerdeVar>;
 pub type SpawnRecord = (NodeBlueprint, Option<Gd<Script>>);
 pub type SpawnRecords = Vec<SpawnRecord>;
 

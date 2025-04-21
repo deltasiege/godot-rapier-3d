@@ -4,7 +4,7 @@ use rapier3d::parry::utils::hashmap::HashMap;
 use crate::adapters::GR3DInputAdapter;
 use crate::network::*;
 use crate::types::*;
-use crate::utils::get_hash;
+use crate::world::WorldSnapshot;
 
 #[derive(Debug)]
 pub struct LocalPeer {
@@ -83,8 +83,22 @@ impl LocalPeer {
     }
 
     /// Record the given serialized WorldSnapshot for the given tick.
-    pub fn record_world_snapshot(&mut self, tick: Tick, snapshot: Vec<u8>) {
-        self.buffers.world_hashes.insert(tick, get_hash(&snapshot));
-        self.world_snapshots.insert(tick, snapshot);
+    pub fn record_world_snapshot(&mut self, tick: Tick, snapshot: WorldSnapshot) {
+        let (bytes, hash) = match self.try_record_world_snapshot(snapshot) {
+            Some((bytes, hash)) => (bytes, hash),
+            None => {
+                log::error!("Failed to record world snapshot for tick: {}", tick);
+                return;
+            }
+        };
+
+        self.world_snapshots.insert(tick, bytes);
+        self.buffers.world_hashes.insert(tick, hash);
+    }
+
+    fn try_record_world_snapshot(&mut self, snapshot: WorldSnapshot) -> Option<(Vec<u8>, u64)> {
+        let bytes = snapshot.try_to_bytes()?;
+        let hash = snapshot.get_hash()?;
+        Some((bytes, hash))
     }
 }

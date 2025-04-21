@@ -46,7 +46,7 @@ impl GR3DInputAdapter {
 
     #[func(virtual)]
     /// Must be provided. Returns some variant value for every possible action specified in all_inputs.
-    fn get_input(&self, _input_key: GString) -> Variant {
+    fn get_input(&self, _input_key: GString, _node_state: Dictionary) -> Variant {
         log::error!(
             "UNIMPLEMENTED: get_input on InputAdapter: {:?}",
             self.base().get_name()
@@ -55,8 +55,11 @@ impl GR3DInputAdapter {
     }
 
     /// Returns result of potentially overriden get_input function.
-    pub fn get_overriden_input(&mut self, input_key: &GString) -> Variant {
-        self.base_mut().call("get_input", &[input_key.to_variant()])
+    pub fn get_overriden_input(&mut self, input_key: &GString, node_state: &Dictionary) -> Variant {
+        self.base_mut().call(
+            "get_input",
+            &[input_key.to_variant(), node_state.to_variant()],
+        )
     }
 
     #[func(virtual)]
@@ -88,15 +91,21 @@ impl GR3DInputAdapter {
     }
 
     /// Returns all current inputs as an InputMap.
-    pub fn get_inputs(&mut self) -> InputMap {
+    pub fn get_inputs(&mut self, node_state: &Dictionary) -> InputMap {
         let input_list = self.get_overriden_input_list();
         input_list
             .iter()
-            .map(|input_key| (input_key.clone(), self.get_overriden_input(input_key)))
+            .map(|input_key| {
+                (
+                    input_key.clone(),
+                    self.get_overriden_input(input_key, node_state),
+                )
+            })
             .collect()
     }
 
     /// Returns all predicted inputs based on a previous InputMap.
+    // TODO does predicted inputs need node_state?
     pub fn get_predicted_inputs(&mut self, previous_inputs: &InputMap) -> InputMap {
         let mut predicted_inputs: InputMap = HashMap::default();
 
@@ -110,8 +119,8 @@ impl GR3DInputAdapter {
     }
 
     /// Returns all current inputs as a serialized byte array.
-    pub fn get_ser_inputs(&mut self) -> Vec<u8> {
-        let inputs = self.get_inputs();
+    pub fn get_ser_inputs(&mut self, node_state: &Dictionary) -> Vec<u8> {
+        let inputs = self.get_inputs(node_state);
         serialize_inputs(&inputs)
     }
 

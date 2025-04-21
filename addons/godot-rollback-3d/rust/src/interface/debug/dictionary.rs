@@ -64,7 +64,13 @@ fn network_dictionary(network: &Network) -> Dictionary {
     }
     local_peer.set("input_adapter", class_or_none(&lp.input_adapter));
 
-    let mut buffers = Dictionary::new();
+    let mut buffers: Dictionary = Dictionary::new();
+
+    buffers.set(
+        "latest_world_hash",
+        stringify_option(lp.buffers.get_latest_world_hash()),
+    );
+
     buffers.set("inputs", lp.buffers.inputs.len() as i64);
     buffers.set("ser_inputs", lp.buffers.ser_inputs.len() as i64);
     buffers.set("input_hashes", lp.buffers.input_hashes.len() as i64);
@@ -81,9 +87,9 @@ fn network_dictionary(network: &Network) -> Dictionary {
         pd.set("rtt", peer.rtt as i64);
         pd.set("last_ping_received", peer.last_ping_received as i64);
         pd.set("time_delta", peer.time_delta);
-        let lrt = peer.get_lastest_received_tick();
+        let lrt = peer.get_lastest_received_tick().unwrap_or(0);
         pd.set("latest_received_tick", lrt as i64);
-        let lrqt = peer.get_latest_requested_tick();
+        let lrqt = peer.get_latest_requested_tick().unwrap_or(0);
         pd.set("latest_requested_tick", lrqt as i64);
         pd.set("remote_lag", peer.remote_lag);
         pd.set("local_lag", peer.local_lag);
@@ -91,6 +97,12 @@ fn network_dictionary(network: &Network) -> Dictionary {
         pd.set("advantage_list", peer.advantage_list.to_variant());
 
         let mut buffers = Dictionary::new();
+
+        buffers.set(
+            "latest_world_hash",
+            stringify_option(peer.buffers.get_latest_world_hash()),
+        );
+
         buffers.set("inputs", peer.buffers.inputs.len() as i64);
         buffers.set("ser_inputs", peer.buffers.ser_inputs.len() as i64);
         buffers.set("input_hashes", peer.buffers.input_hashes.len() as i64);

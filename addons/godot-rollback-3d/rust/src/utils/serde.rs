@@ -9,7 +9,7 @@ use std::fmt::Debug;
 use crate::utils::variant_to;
 
 /// Wrapper to abstract away configuration details of bincode.
-pub fn encode(value: &(impl Serialize + Debug)) -> Result<Vec<u8>, EncodeError> {
+pub fn encode(value: &impl Serialize) -> Result<Vec<u8>, EncodeError> {
     encode_to_vec(value, standard())
 }
 
@@ -24,12 +24,12 @@ pub fn try_wrap_bytes(data: Option<Vec<u8>>) -> PackedByteArray {
 /// Wrapper to handle error logging and return an Option<bytes>.
 pub fn encode_or_none<T>(value: &T) -> Option<Vec<u8>>
 where
-    T: Serialize + Debug + Clone,
+    T: Serialize + Clone,
 {
     match encode(value) {
         Ok(encoded) => Some(encoded),
         Err(_) => {
-            log::error!("Failed to encode value: {:?}", value);
+            log::error!("Failed to encode value");
             None
         }
     }

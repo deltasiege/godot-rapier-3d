@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use godot::prelude::*;
 use rapier3d::parry::utils::hashmap::HashMap;
 
@@ -25,7 +27,7 @@ pub struct RemotePeer {
     pub advantage_list: Vec<i64>, // List of advantage values over time to calculate the average
 
     pub requested_frames: Vec<Tick>, // List of ticks that the remote peer would like to receive local UpdateMessages for
-    pub received_frames: HashMap<Tick, UpdateFrame>, // List of update messages we have received from this remote peer
+    pub received_frames: HashMap<Tick, UpdateFrame>, // List of update frames we have received from this remote peer
 }
 
 impl RemotePeer {
@@ -50,55 +52,73 @@ impl RemotePeer {
         }
     }
 
-    pub fn get_latest_requested_tick(&self) -> Tick {
-        self.requested_frames.last().unwrap_or(&0).clone()
+    pub fn get_earliest_requested_tick(&self) -> Option<Tick> {
+        self.requested_frames.iter().min().map(|tick| *tick)
     }
 
-    pub fn get_lastest_received_tick(&self) -> Tick {
-        self.received_frames.keys().last().unwrap_or(&0).clone()
+    pub fn get_latest_requested_tick(&self) -> Option<Tick> {
+        self.requested_frames.iter().max().map(|tick| *tick)
+    }
+
+    pub fn get_lastest_received_tick(&self) -> Option<Tick> {
+        self.received_frames.keys().last().map(|tick| *tick)
     }
 
     // Predict missing inputs up to the current tick after the most recent input
     // Silently returns if there are no inputs to predict from
     pub fn predict_inputs_until_tick(
         &mut self,
+        synchronized_tick: Tick,
         until_tick: Tick,
         input_adapter: &mut Gd<GR3DInputAdapter>,
     ) {
+        let instant = Instant::now();
         self.combined_inputs.clear();
         self.combined_input_hashes.clear();
 
         let mut predictions = 0;
 
-        if let Some((start_tick, start_input)) = get_earliest_entry(&self.buffers.inputs) {
-            for tick in start_tick..=until_tick {
-                if let Some(input) = self.buffers.inputs.get(&tick) {
-                    self.combined_inputs.insert(tick, (input.clone(), false)); // If we have a known input, add it to the combined inputs
-                } else {
-                    // If we don't have a known input, predict it based on the previous input (predicted or not)
-                    let previous_input = match tick == start_tick {
-                        true => start_input,
-                        false => &self.combined_inputs.get(&(tick - 1)).unwrap().0,
-                    };
-                    let predicted_input = input_adapter
-                        .bind_mut()
-                        .get_predicted_inputs(previous_input);
+        let start_input = match self.buffers.inputs.get(&synchronized_tick) {
+            Some(input) => input,
+            None => {
+                log::trace!(
+                    "No input found for synchronized tick: {} for remote peer: {}",
+                    synchronized_tick,
+                    self.metadata.id
+                );
+                return;
+            }
+        };
 
-                    self.combined_input_hashes
-                        .insert(tick, (get_input_hash(&predicted_input), true));
-                    self.combined_inputs.insert(tick, (predicted_input, true));
+        for tick in synchronized_tick..=until_tick {
+            if let Some(input) = self.buffers.inputs.get(&tick) {
+                self.combined_inputs.insert(tick, (input.clone(), false)); // If we have a known input, add it to the combined inputs
+            } else {
+                // If we don't have a known input, predict it based on the previous input (predicted or not)
+                let previous_input = match tick == synchronized_tick {
+                    true => start_input,
+                    false => &self.combined_inputs.get(&(tick - 1)).unwrap().0,
+                };
+                let predicted_input = input_adapter
+                    .bind_mut()
+                    .get_predicted_inputs(previous_input);
 
-                    predictions += 1;
-                }
+                self.combined_input_hashes
+                    .insert(tick, (get_input_hash(&predicted_input), true));
+                self.combined_inputs.insert(tick, (predicted_input, true));
+
+                predictions += 1;
             }
         }
 
         log::trace!(
-            "Predicted {}/{} inputs for remote peer: {} until tick: {}",
+            "Predicted {}/{} inputs for remote peer: {}. Tick range: {} -> {} [{} μs]",
             predictions,
             self.combined_inputs.len(),
             self.metadata.id,
-            until_tick
+            synchronized_tick,
+            until_tick,
+            instant.elapsed().as_micros()
         );
     }
 
@@ -155,7 +175,7 @@ impl RemotePeer {
     }
 
     pub fn record_advantage(&mut self, tick: Tick, force_recalculate: bool) {
-        self.local_lag = (tick + 1) as i64 - (self.get_lastest_received_tick()) as i64;
+        self.local_lag = (tick + 1) as i64 - (self.get_lastest_received_tick().unwrap_or(0)) as i64;
         self.advantage_list.push(self.local_lag - self.remote_lag);
         if force_recalculate || (self.advantage_list.len() >= TICKS_TO_CALCULATE_ADVANTAGE as usize)
         {

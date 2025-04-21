@@ -68,7 +68,7 @@ fn try_resimulate_from_tick(gr3d: &mut GR3D, tick: Tick) -> Result<(), ()> {
         }
     };
 
-    gr3d.world.restore_snapshot(snapshot, true);
+    gr3d.world.load_de_snapshot(snapshot, true);
 
     let steps = current_tick - tick;
     log::trace!("Stepping {} times", steps);

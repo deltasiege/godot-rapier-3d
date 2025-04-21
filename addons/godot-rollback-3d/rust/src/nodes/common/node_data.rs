@@ -18,7 +18,7 @@ pub struct NodeData {
     pub spawn_tick: Tick,
     pub despawn_tick: Option<Tick>,
     pub blueprint: NodeBlueprint,
-    pub node_state: HashMap<GString, SerdeVar>,
+    pub node_state: NodeState,
 }
 
 impl NodeData {
@@ -58,6 +58,17 @@ impl NodeData {
             dict.set(key.clone(), value.to_variant());
         }
         dict
+    }
+
+    pub fn get_state(&self, key: GString) -> Option<Variant> {
+        let serde_var = self.node_state.get(&key)?;
+        Some(serde_var.to_variant())
+    }
+
+    pub fn set_state(&mut self, key: GString, value: Variant) -> Option<Variant> {
+        let value = SerdeVar::from_variant(value)?;
+        let previous_value = self.node_state.insert(key, value)?;
+        Some(previous_value.to_variant())
     }
 
     pub fn get_rigid_body(&self, world: &World) -> Option<RigidBody> {
