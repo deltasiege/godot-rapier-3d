@@ -1,6 +1,5 @@
 use godot::prelude::*;
 
-use crate::adapters::GR3DInputAdapter;
 use crate::interface::GR3D;
 use crate::network::PeerBuffers;
 use crate::types::*;

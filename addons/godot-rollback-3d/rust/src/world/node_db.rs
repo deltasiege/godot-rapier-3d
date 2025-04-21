@@ -11,15 +11,12 @@ use crate::world::actions::*;
 #[derive(Debug)]
 pub struct NodeDatabase {
     pub nodes: NodeMap, // Map of all nodes that have been spawned/despawned into Rapier.
+    pub node_scripts: HashMap<GRUID, Gd<Script>>, // Map of all `on_physics_tick` functions that have been registered for each node.
 
     // Static spawn-time data.
     // Should never be cleared since spawned resources are expected to be static.
     // Populated when nodes are spawned via on_spawn_request, at the same time as insertion into awaiting_rapier.
-
-    // TODO change node_scripts to be referenced by resource path cuz they meant to be static and gruid is not static !!!!!!!
-    // !!
-    pub node_scripts: HashMap<GRUID, Gd<Script>>, // Map of all `on_physics_tick` functions that have been registered for each node.
-    pub spawn_cache: HashMap<String, SpawnRecords>, // Cache of resource node paths -> blueprints. Used to avoid instantiating Godot nodes during rollback unnecessarily.
+    pub spawn_cache: HashMap<String, Vec<SpawnRecord>>, // Cache of resource node paths -> blueprints. Used to avoid instantiating Godot nodes during rollback unnecessarily.
 
     // Rapier / Godot queues. Should be cleared whenever snapshots are loaded.
     // awaiting_rapier is populated whenever nodes are spawned or modified during Godot physics_process.
@@ -85,9 +82,7 @@ impl NodeDatabase {
                 .insert(gruid, RapierAction::Spawn(blueprint));
 
             if let Some(script) = script {
-                if script.has_method("on_physics_tick") {
-                    self.node_scripts.insert(gruid, script);
-                }
+                self.node_scripts.insert(gruid, script);
             }
         }
 
@@ -96,7 +91,7 @@ impl NodeDatabase {
 
     /// Extracts spawn records from the given spawn request,
     /// either from the spawn_cache or by actually instantiating the node in Godot and analyzing it.
-    fn get_spawn_records(&mut self, spawn_request: SpawnRequest) -> Option<SpawnRecords> {
+    fn get_spawn_records(&mut self, spawn_request: SpawnRequest) -> Option<Vec<SpawnRecord>> {
         let res_path = spawn_request.resource_path.clone();
 
         match self.spawn_cache.get(&res_path) {

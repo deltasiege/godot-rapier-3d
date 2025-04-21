@@ -25,7 +25,6 @@ pub type UnixEpoch = u128; // Unix epoch in milliseconds
 pub type NodeMap = HashMap<GRUID, NodeData>; // Map of all nodes that have been spawned and despawned into Rapier + Godot.
 pub type NodeState = HashMap<GString, SerdeVar>;
 pub type SpawnRecord = (NodeBlueprint, Option<Gd<Script>>);
-pub type SpawnRecords = Vec<SpawnRecord>;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum RollbackNodeClass {

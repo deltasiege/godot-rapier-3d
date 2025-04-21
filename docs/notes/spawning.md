@@ -1,8 +1,22 @@
 # Flows
 
-We MUST instance at the time of spawning in order to get transforms =<
+## Spawning / node presence management
 
-## Spawning
+- Changes to Godot children of Rollback nodes at runtime is not safe by default - We could allow it by building a new PackedScene when children are added.
+  I think thats a good idea. Keep temporary saved packed scene up to date with all godot changes if they are needed. Won't be necessary for GR3D.spawn()'d objects that never change, but will support child changes to either GR3D.spawn or ambient nodes if they happen.
+
+- We should allow the user to batch this if they want to add many children to a rollback node at once, and then call the update resource function at the end.
+
+## Runtime spawns/despawns
+
+- We need to insert them into Rapier
+- We need to collect tick and input functions from them
+- We need to be able to recreate their rapier stuff during rollbacks and godot stuff at the end of rollbacks
+
+### Spawning
+
+- We MUST instance at the time of spawning in order to get transforms.
+- We cache transforms and other instance-dependent data into spawn_cache so we only have to do it once
 
 1. GDScript `GR3D.spawn()`
 2. Check ResourceCache if resource path has been mapped to Vec<NodeBlueprint> previously
@@ -29,12 +43,20 @@ If it is, just use cached Vec<NodeBlueprint>
    - create Godot node from NodeData
    - set node_data property on the created node
 
-## Despawning
+### Despawning
 
-## Ambiently enter_tree
+- TODO
 
-1. Rust node `enter_tree`
-2. Somehow construct NodeBlueprint
+## Ambient nodes
+
+- We need to insert them into Rapier
+- We need to collect tick and input functions from them
+- We need to be able to recreate their rapier stuff during rollbacks and godot stuff at the end of rollbacks
+
+1. Ambient node `enter_tree`, should already have GRUID in metadata
+2. Call singleton "ambient enter tree"
+3. Use ResourceSaver to convert & save node into a PackedScene saved in userdata directory (so we can respawn it later if needed after rollbacks end)
+4. Plug into GR3D.spawn() flow using the resource_path obtained from the Resource Saver
 
 ---
 

@@ -6,7 +6,9 @@ use crate::types::*;
 use crate::utils::*;
 use crate::world::SpawnRequest;
 
-pub fn get_spawn_records_from_spawn_request(spawn_request: SpawnRequest) -> Option<SpawnRecords> {
+pub fn get_spawn_records_from_spawn_request(
+    spawn_request: SpawnRequest,
+) -> Option<Vec<SpawnRecord>> {
     let mut spawned_node = spawn_into_godot(
         &spawn_request.parent,
         &spawn_request.name,
@@ -21,7 +23,7 @@ pub fn get_spawn_records_from_spawn_request(spawn_request: SpawnRequest) -> Opti
 }
 
 /// Recursively returns a vector of NodeBlueprints for all rollback nodes under and including the given node.
-fn get_records(root: &Gd<Node>, resource_path: &String) -> SpawnRecords {
+fn get_records(root: &Gd<Node>, resource_path: &String) -> Vec<SpawnRecord> {
     let rigidbodies = get_children_with_class(root, RollbackNodeClass::RollbackRigidBody3D);
     let kin_chars = get_children_with_class(root, RollbackNodeClass::RollbackKinematicCharacter3D);
     let pid_chars = get_children_with_class(root, RollbackNodeClass::RollbackPIDCharacter3D);
@@ -41,7 +43,7 @@ fn get_records(root: &Gd<Node>, resource_path: &String) -> SpawnRecords {
 }
 
 /// Recursively returns SpawnRecords for all colliders under the given node.
-fn get_collider_records(root: &Gd<Node>, resource_path: &String) -> SpawnRecords {
+fn get_collider_records(root: &Gd<Node>, resource_path: &String) -> Vec<SpawnRecord> {
     let colliders = get_children_with_class(root, RollbackNodeClass::RollbackCollisionShape3D);
     iter_to_records(colliders.iter_shared(), resource_path, false)
 }
@@ -51,7 +53,7 @@ fn iter_to_records(
     iter: impl Iterator<Item = Gd<Node>>,
     resource_path: &String,
     get_child_colliders: bool,
-) -> SpawnRecords {
+) -> Vec<SpawnRecord> {
     let mut records = Vec::new();
     for node in iter {
         if let Some(blueprint) = node_to_records(&node, resource_path, get_child_colliders) {

@@ -27,6 +27,10 @@ pub fn spawn(
     }
 }
 
+pub fn register_ambient_node(gr3d: &mut GR3D, node: Gd<Node>) -> Array<GString> {
+    // UP TO: - refer to spawning.md ambient nodes section and note under ## Spawning / node presence management
+}
+
 /// Option compatible version of spawn function.
 fn try_spawn(gr3d: &mut GR3D, spawn_request: SpawnRequest) -> Option<Array<GString>> {
     if !gr3d.network.started {
